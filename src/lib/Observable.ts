@@ -33,12 +33,48 @@ export class Observable {
     return uuid
   }
 
+  /**
+   *
+   * @param event
+   * @param params values to match, if match call the callback and unsubscribe, or pass a function, return true to call the callback and unsubscribe
+   *  last param is the callback
+   */
+  public onceMatch(event: number | string, ...params: any[]): string {
+    const listener = params.pop()
+    return this.once(event, (...values: any[]) => {
+      const preventClear = values.pop()
+      if (
+        (params.length !== 0) && (
+          (typeof params[0] === 'function' && !params[0](...values))
+          || (params.length !== values.length)
+          || (!params.reduce((prev, curr, k) => prev && curr === values[k], true))
+        )
+      ) {
+        preventClear()
+      } else {
+        listener(...values, preventClear)
+      }
+    })
+  }
+
   public until(event: number | string, timeout = 500): Promise<any[]> {
     return new Promise((resolve, reject) => {
       const cb = window.setTimeout(() => {
-        reject('timeout')
+        reject(event + ' timeout')
       }, timeout)
       this.once(event, (...params: any[]) => {
+        window.clearTimeout(cb)
+        resolve(params)
+      })
+    })
+  }
+
+  public untilMatch(event: number | string, value: any, timeout = 500): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      const cb = window.setTimeout(() => {
+        reject(`${event} ${value.toString()} timeout`)
+      }, timeout)
+      this.onceMatch(event, value, (...params: any[]) => {
         window.clearTimeout(cb)
         resolve(params)
       })
@@ -55,9 +91,17 @@ export class Observable {
     Object.values(this._onEventListeners?.[event] || {})?.forEach((listener) => {
       listener(...params)
     })
-    Object.values(this._onceEventListeners?.[event] || {})?.forEach((listener) => {
-      listener(...params)
+    const clearUuid: string[] = []
+    Object.entries(this._onceEventListeners?.[event] || {})?.forEach(([uuid, listener]) => {
+      let preventClear = false
+      listener(...params, () => preventClear = true)
+      if (!preventClear) {
+        clearUuid.push(uuid)
+      }
     })
-    delete this._onceEventListeners?.[event]
+    clearUuid.forEach((uuid) => {
+      this.off(event, uuid)
+    })
+    // delete this._onceEventListeners?.[event]
   }
 }

@@ -23,25 +23,29 @@ import {Connection, ConnectionEvent} from './lib/Connection'
 global.Connection = Connection
 // @ts-ignore
 global.ConnectionEvent = ConnectionEvent
-const c1 = new Connection(Connection.prefixId('1'))
-const c2 = new Connection(Connection.prefixId('2'))
-c2.on(ConnectionEvent.CONN_DATA, console.log)
-c1.on(ConnectionEvent.PEER_ERROR, console.log)
-c1.on(ConnectionEvent.CONN_ERROR, console.log)
-c2.on(ConnectionEvent.PEER_ERROR, console.log)
-c2.on(ConnectionEvent.CONN_ERROR, console.log)
-c1.once(ConnectionEvent.PEER_OPEN, () => {
-  c1.connect(Connection.prefixId('2'))
-  c1.once(ConnectionEvent.CONN_OPEN, () => {
+const main = async () => {
+  const c1 = new Connection(Connection.prefixId('1'))
+  const c2 = new Connection(Connection.prefixId('2'))
+
+// @ts-ignore
+  global.c1 = c1
+// @ts-ignore
+  global.c2 = c2
+  await c1.until(ConnectionEvent.PEER_OPEN, 1000)
+  await c2.until(ConnectionEvent.PEER_OPEN, 1000)
+  c1.on(ConnectionEvent.PEER_ERROR, console.log)
+  c1.on(ConnectionEvent.CONN_ERROR, console.log)
+  c2.on(ConnectionEvent.CONN_DATA, console.log)
+  c2.on(ConnectionEvent.PEER_ERROR, console.log)
+  c2.on(ConnectionEvent.CONN_ERROR, console.log)
+  c1.connect(Connection.prefixId('3')).then(() => {
     c1.broadcast('hello world')
-  })
-})
-
-// @ts-ignore
-global.c1 = c1
-// @ts-ignore
-global.c2 = c2
-
+  }).catch(e => console.log('err', e))
+  // c1.once(ConnectionEvent.CONN_OPEN, () => {
+  // })
+  console.log('hi')
+}
+main()
 
 function App() {
   useEffect(() => {

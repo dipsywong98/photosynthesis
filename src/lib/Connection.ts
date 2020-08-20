@@ -1,5 +1,6 @@
 import Peer, {DataConnection} from "peerjs"
 import {Observable} from './Observable'
+import {v4} from 'uuid'
 
 export interface ConnectionError {
   name: string
@@ -8,11 +9,12 @@ export interface ConnectionError {
   type?: string
 }
 
-export type ConnectionListenerPayload = [{
-  conn?: DataConnection,
-  data?: any,
+export interface ConnectionListenerPayload {
+  conn?: DataConnection
+  data?: any
   error?: ConnectionError
-}]
+  pid?: number
+}
 export type ConnectionListener = (...params: any[]) => void
 
 export enum ConnectionEvent {
@@ -24,7 +26,8 @@ export enum ConnectionEvent {
   CONN_OPEN = 'open',
   CONN_CLOSE = 'close',
   CONN_DATA = 'data',
-  CONN_ERROR = 'error'
+  CONN_ERROR = 'error',
+  CONN_ACK = 'ack'
 }
 
 export class Connection extends Observable {
@@ -46,17 +49,27 @@ export class Connection extends Observable {
     this.peer = this.initPeer(id)
   }
 
-  public connect(id: string) {
+  public async connect(id: string) {
     const conn = this.peer.connect(id)
-    this.connections.push(conn)
-    this.enrichConn(conn)
-    return conn
+    return new Promise((resolve, reject) => {
+      const id2 = this.once(ConnectionEvent.PEER_ERROR, ({error}: ConnectionListenerPayload) => {
+        reject(error)
+      })
+      conn.on('open', () => {
+        this.connections.push(conn)
+        this.enrichConn(conn)
+        this.off(ConnectionEvent.CONN_ERROR, id2)
+        resolve(conn)
+      })
+    })
   }
 
-  public broadcast(data: any) {
-    this.connections.forEach(conn => {
-      conn.send(data)
-    })
+  public broadcast(data: any): Promise<unknown> {
+    return Promise.all(this.connections.map(conn => {
+      let pid = v4()
+      conn.send([pid, data])
+      return this.untilMatch(ConnectionEvent.CONN_ACK, pid)
+    }))
   }
 
   private initPeer(id?: string): Peer {
@@ -79,8 +92,14 @@ export class Connection extends Observable {
     conn.on('open', () => {
       this.emit(ConnectionEvent.CONN_OPEN, {conn})
     })
-    conn.on('data', data => {
-      this.emit(ConnectionEvent.CONN_DATA, {conn, data})
+    conn.on('data', ([pid, data]) => {
+      console.log(this.id, pid, data)
+      if(data !== undefined){
+        this.emit(ConnectionEvent.CONN_DATA, {conn, data})
+        conn.send([pid])
+      } else{
+        this.emit(ConnectionEvent.CONN_ACK, pid)
+      }
     })
     conn.on('error', (error) => {
       this.emit(ConnectionEvent.CONN_ERROR, {conn, error})
@@ -123,8 +142,8 @@ export class Connection extends Observable {
     super.off(event, uuid)
   }
 
-  protected emit(event: ConnectionEvent, ...payload: ConnectionListenerPayload): void {
+  protected emit(event: ConnectionEvent, payload: ConnectionListenerPayload): void {
     console.log(this.id, event, payload)
-    super.emit(event, ...payload)
+    super.emit(event, payload)
   }
 }
