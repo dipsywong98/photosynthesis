@@ -4,4 +4,5 @@ export enum PkgType {
   JOIN = 0,
   PLAYERS,
   NEW_JOIN,
+  ACK,
 }

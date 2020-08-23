@@ -3,8 +3,9 @@ import {v4} from 'uuid'
 import {ConnectionListenerPayload, ConnEvent} from './ConnectionTypes'
 import {ConnectionManager} from './ConnectionManager'
 import {Observable} from './Observable'
+import {PkgType} from './PkgType'
 
-export class Connection extends Observable{
+export class Connection extends Observable {
   protected conn?: DataConnection
   protected manager: ConnectionManager
 
@@ -12,8 +13,8 @@ export class Connection extends Observable{
     this.manager.log(...params)
   }
 
-  public get id(){
-    if(this.conn){
+  public get id() {
+    if (this.conn) {
       return this.conn.peer
     } else {
       return this.manager.id
@@ -22,7 +23,7 @@ export class Connection extends Observable{
 
   constructor(conn: DataConnection | 'self', connectionManager: ConnectionManager) {
     super()
-    if(conn !== 'self'){
+    if (conn !== 'self') {
       this.conn = conn
       this.enrichConn(conn)
     }
@@ -31,19 +32,19 @@ export class Connection extends Observable{
 
   public send(data: any): Promise<any> {
     let pid = v4().split('-')[0]
-    if(this.conn) {
+    if (this.conn) {
       this.conn.send([pid, data])
     } else {
       this.emit(ConnEvent.CONN_DATA, {conn: this, data})
     }
     return this.manager.untilMatch(ConnEvent.CONN_ACK, ({pid: p}: ConnectionListenerPayload) => p === pid)
-      .catch((e) => console.log('ack error', e))
+      .then(({data, ...rest}: ConnectionListenerPayload) => ({data: data?.data, ...rest, type: data?._t})).catch((e) => console.log('ack error', e))
   }
 
-  public sendPkg(type: string|number, data: any): Promise<ConnectionListenerPayload> {
+  public sendPkg(type: string | number, data: any): Promise<ConnectionListenerPayload> {
     return this.send({
       data,
-      _t: type,
+      _t: type
     })
   }
 
@@ -58,14 +59,21 @@ export class Connection extends Observable{
     })
     conn.on('data', ([pid, data]) => {
       // this.log('conn data', pid, data)
-      if (data !== undefined) {
-        this.emit(ConnEvent.CONN_DATA, {conn: this, data})
-        if(typeof data === 'object' && data._t !== undefined){
-          this.emit(ConnEvent.CONN_PKG, {conn: this, data})
+      if (data !== undefined && data._t !== PkgType.ACK) {
+        let response = undefined
+        const ack = (v: any) => response = v
+        this.emit(ConnEvent.CONN_DATA, {conn: this, data, ack})
+        if (typeof data === 'object' && data._t !== undefined) {
+          this.emit(ConnEvent.CONN_PKG, {conn: this, data, ack})
         }
-        conn.send([pid])
+        console.log(ack, response)
+        if (response === undefined) {
+          conn.send([pid])
+        } else {
+          conn.send([pid, {_t: PkgType.ACK, data: response}])
+        }
       } else {
-        this.emit(ConnEvent.CONN_ACK, {conn: this, pid})
+        this.emit(ConnEvent.CONN_ACK, {conn: this, data, pid})
       }
     })
     conn.on('error', (error) => {

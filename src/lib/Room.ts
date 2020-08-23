@@ -47,9 +47,11 @@ export class Room extends Observable{
   }
   public async host(roomCode: string){
     this.hostConnection = ConnectionManager.withPrefix(roomCode)
-    this.hostConnection.onPkg(PkgType.JOIN, ({conn, data}) => {
+    this.hostConnection.onPkg(PkgType.JOIN, ({conn, data, ack}) => {
       console.log('on join')
       if(conn !== undefined) {
+        console.log(ack)
+        ack?.(this.players)
         conn?.sendPkg(PkgType.PLAYERS, this.players)
         this.hostConnection?.broadcastPkg(PkgType.NEW_JOIN, [data, conn.id])
       }
@@ -70,9 +72,9 @@ export class Room extends Observable{
     //
     // })
     console.log('send join')
-    this.sendHost(PkgType.JOIN, myName)
-    console.log('sent join')
-    const {data} = await this.myConnection.untilPkg(PkgType.PLAYERS)
+    const {data} = await this.sendHost(PkgType.JOIN, myName)//.then(d => console.log('acked data', d))
+    // console.log('sent join')
+    // const {data} = await this.myConnection.untilPkg(PkgType.PLAYERS)
     console.log('join received ', data)
     this.players = data
     this.roomCode = roomCode

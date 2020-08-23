@@ -88,7 +88,7 @@ export class Observable {
     })
   }
 
-  public untilMatch(event: number | string, value: any, timeout = TIMEOUT_DURATION): Promise<any[]> {
+  public untilMatch(event: number | string, value: any, timeout = TIMEOUT_DURATION): Promise<any> {
     return new Promise((resolve, reject) => {
       const cb = window.setTimeout(() => {
         reject(`${event} ${value.toString()} timeout`)

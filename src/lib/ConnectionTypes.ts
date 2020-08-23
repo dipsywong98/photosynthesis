@@ -29,5 +29,6 @@ export interface ConnectionListenerPayload {
   error?: ConnectionError
   pid?: string
   type?: PkgType
+  ack?: Function
 }
 export type ConnectionListener = (payload: ConnectionListenerPayload) => void

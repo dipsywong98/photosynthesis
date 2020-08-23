@@ -117,20 +117,20 @@ export class ConnectionManager extends Observable {
   }
 
   public onPkg(pkgType: PkgType, listener: ConnectionListener): string {
-    return super.onMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, ({conn, data}: ConnectionListenerPayload) => {
-      listener({conn, data: data.data, type: pkgType})
+    return super.onMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, ({data, ...rest}: ConnectionListenerPayload) => {
+      listener({...rest, data: data.data, type: pkgType})
     })
   }
 
   public oncePkg(pkgType: PkgType, listener: ConnectionListener): string {
-    return super.onceMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, ({conn, data}: ConnectionListenerPayload) => {
-      listener({conn, data: data.data, type: pkgType})
+    return super.onceMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, ({data, ...rest}: ConnectionListenerPayload) => {
+      listener({...rest, data: data.data, type: pkgType})
     })
   }
 
   public untilPkg(pkgType: PkgType, timeout?: number): Promise<any> {
-    return super.untilMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, timeout).then(({conn, data}: any) => {
-      return {conn, data: data.data, type: pkgType}
+    return super.untilMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, timeout).then(({data,...rest}: any) => {
+      return {...rest, data: data.data, type: pkgType}
     })
   }
 
