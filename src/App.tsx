@@ -1,7 +1,8 @@
 import React, {useEffect} from 'react'
 import logo from './logo.svg'
 import './App.css'
-import {Connection, ConnectionEvent} from './lib/Connection'
+import {ConnectionManager} from './lib/ConnectionManager'
+import {ConnectionEvent} from './lib/ConnectionTypes'
 
 // const peer = new Peer('wgyp9qrark000000', {
 //   secure: true
@@ -20,29 +21,31 @@ import {Connection, ConnectionEvent} from './lib/Connection'
 // })
 // peer.on('error', console.log)
 // @ts-ignore
-global.Connection = Connection
+global.Connection = ConnectionManager
 // @ts-ignore
 global.ConnectionEvent = ConnectionEvent
 const main = async () => {
-  const c1 = new Connection(Connection.prefixId('1'))
-  const c2 = new Connection(Connection.prefixId('2'))
+  const c1 = ConnectionManager.withPrefix('1')
+  const c2 = ConnectionManager.withPrefix('2')
 
 // @ts-ignore
   global.c1 = c1
 // @ts-ignore
   global.c2 = c2
-  await c1.until(ConnectionEvent.PEER_OPEN, 1000)
-  await c2.until(ConnectionEvent.PEER_OPEN, 1000)
+  await c1.until(ConnectionEvent.PEER_OPEN, 2000)
+  await c2.until(ConnectionEvent.PEER_OPEN, 2000)
   c1.on(ConnectionEvent.PEER_ERROR, console.log)
+  c1.on(ConnectionEvent.CONN_DATA, (data) => console.log('data!!!', data))
   c1.on(ConnectionEvent.CONN_ERROR, console.log)
-  c2.on(ConnectionEvent.CONN_DATA, console.log)
+  c2.on(ConnectionEvent.CONN_DATA, (data) => console.log('data!!!', data))
   c2.on(ConnectionEvent.PEER_ERROR, console.log)
   c2.on(ConnectionEvent.CONN_ERROR, console.log)
-  c1.connect(Connection.prefixId('3')).then(() => {
+  c1.connect(ConnectionManager.prefixId('2')).then(() => {
     c1.broadcast('hello world')
   }).catch(e => console.log('err', e))
   // c1.once(ConnectionEvent.CONN_OPEN, () => {
   // })
+
   console.log('hi')
 }
 main()

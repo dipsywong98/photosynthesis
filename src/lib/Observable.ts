@@ -1,5 +1,7 @@
 import {v4 as uuidv4} from 'uuid'
 
+const TIMEOUT_DURATION = 5000
+
 export class Observable {
   private _onEventListeners: { [event: string]: { [uuid: string]: Function } } = {}
   private _onceEventListeners: { [event: string]: { [uuid: string]: Function } } = {}
@@ -43,10 +45,11 @@ export class Observable {
     const listener = params.pop()
     return this.once(event, (...values: any[]) => {
       const preventClear = values.pop()
-      if (
+      if((typeof params[0] === 'function' && params[0](...values))){
+        listener(...values, preventClear)
+      } else if (
         (params.length !== 0) && (
-          (typeof params[0] === 'function' && !params[0](...values))
-          || (params.length !== values.length)
+          (params.length !== values.length)
           || (!params.reduce((prev, curr, k) => prev && curr === values[k], true))
         )
       ) {
@@ -57,26 +60,26 @@ export class Observable {
     })
   }
 
-  public until(event: number | string, timeout = 500): Promise<any[]> {
+  public until(event: number | string, timeout = TIMEOUT_DURATION): Promise<any[]> {
     return new Promise((resolve, reject) => {
       const cb = window.setTimeout(() => {
         reject(event + ' timeout')
       }, timeout)
       this.once(event, (...params: any[]) => {
         window.clearTimeout(cb)
-        resolve(params)
+        resolve(...params)
       })
     })
   }
 
-  public untilMatch(event: number | string, value: any, timeout = 500): Promise<any[]> {
+  public untilMatch(event: number | string, value: any, timeout = TIMEOUT_DURATION): Promise<any[]> {
     return new Promise((resolve, reject) => {
       const cb = window.setTimeout(() => {
         reject(`${event} ${value.toString()} timeout`)
       }, timeout)
       this.onceMatch(event, value, (...params: any[]) => {
         window.clearTimeout(cb)
-        resolve(params)
+        resolve(...params)
       })
     })
   }
@@ -86,7 +89,7 @@ export class Observable {
     delete this._onceEventListeners?.[event]?.[uuid]
   }
 
-  protected emit(...params: any[]) {
+  public emit(...params: any[]) {
     const event: number | string = params.shift()
     Object.values(this._onEventListeners?.[event] || {})?.forEach((listener) => {
       listener(...params)
@@ -102,6 +105,8 @@ export class Observable {
     clearUuid.forEach((uuid) => {
       this.off(event, uuid)
     })
-    // delete this._onceEventListeners?.[event]
+    if (event !== '*') {
+      this.emit('*', event, ...params)
+    }
   }
 }
