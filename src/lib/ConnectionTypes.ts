@@ -1,6 +1,6 @@
 import {Connection} from './Connection'
 
-export enum ConnectionEvent {
+export enum ConnEvent {
   ANY = '*',
   PEER_OPEN = '_open',
   PEER_CLOSE = '_close',
@@ -11,7 +11,8 @@ export enum ConnectionEvent {
   CONN_CLOSE = 'close',
   CONN_DATA = 'data',
   CONN_ERROR = 'error',
-  CONN_ACK = 'ack'
+  CONN_ACK = 'ack',
+  CONN_PKG = 'pkg'
 }
 
 export interface ConnectionError {

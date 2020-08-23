@@ -1,13 +1,18 @@
 import {DataConnection} from "peerjs"
 import {v4} from 'uuid'
-import {ConnectionEvent, ConnectionListenerPayload} from './ConnectionTypes'
+import {ConnectionListenerPayload, ConnEvent} from './ConnectionTypes'
 import {ConnectionManager} from './ConnectionManager'
 
 export class Connection {
-  private conn: DataConnection
-  private manager: ConnectionManager
-  private log(...params: any[]) {
+  protected conn: DataConnection
+  protected manager: ConnectionManager
+
+  protected log(...params: any[]) {
     this.manager.log(...params)
+  }
+
+  public get id(){
+    return this.conn.peer
   }
 
   constructor(conn: DataConnection, connectionManager: ConnectionManager) {
@@ -17,35 +22,49 @@ export class Connection {
   }
 
   public send(data: any): Promise<unknown> {
-      let pid = v4().split('-')[0]
-      this.conn.send([pid, data])
-      return this.manager.untilMatch(ConnectionEvent.CONN_ACK, ({pid: p}: ConnectionListenerPayload) => p === pid)
-        .catch((e) => console.log('ack error', e)).then(() => this.log('acked', pid))
+    let pid = v4().split('-')[0]
+    this.conn.send([pid, data])
+    return this.manager.untilMatch(ConnEvent.CONN_ACK, ({pid: p}: ConnectionListenerPayload) => p === pid)
+      .catch((e) => console.log('ack error', e)).then(() => this.log('acked', pid))
+  }
+
+  public sendPkg(type: string, data: any): Promise<unknown> {
+    return this.send({
+      data,
+      _t: type,
+    })
+  }
+
+  public close(): void {
+    this.conn.close()
   }
 
   private enrichConn(conn: DataConnection): DataConnection {
     conn.on('open', () => {
-      this.emit(ConnectionEvent.CONN_OPEN, {conn: this})
+      this.emit(ConnEvent.CONN_OPEN, {conn: this})
     })
     conn.on('data', ([pid, data]) => {
       this.log('conn data', pid, data)
-      if(data !== undefined){
-        this.emit(ConnectionEvent.CONN_DATA, {conn: this, data})
+      if (data !== undefined) {
+        this.emit(ConnEvent.CONN_DATA, {conn: this, data})
+        if(typeof data === 'object' && data._t !== undefined){
+          this.emit(ConnEvent.CONN_PKG, {conn: this, data})
+        }
         conn.send([pid])
-      } else{
-        this.emit(ConnectionEvent.CONN_ACK, {conn: this, pid})
+      } else {
+        this.emit(ConnEvent.CONN_ACK, {conn: this, pid})
       }
     })
     conn.on('error', (error) => {
-      this.emit(ConnectionEvent.CONN_ERROR, {conn: this, error})
+      this.emit(ConnEvent.CONN_ERROR, {conn: this, error})
     })
     conn.on('close', () => {
-      this.emit(ConnectionEvent.CONN_CLOSE, {conn: this})
+      this.emit(ConnEvent.CONN_CLOSE, {conn: this})
     })
     return conn
   }
 
-  public emit(event: ConnectionEvent, payload: ConnectionListenerPayload): void {
+  public emit(event: ConnEvent, payload: ConnectionListenerPayload): void {
     this.manager.emit(event, payload)
   }
 }

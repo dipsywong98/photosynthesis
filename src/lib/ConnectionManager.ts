@@ -1,14 +1,14 @@
 import Peer, {DataConnection} from "peerjs"
 import {Observable} from './Observable'
-import {ConnectionEvent, ConnectionListener, ConnectionListenerPayload} from './ConnectionTypes'
+import {ConnectionListener, ConnectionListenerPayload, ConnEvent} from './ConnectionTypes'
 import {Connection} from './Connection'
 
 type Matcher = (payload: ConnectionListenerPayload) => boolean
 
 export class ConnectionManager extends Observable {
-  public id?: string
-  private peer: Peer
-  private connections: Connection[] = []
+  public id: string
+  protected peer: Peer
+  protected connections: Connection[] = []
   public log = (...params: any[]) => {
     console.log(this.id, ...params)
   }
@@ -24,17 +24,18 @@ export class ConnectionManager extends Observable {
   constructor(id?: string) {
     super()
     this.peer = this.initPeer(id)
+    this.id = this.peer.id
   }
 
   public async connect(id: string) {
     const conn = this.peer.connect(id)
     return new Promise((resolve, reject) => {
-      const id2 = this.once(ConnectionEvent.PEER_ERROR, ({error}: ConnectionListenerPayload) => {
+      const id2 = this.once(ConnEvent.PEER_ERROR, ({error}: ConnectionListenerPayload) => {
         reject(error)
       })
       conn.on('open', () => {
-        const connection = this.enrichConn(conn)
-        this.off(ConnectionEvent.CONN_ERROR, id2)
+        const connection: Connection = this.enrichConn(conn)
+        this.off(ConnEvent.CONN_ERROR, id2)
         resolve(connection)
       })
     })
@@ -46,56 +47,94 @@ export class ConnectionManager extends Observable {
     }))
   }
 
+  public conn(id: string): Connection {
+    const find = this.connections.find(c => c.id === id)
+    if (find === undefined) {
+      throw new Error(`connection lost with ${id}`)
+    }
+    return find
+  }
+
+  public send(id: string, data: any): Promise<unknown> {
+    return this.conn(id).send(data)
+  }
+
+  public sendPkg(id: string, pkgType: string, data: any): Promise<unknown> {
+    return this.conn(id).sendPkg(pkgType, data)
+  }
+
   private initPeer(id?: string): Peer {
     const peer = new Peer(id, {
       secure: true
     })
     peer.on('open', this.onPeerOpenHandler(peer))
     peer.on('error', (error) => {
-      this.emit(ConnectionEvent.PEER_ERROR, {error})
+      this.emit(ConnEvent.PEER_ERROR, {error})
     })
-    peer.on('close', () => {this.emit(ConnectionEvent.PEER_CLOSE, {})})
-    peer.on('disconnected', () => {this.emit(ConnectionEvent.PEER_DISCONNECT, {})})
+    peer.on('close', () => {
+      this.emit(ConnEvent.PEER_CLOSE, {})
+    })
+    peer.on('disconnected', () => {
+      this.emit(ConnEvent.PEER_DISCONNECT, {})
+    })
 
     return peer
   }
 
   private onPeerOpenHandler = (peer: Peer) => (id: string): void => {
     this.id = id
-    this.emit(ConnectionEvent.PEER_OPEN, {})
+    this.emit(ConnEvent.PEER_OPEN, {})
     peer.on('connection', this.onPeerConnectionHandler)
   }
 
   private onPeerConnectionHandler = (conn: DataConnection) => {
     const connection = this.enrichConn(conn)
-    this.emit(ConnectionEvent.PEER_CONNECT, {conn: connection})
+    this.emit(ConnEvent.PEER_CONNECT, {conn: connection})
   }
 
-  public on(event: ConnectionEvent, listener: ConnectionListener): string {
+  public onPkg(pkgType: any, listener: ConnectionListener): string {
+    return super.onMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, ({conn, data}: ConnectionListenerPayload) => {
+      listener({conn, data: data.data, type: pkgType})
+    })
+  }
+
+  public oncePkg(pkgType: any, listener: ConnectionListener): string {
+    return super.onceMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, ({conn, data}: ConnectionListenerPayload) => {
+      listener({conn, data: data.data, type: pkgType})
+    })
+  }
+
+  public untilPkg(pkgType: any, timeout?: number): Promise<any> {
+    return super.untilMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, timeout).then(({conn, data}: any) => {
+      return {conn, data: data.data, type: pkgType}
+    })
+  }
+
+  public on(event: ConnEvent, listener: ConnectionListener): string {
     return super.on(event, listener)
   }
 
-  public once(event: ConnectionEvent, listener: ConnectionListener): string {
+  public once(event: ConnEvent, listener: ConnectionListener): string {
     return super.once(event, listener)
   }
 
-  public onceMatch(event: ConnectionEvent, value: (unknown | Matcher), listener: ConnectionListener){
+  public onceMatch(event: ConnEvent, value: (unknown | Matcher), listener: ConnectionListener) {
     return super.onceMatch(event, value, listener)
   }
 
-  public until(event: ConnectionEvent, timeout?: number): Promise<any[]> {
+  public until(event: ConnEvent, timeout?: number): Promise<any[]> {
     return super.until(event, timeout).then((result: any[]) => result[0])
   }
 
-  public untilMatch(event: ConnectionEvent, value: (unknown | Matcher), timeout?: number){
+  public untilMatch(event: ConnEvent, value: (unknown | Matcher), timeout?: number) {
     return super.untilMatch(event, value, timeout)
   }
 
-  public off(event: ConnectionEvent, uuid: string): void {
+  public off(event: ConnEvent, uuid: string): void {
     super.off(event, uuid)
   }
 
-  public emit(event: ConnectionEvent, payload: ConnectionListenerPayload): void {
+  public emit(event: ConnEvent, payload: ConnectionListenerPayload): void {
     this.log('emit', event, payload)
     super.emit(event, payload)
   }

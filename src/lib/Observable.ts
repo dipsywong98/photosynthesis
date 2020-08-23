@@ -23,6 +23,22 @@ export class Observable {
     return uuid
   }
 
+  public onMatch(event: number | string, ...params: any[]): string {
+    const listener = params.pop()
+    return this.on(event, (...values: any[]) => {
+      if((typeof params[0] === 'function' && params[0](...values))){
+        listener(...values)
+      } else if (
+        !((params.length !== 0) && (
+          (params.length !== values.length)
+          || (!params.reduce((prev, curr, k) => prev && curr === values[k], true))
+        ))
+      ) {
+        listener(...values)
+      }
+    })
+  }
+
   public once(event: number | string, listener: Function) {
     if (!this._onceEventListeners) {
       this._onceEventListeners = {}
