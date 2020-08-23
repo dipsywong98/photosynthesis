@@ -121,8 +121,8 @@ export class Observable {
     clearUuid.forEach((uuid) => {
       this.off(event, uuid)
     })
-    if (event !== '*') {
-      this.emit('*', event, ...params)
-    }
+    // if (event !== '*') {
+    //   this.emit('*', event, ...params)
+    // }
   }
 }

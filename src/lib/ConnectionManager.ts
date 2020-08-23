@@ -2,6 +2,7 @@ import Peer, {DataConnection} from "peerjs"
 import {Observable} from './Observable'
 import {ConnectionListener, ConnectionListenerPayload, ConnEvent} from './ConnectionTypes'
 import {Connection} from './Connection'
+import {PkgType} from './PkgType'
 
 type Matcher = (payload: ConnectionListenerPayload) => boolean
 
@@ -27,23 +28,46 @@ export class ConnectionManager extends Observable {
     this.id = this.peer.id
   }
 
-  public async connect(id: string) {
-    const conn = this.peer.connect(id)
+  public async connect(id: string, timeout: number = 5000): Promise<Connection> {
+    if(id === this.id) {
+      return Promise.resolve(this.enrichConn(new Connection('self', this)))
+    }
     return new Promise((resolve, reject) => {
+      const id1 = setTimeout(() => reject('connection timeout to peer '+id), timeout)
       const id2 = this.once(ConnEvent.PEER_ERROR, ({error}: ConnectionListenerPayload) => {
         reject(error)
       })
-      conn.on('open', () => {
-        const connection: Connection = this.enrichConn(conn)
+      const openHandler = () => {
+        console.log('open', this.id, conn.peer)
+        const connection: Connection = this.enrichConn(new Connection(conn, this))
         this.off(ConnEvent.CONN_ERROR, id2)
         resolve(connection)
+        clearTimeout(id1)
+      }
+      const conn = this.peer.connect(id)
+      conn.on('open', () => {
+        openHandler()
       })
+
+      if(conn.open) {
+        openHandler()
+      }
     })
+  }
+
+  public async connectPrefix(id: string): Promise<Connection> {
+    return this.connect(ConnectionManager.prefixId(id))
   }
 
   public broadcast(data: any): Promise<unknown> {
     return Promise.all(this.connections.map(conn => {
       return conn.send(data)
+    }))
+  }
+
+  public broadcastPkg(pkgType: PkgType, data: any): Promise<unknown> {
+    return Promise.all(this.connections.map(conn => {
+      return conn.sendPkg(pkgType, data)
     }))
   }
 
@@ -55,11 +79,11 @@ export class ConnectionManager extends Observable {
     return find
   }
 
-  public send(id: string, data: any): Promise<unknown> {
+  public send(id: string, data: any): Promise<ConnectionListenerPayload> {
     return this.conn(id).send(data)
   }
 
-  public sendPkg(id: string, pkgType: string, data: any): Promise<unknown> {
+  public sendPkg(id: string, pkgType: PkgType, data: any): Promise<ConnectionListenerPayload> {
     return this.conn(id).sendPkg(pkgType, data)
   }
 
@@ -88,23 +112,23 @@ export class ConnectionManager extends Observable {
   }
 
   private onPeerConnectionHandler = (conn: DataConnection) => {
-    const connection = this.enrichConn(conn)
+    const connection = this.enrichConn(new Connection(conn, this))
     this.emit(ConnEvent.PEER_CONNECT, {conn: connection})
   }
 
-  public onPkg(pkgType: any, listener: ConnectionListener): string {
+  public onPkg(pkgType: PkgType, listener: ConnectionListener): string {
     return super.onMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, ({conn, data}: ConnectionListenerPayload) => {
       listener({conn, data: data.data, type: pkgType})
     })
   }
 
-  public oncePkg(pkgType: any, listener: ConnectionListener): string {
+  public oncePkg(pkgType: PkgType, listener: ConnectionListener): string {
     return super.onceMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, ({conn, data}: ConnectionListenerPayload) => {
       listener({conn, data: data.data, type: pkgType})
     })
   }
 
-  public untilPkg(pkgType: any, timeout?: number): Promise<any> {
+  public untilPkg(pkgType: PkgType, timeout?: number): Promise<any> {
     return super.untilMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, timeout).then(({conn, data}: any) => {
       return {conn, data: data.data, type: pkgType}
     })
@@ -139,8 +163,7 @@ export class ConnectionManager extends Observable {
     super.emit(event, payload)
   }
 
-  private enrichConn(conn: DataConnection): Connection {
-    const connection = new Connection(conn, this)
+  private enrichConn(connection: Connection): Connection {
     this.connections.push(connection)
     return connection
   }

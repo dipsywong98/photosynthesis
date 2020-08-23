@@ -1,4 +1,5 @@
 import {Connection} from './Connection'
+import {PkgType} from './PkgType'
 
 export enum ConnEvent {
   ANY = '*',
@@ -27,5 +28,6 @@ export interface ConnectionListenerPayload {
   data?: any
   error?: ConnectionError
   pid?: string
+  type?: PkgType
 }
-export type ConnectionListener = (...params: any[]) => void
+export type ConnectionListener = (payload: ConnectionListenerPayload) => void

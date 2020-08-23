@@ -2,9 +2,10 @@ import {DataConnection} from "peerjs"
 import {v4} from 'uuid'
 import {ConnectionListenerPayload, ConnEvent} from './ConnectionTypes'
 import {ConnectionManager} from './ConnectionManager'
+import {Observable} from './Observable'
 
-export class Connection {
-  protected conn: DataConnection
+export class Connection extends Observable{
+  protected conn?: DataConnection
   protected manager: ConnectionManager
 
   protected log(...params: any[]) {
@@ -12,23 +13,34 @@ export class Connection {
   }
 
   public get id(){
-    return this.conn.peer
+    if(this.conn){
+      return this.conn.peer
+    } else {
+      return this.manager.id
+    }
   }
 
-  constructor(conn: DataConnection, connectionManager: ConnectionManager) {
-    this.conn = conn
+  constructor(conn: DataConnection | 'self', connectionManager: ConnectionManager) {
+    super()
+    if(conn !== 'self'){
+      this.conn = conn
+      this.enrichConn(conn)
+    }
     this.manager = connectionManager
-    this.enrichConn(conn)
   }
 
-  public send(data: any): Promise<unknown> {
+  public send(data: any): Promise<any> {
     let pid = v4().split('-')[0]
-    this.conn.send([pid, data])
+    if(this.conn) {
+      this.conn.send([pid, data])
+    } else {
+      this.emit(ConnEvent.CONN_DATA, {conn: this, data})
+    }
     return this.manager.untilMatch(ConnEvent.CONN_ACK, ({pid: p}: ConnectionListenerPayload) => p === pid)
-      .catch((e) => console.log('ack error', e)).then(() => this.log('acked', pid))
+      .catch((e) => console.log('ack error', e))
   }
 
-  public sendPkg(type: string, data: any): Promise<unknown> {
+  public sendPkg(type: string|number, data: any): Promise<ConnectionListenerPayload> {
     return this.send({
       data,
       _t: type,
@@ -36,7 +48,8 @@ export class Connection {
   }
 
   public close(): void {
-    this.conn.close()
+    this.conn?.close()
+    this.emit(ConnEvent.CONN_CLOSE, {})
   }
 
   private enrichConn(conn: DataConnection): DataConnection {
@@ -44,7 +57,7 @@ export class Connection {
       this.emit(ConnEvent.CONN_OPEN, {conn: this})
     })
     conn.on('data', ([pid, data]) => {
-      this.log('conn data', pid, data)
+      // this.log('conn data', pid, data)
       if (data !== undefined) {
         this.emit(ConnEvent.CONN_DATA, {conn: this, data})
         if(typeof data === 'object' && data._t !== undefined){
@@ -65,6 +78,7 @@ export class Connection {
   }
 
   public emit(event: ConnEvent, payload: ConnectionListenerPayload): void {
+    super.emit(event, payload)
     this.manager.emit(event, payload)
   }
 }
