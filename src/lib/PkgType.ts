@@ -5,4 +5,6 @@ export enum PkgType {
   PLAYERS,
   NEW_JOIN,
   ACK,
+  PLAYER_LEFT,
+  CHANGE_HOST,
 }

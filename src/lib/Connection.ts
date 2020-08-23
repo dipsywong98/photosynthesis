@@ -38,7 +38,7 @@ export class Connection extends Observable {
       this.emit(ConnEvent.CONN_DATA, {conn: this, data})
     }
     return this.manager.untilMatch(ConnEvent.CONN_ACK, ({pid: p}: ConnectionListenerPayload) => p === pid)
-      .then(({data, ...rest}: ConnectionListenerPayload) => ({data: data?.data, ...rest, type: data?._t})).catch((e) => console.log('ack error', e))
+      .then(({data, ...rest}: ConnectionListenerPayload) => ({data: data?.data, ...rest, type: data?._t})).catch((e) => console.log('ack error '+pid))
   }
 
   public sendPkg(type: string | number, data: any): Promise<ConnectionListenerPayload> {

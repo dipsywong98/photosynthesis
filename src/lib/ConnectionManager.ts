@@ -33,7 +33,9 @@ export class ConnectionManager extends Observable {
       return Promise.resolve(this.enrichConn(new Connection('self', this)))
     }
     return new Promise((resolve, reject) => {
-      const id1 = setTimeout(() => reject('connection timeout to peer '+id), timeout)
+      const id1 = setTimeout(() => {
+        reject('connection timeout to peer '+id)
+      }, timeout)
       const id2 = this.once(ConnEvent.PEER_ERROR, ({error}: ConnectionListenerPayload) => {
         reject(error)
       })
@@ -166,5 +168,9 @@ export class ConnectionManager extends Observable {
   private enrichConn(connection: Connection): Connection {
     this.connections.push(connection)
     return connection
+  }
+
+  public disconnect(data: string) {
+    this.conn(data).close()
   }
 }
