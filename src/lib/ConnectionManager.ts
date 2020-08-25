@@ -22,6 +22,22 @@ export class ConnectionManager extends Observable {
     return new ConnectionManager(ConnectionManager.prefixId(id))
   }
 
+  public static startPrefix(id = ''): Promise<ConnectionManager>{
+    return ConnectionManager.startAs(ConnectionManager.prefixId(id))
+  }
+
+  public static startAs(id?: string): Promise<ConnectionManager> {
+    return new Promise<ConnectionManager>(((resolve, reject) => {
+      const manager = new ConnectionManager(id)
+      manager.once(ConnEvent.PEER_OPEN, () => {
+        resolve(manager)
+      })
+      manager.once(ConnEvent.PEER_ERROR, (payload) => {
+        reject(payload)
+      })
+    }))
+  }
+
   constructor(id?: string) {
     super()
     this.peer = this.initPeer(id)
@@ -91,7 +107,9 @@ export class ConnectionManager extends Observable {
 
   private initPeer(id?: string): Peer {
     const peer = new Peer(id, {
-      secure: true
+      host: 'localhost',
+      port: 9000,
+      path: '/peer',
     })
     peer.on('open', this.onPeerOpenHandler(peer))
     peer.on('error', (error) => {

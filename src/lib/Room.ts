@@ -3,6 +3,7 @@ import {ConnEvent} from './ConnectionTypes'
 import {PkgType} from './PkgType'
 import {Connection} from './Connection'
 import {Observable} from './Observable'
+import {pause} from './pause'
 
 const CH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
@@ -39,20 +40,22 @@ export class Room extends Observable {
     while (true) {
       const roomCode = generateRoomCode()
       try {
-        await this.myConnection.connectPrefix(roomCode)
-        this.myConnection.conn(roomCode).close()
-      } catch (e) {
         await this.host(roomCode)
-        await this.join(myName, roomCode)
-        return roomCode
+      } catch (e) {
+        console.log(e)
+        await pause(1000)
+        continue
       }
+      await this.join(myName, roomCode)
+      return roomCode
     }
     // this.myConnection.connect(ConnectionManager.prefixId(roomName+'host')).then(()).catch(this.hostRoom(roomName))
   }
 
   public async host(roomCode: string) {
     console.log('host prepare ', roomCode)
-    this.hostConnection = ConnectionManager.withPrefix(roomCode)
+    this.hostConnection = await ConnectionManager.startPrefix(roomCode)
+    console.log('started')
     await this.setUpHostConnectionListeners(this.hostConnection)
     this.hostId = this.myConnection.id
     console.log('host done ', roomCode)
@@ -67,7 +70,7 @@ export class Room extends Observable {
         ack?.([this.players, this.myConnection.id])
         conn?.sendPkg(PkgType.PLAYERS, this.players)
         hostConnection?.broadcastPkg(PkgType.NEW_JOIN, [data, conn.id])
-      }else{
+      } else {
         throw new Error('missing conn')
       }
     })
@@ -76,7 +79,6 @@ export class Room extends Observable {
         delete this.players[conn.id]
       }
     })
-    await hostConnection.until(ConnEvent.PEER_OPEN)
     if (Object.keys(this.players).length > 0) {
       await Promise.all(Object.keys(this.players).map((id: string) => hostConnection?.connect(id)))
       await hostConnection.broadcastPkg(PkgType.CHANGE_HOST, this.myConnection.id)
