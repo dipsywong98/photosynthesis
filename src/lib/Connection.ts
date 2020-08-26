@@ -6,7 +6,7 @@ import {Observable} from './Observable'
 import {PkgType} from './PkgType'
 
 export class Connection extends Observable {
-  protected conn?: DataConnection
+  protected conn?: DataConnection // undefined if it is connecting to itself
   protected manager: ConnectionManager
 
   protected log(...params: any[]) {
@@ -58,7 +58,6 @@ export class Connection extends Observable {
       this.emit(ConnEvent.CONN_OPEN, {conn: this})
     })
     conn.on('data', ([pid, data]) => {
-      // this.log('conn data', pid, data)
       if (data !== undefined && data._t !== PkgType.ACK) {
         let response = undefined
         const ack = (v: any) => response = v
@@ -66,7 +65,6 @@ export class Connection extends Observable {
         if (typeof data === 'object' && data._t !== undefined) {
           this.emit(ConnEvent.CONN_PKG, {conn: this, data, ack})
         }
-        console.log(ack, response)
         if (response === undefined) {
           conn.send([pid])
         } else {

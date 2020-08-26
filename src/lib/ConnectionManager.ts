@@ -56,7 +56,6 @@ export class ConnectionManager extends Observable {
         reject(error)
       })
       const openHandler = () => {
-        console.log('open', this.id, conn.peer)
         const connection: Connection = this.enrichConn(new Connection(conn, this))
         this.off(ConnEvent.CONN_ERROR, id2)
         resolve(connection)
@@ -179,7 +178,7 @@ export class ConnectionManager extends Observable {
   }
 
   public emit(event: ConnEvent, payload: ConnectionListenerPayload): void {
-    this.log('emit', event, payload)
+    // this.log('emit', event, payload)
     super.emit(event, payload)
   }
 
