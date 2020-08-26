@@ -7,4 +7,5 @@ export enum PkgType {
   ACK,
   PLAYER_LEFT,
   CHANGE_HOST,
+  RENAME,
 }

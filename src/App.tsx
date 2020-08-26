@@ -92,6 +92,7 @@ function App() {
         Room: <input onChange={({target:{value}}) => setRoomCode(value)} value={roomCode}/>
         <button onClick={() => room.create(name).then(setRoomCode)}>create room</button>
         <button onClick={() => room.join(name, roomCode)}>join room</button>
+        <button onClick={() => room.rename(name)}>rename</button>
       </header>
     </div>
   )

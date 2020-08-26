@@ -30,11 +30,19 @@ export class Room extends Observable {
     this.setUpMyConnectionListener(this.myConnectionManager)
   }
 
-  public async sendToHost(pkgType: PkgType, data: any) {
+  public sendToHost = async (pkgType: PkgType, data: any) => {
     if (this.meToHostConnection === undefined) {
       throw new Error('not connected to host')
     }
     return this.myConnectionManager.sendPkg(this.meToHostConnection.id, pkgType, data)
+  }
+
+  public broadcast = (pkgType: PkgType, data: any) => {
+    return Promise.all(Object.keys(this.players).map(id => this.myConnectionManager.conn(id).sendPkg(pkgType, data)))
+  }
+
+  public get myId() {
+    return this.myConnectionManager.id
   }
 
   /**
@@ -45,7 +53,7 @@ export class Room extends Observable {
    * create a room to host and join, room name will be random 4 capital letters
    * @param myName
    */
-  public async create(myName: string) {
+  public create = async (myName: string) => {
     while (true) {
       const roomCode = generateRoomCode()
       try {
@@ -65,13 +73,13 @@ export class Room extends Observable {
    * and notify other roommates that a new peer is joining
    * @param roomCode
    */
-  public async host(roomCode: string) {
+  public host = async (roomCode: string) => {
     this.hostConnectionManager = await ConnectionManager.startPrefix(roomCode)
     await this.setUpHostConnectionManagerListeners(this.hostConnectionManager)
     this.hostPlayerId = this.myConnectionManager.id
   }
 
-  private async setUpHostConnectionManagerListeners(hostConnection: ConnectionManager) {
+  private setUpHostConnectionManagerListeners = async (hostConnection: ConnectionManager) => {
     hostConnection.onPkg(PkgType.JOIN, ({conn, data, ack}) => {
       if (conn !== undefined) {
         this.players[conn.id] = data
@@ -104,7 +112,7 @@ export class Room extends Observable {
    * @param myName
    * @param roomCode
    */
-  public async join(myName: string, roomCode: string) {
+  public join = async (myName: string, roomCode: string) => {
     this.meToHostConnection = await this.myConnectionManager.connectPrefix(roomCode)  // connect ot the room beacon
     const {data: [players, hostId]} = await this.sendToHost(PkgType.JOIN, myName)
     this.players = players
@@ -114,7 +122,7 @@ export class Room extends Observable {
     return Promise.all(Object.keys(players).map((id) => this.myConnectionManager.connect(id)))  // connect to rest of the players to form mesh
   }
 
-  private setUpMyConnectionListener(myConnection: ConnectionManager) {
+  private setUpMyConnectionListener = (myConnection: ConnectionManager) => {
     // triggered when other enter the room
     myConnection.onPkg(PkgType.NEW_JOIN, ({data: [name, id]}) => {
       myConnection.connect(id)
@@ -131,10 +139,14 @@ export class Room extends Observable {
         this.emit(RoomEvents.SET_PLAYERS, {...this.players})
       }
     })
+    myConnection.onPkg(PkgType.RENAME, ({data: [id, name]}) => {
+      this.players[id] = name
+      this.emit(RoomEvents.SET_PLAYERS, {...this.players})
+    })
   }
 
-  private handleHostClosed(myConnection: ConnectionManager) {
-    if(this.hostPlayerId){
+  private handleHostClosed = (myConnection: ConnectionManager) => {
+    if (this.hostPlayerId) {
       delete this.players[this.hostPlayerId]
     }
     if (this.meToHostConnection) {
@@ -146,5 +158,9 @@ export class Room extends Observable {
         this.host(this.roomCode)
       }
     }
+  }
+
+  public rename = (name: string) => {
+    return this.broadcast(PkgType.RENAME, [this.myId, name])
   }
 }
