@@ -1,12 +1,31 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import './index.css'
-import App from './App'
+import App from './components/App'
 import * as serviceWorker from './serviceWorker'
+import {AxiosProvider} from './components/common/Axios'
+import {Global} from '@emotion/core'
+import theme from './theme'
+import {ThemeProvider} from 'theme-ui'
+
+const MyGlobal = () => (
+  <Global
+    styles={theme => ({
+      body: theme.styles.body,
+      '*': theme.styles['*'],
+      a: theme.styles.a
+    })}
+  />
+)
 
 ReactDOM.render(
   <React.StrictMode>
-    <App/>
+    <AxiosProvider>
+      <ThemeProvider theme={theme}>
+        <MyGlobal/>
+        <App/>
+      </ThemeProvider>
+    </AxiosProvider>
   </React.StrictMode>,
   document.getElementById('root')
 )

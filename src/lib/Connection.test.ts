@@ -105,8 +105,10 @@ describe('Connection', () => {
       expect(cb).toHaveBeenCalledWith({
         ack: expect.any(Function),
         conn: connection,
-        pkgType: 'pkgType',
-        data: '123'
+        data: {
+          _t: 'pkgType',
+          data: '123'
+        }
       })
     })
   })

@@ -13,7 +13,7 @@ const generateRoomCode = () => {
 
 export enum RoomEvents {
   SET_PLAYERS,
-  CHANGE_HOST,
+  SET_HOST,
 }
 
 export class Room extends Observable {
@@ -24,9 +24,9 @@ export class Room extends Observable {
   hostPlayerId?: string
   roomCode?: string
 
-  constructor(myConnection: ConnectionManager) {
+  constructor() {
     super()
-    this.myConnectionManager = myConnection
+    this.myConnectionManager = new ConnectionManager()
     this.setUpMyConnectionListener(this.myConnectionManager)
   }
 
@@ -52,18 +52,25 @@ export class Room extends Observable {
   /**
    * create a room to host and join, room name will be random 4 capital letters
    * @param myName
+   * @param code
    */
-  public create = async (myName: string) => {
-    while (true) {
-      const roomCode = generateRoomCode()
-      try {
-        await this.host(roomCode)
-      } catch (e) {
-        await pause(100)
-        continue
+  public create = async (myName: string, code?: string): Promise<string> => {
+    if (code !== undefined && code !== '') {
+      await this.host(code)
+      await this.join(myName, code)
+      return code
+    } else {
+      while (true) {
+        const roomCode = generateRoomCode()
+        try {
+          await this.host(roomCode)
+        } catch (e) {
+          await pause(100)
+          continue
+        }
+        await this.join(myName, roomCode)
+        return roomCode
       }
-      await this.join(myName, roomCode)
-      return roomCode
     }
   }
 
@@ -77,6 +84,7 @@ export class Room extends Observable {
     this.hostConnectionManager = await ConnectionManager.startPrefix(roomCode)
     await this.setUpHostConnectionManagerListeners(this.hostConnectionManager)
     this.hostPlayerId = this.myConnectionManager.id
+    this.emit(RoomEvents.SET_HOST, this.hostPlayerId)
   }
 
   private setUpHostConnectionManagerListeners = async (hostConnection: ConnectionManager) => {
@@ -118,6 +126,7 @@ export class Room extends Observable {
     this.players = players
     this.hostPlayerId = hostId
     this.emit(RoomEvents.SET_PLAYERS, {...this.players})
+    this.emit(RoomEvents.SET_HOST, hostId)
     this.roomCode = roomCode
     return Promise.all(Object.keys(players).map((id) => this.myConnectionManager.connect(id)))  // connect to rest of the players to form mesh
   }
@@ -146,12 +155,15 @@ export class Room extends Observable {
   }
 
   private handleHostClosed = (myConnection: ConnectionManager) => {
+    if(this.myConnectionManager.isClosed()){
+      return
+    }
     if (this.hostPlayerId) {
       delete this.players[this.hostPlayerId]
     }
     if (this.meToHostConnection) {
       myConnection.untilPkg(PkgType.CHANGE_HOST).then(async ({data}) => {
-        this.emit(RoomEvents.CHANGE_HOST, data)
+        this.emit(RoomEvents.SET_HOST, data)
         this.meToHostConnection = await myConnection.connect(data)
       })
       if (Object.keys(this.players)[0] === myConnection.id && this.roomCode) {
@@ -162,5 +174,22 @@ export class Room extends Observable {
 
   public rename = (name: string) => {
     return this.broadcast(PkgType.RENAME, [this.myId, name])
+  }
+
+  public leaveRoom = async () => {
+    await this.myConnectionManager.close()
+    this.myConnectionManager = new ConnectionManager()
+    if(this.hostConnectionManager){
+      await this.hostConnectionManager?.close()
+    }
+    this.setUpMyConnectionListener(this.myConnectionManager)
+    this.hostConnectionManager = undefined
+    await this.meToHostConnection?.close()
+    this.meToHostConnection = undefined
+    this.players = {}
+    this.hostPlayerId = undefined
+    this.roomCode = undefined
+    this.emit(RoomEvents.SET_HOST, undefined)
+    this.emit(RoomEvents.SET_PLAYERS, {})
   }
 }

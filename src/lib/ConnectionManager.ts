@@ -10,6 +10,10 @@ export class ConnectionManager extends Observable {
   public id: string
   protected peer: Peer
   protected connections: Connection[] = []
+  protected closed = false
+  public isClosed(){
+    return this.closed
+  }
   public log = (...params: any[]) => {
     console.log(this.id, ...params)
   }
@@ -22,7 +26,7 @@ export class ConnectionManager extends Observable {
     return new ConnectionManager(ConnectionManager.prefixId(id))
   }
 
-  public static startPrefix(id = ''): Promise<ConnectionManager>{
+  public static startPrefix(id = ''): Promise<ConnectionManager> {
     return ConnectionManager.startAs(ConnectionManager.prefixId(id))
   }
 
@@ -33,7 +37,7 @@ export class ConnectionManager extends Observable {
         resolve(manager)
       })
       manager.once(ConnEvent.PEER_ERROR, (payload) => {
-        reject(payload)
+        reject(payload.error)
       })
     }))
   }
@@ -45,12 +49,15 @@ export class ConnectionManager extends Observable {
   }
 
   public async connect(id: string, timeout: number = 5000): Promise<Connection> {
-    if(id === this.id) {
+    if (id === this.id) {
       return Promise.resolve(this.enrichConn(new Connection('self', this)))
     }
     return new Promise((resolve, reject) => {
       const id1 = setTimeout(() => {
-        reject('connection timeout to peer '+id)
+        reject({
+            type: 'connection timeout',
+            message: 'connection timeout to peer ' + id
+        })
       }, timeout)
       const id2 = this.once(ConnEvent.PEER_ERROR, ({error}: ConnectionListenerPayload) => {
         reject(error)
@@ -66,7 +73,7 @@ export class ConnectionManager extends Observable {
         openHandler()
       })
 
-      if(conn.open) {
+      if (conn.open) {
         openHandler()
       }
     })
@@ -108,7 +115,7 @@ export class ConnectionManager extends Observable {
     const peer = new Peer(id, {
       host: 'localhost',
       port: 9000,
-      path: '/peer',
+      path: '/peer'
     })
     peer.on('open', this.onPeerOpenHandler(peer))
     peer.on('error', (error) => {
@@ -148,7 +155,7 @@ export class ConnectionManager extends Observable {
   }
 
   public untilPkg(pkgType: PkgType, timeout?: number): Promise<any> {
-    return super.untilMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, timeout).then(({data,...rest}: any) => {
+    return super.untilMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, timeout).then(({data, ...rest}: any) => {
       return {...rest, data: data.data, type: pkgType}
     })
   }
@@ -189,5 +196,14 @@ export class ConnectionManager extends Observable {
 
   public disconnect(data: string) {
     this.conn(data).close()
+  }
+
+  public disconnectAll() {
+    return Promise.all(this.connections.map(conn => conn.close()))
+  }
+
+  public close() {
+    this.closed = true
+    this.peer.destroy()
   }
 }
