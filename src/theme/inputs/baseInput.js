@@ -7,7 +7,8 @@ export const baseInput = {
   ...shortTransition(['box-shadow']),
   boxShadow: '0 0 0 0 transparent',
   ':focus, &.focus': {
-    boxShadow: theme => `0 0 0 3px ${theme.colors.inputFocus}`
+    boxShadow: theme => `0 0 0 3px ${theme.colors.inputFocus}`,
+    borderColor: 'unset'
   },
   lineHeight: 'input',
   backgroundColor: 'transparent',

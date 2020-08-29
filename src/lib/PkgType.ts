@@ -1,6 +1,6 @@
 export enum PkgType {
   ALERT = 'alert',
-  XD= 'xd',
+  XD = 'xd',
   JOIN = 0,
   PLAYERS,
   NEW_JOIN,
@@ -8,4 +8,7 @@ export enum PkgType {
   PLAYER_LEFT,
   CHANGE_HOST,
   RENAME,
+  START_GAME,
+  GAME_EVENT,
+  UPDATE_GAME_STATE,
 }

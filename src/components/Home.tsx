@@ -14,7 +14,7 @@ const propTypes = {
 export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({setState}) => {
   const room = useRoom()
   const [name, setName] = useState('')
-  const [roomCode, setRoomCode] = useState('')
+  const [roomCode, setRoomCode] = useState(window.location.pathname.match(/^\/(.*)$/)?.[1] ?? '')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)

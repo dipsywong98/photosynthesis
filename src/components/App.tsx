@@ -5,6 +5,10 @@ import NavBar from './NavBar'
 import {transition} from '../theme/transitions'
 import {Home} from './Home'
 import {Room} from './Room'
+import {Game} from '../Game/Game'
+import {GameContextProvider} from '../Game/GameContext'
+import {GamePlayer} from './GamePlayer'
+import {withAlertQueue} from './common/AlertContext'
 
 export enum AppState {
   HOME,
@@ -14,11 +18,27 @@ export enum AppState {
 
 function App() {
   const [state, _setState] = useState(AppState.HOME)
+  const [game, setGame] = useState<null|Game>(null)
   const room = useRoom()
-  const setState = (newState: AppState) => {
-    if(newState !== state){
-      if(newState === AppState.HOME) {
+  const setState = (newState: AppState, param: unknown) => {
+    if (newState !== state) {
+      if (newState === AppState.HOME) {
+        window.setTimeout(() => {
+          setGame(null)
+        }, 300)
         room.leaveRoom()
+        window.history.pushState({
+          pageTitle: 'Whatever Game'
+        }, '', './')
+      } else if (newState === AppState.ROOM) {
+        window.setTimeout(() => {
+          setGame(null)
+        }, 300)
+        window.history.pushState({
+          pageTitle: room.roomCode + ' - Whatever Game'
+        }, '', './' + room.roomCode)
+      } else if (newState === AppState.GAME) {
+        setGame(param as Game)
       }
       _setState(newState)
     }
@@ -40,9 +60,14 @@ function App() {
         <Flex sx={{minWidth: '100vw', justifyContent: 'center', alignItems: 'center'}}>
           <Room setState={setState}/>
         </Flex>
+        <Flex sx={{minWidth: '100vw', justifyContent: 'center', alignItems: 'center'}}>
+          <GameContextProvider value={game}>
+            <GamePlayer setState={setState}/>
+          </GameContextProvider>
+        </Flex>
       </Flex>
     </Flex>
   )
 }
 
-export default App
+export default withAlertQueue(App)

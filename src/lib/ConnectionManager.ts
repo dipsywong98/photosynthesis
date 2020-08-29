@@ -91,6 +91,7 @@ export class ConnectionManager extends Observable {
 
   public broadcastPkg(pkgType: PkgType, data: any): Promise<unknown> {
     return Promise.all(this.connections.map(conn => {
+      console.log(conn.id)
       return conn.sendPkg(pkgType, data)
     }))
   }
@@ -138,6 +139,7 @@ export class ConnectionManager extends Observable {
   }
 
   private onPeerConnectionHandler = (conn: DataConnection) => {
+    this.log('connect',conn.peer)
     const connection = this.enrichConn(new Connection(conn, this))
     this.emit(ConnEvent.PEER_CONNECT, {conn: connection})
   }

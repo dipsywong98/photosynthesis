@@ -55,6 +55,7 @@ export class Connection extends Observable {
   }
 
   private dataHandler = (conn?: DataConnection) => ([pid, data]: any) => {
+    console.log(data)
     if (data !== undefined && data._t !== PkgType.ACK) {
       let response = undefined
       const ack = (v: any) => response = v

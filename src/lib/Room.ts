@@ -4,6 +4,7 @@ import {PkgType} from './PkgType'
 import {Connection} from './Connection'
 import {Observable} from './Observable'
 import {pause} from './pause'
+import {Game, GameEvent} from '../Game/Game'
 
 const CH = 'ABCDEFGHJKLMNOPQRSTUVWXYZ'
 
@@ -14,6 +15,7 @@ const generateRoomCode = () => {
 export enum RoomEvents {
   SET_PLAYERS,
   SET_HOST,
+  START_GAME,
 }
 
 export class Room extends Observable {
@@ -23,6 +25,11 @@ export class Room extends Observable {
   players: { [id: string]: string } = {}
   hostPlayerId?: string
   roomCode?: string
+  game?: Game
+
+  public get playerIds() {
+    return Object.keys(this.players)
+  }
 
   constructor() {
     super()
@@ -152,6 +159,13 @@ export class Room extends Observable {
       this.players[id] = name
       this.emit(RoomEvents.SET_PLAYERS, {...this.players})
     })
+    myConnection.onPkg(PkgType.START_GAME, () => {
+      const game = new Game(this)
+      game.on(GameEvent.GAME_OVER, () => {
+        this.game = undefined
+      })
+      this.emit(RoomEvents.START_GAME, game)
+    })
   }
 
   private handleHostClosed = (myConnection: ConnectionManager) => {
@@ -191,5 +205,9 @@ export class Room extends Observable {
     this.roomCode = undefined
     this.emit(RoomEvents.SET_HOST, undefined)
     this.emit(RoomEvents.SET_PLAYERS, {})
+  }
+
+  public startGame = () => {
+    return this.broadcast(PkgType.START_GAME, undefined)
   }
 }

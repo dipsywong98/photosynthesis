@@ -79,8 +79,8 @@ const buttonColors = {
   },
   danger: {
     fg: 'white.0',
-    bg: 'yellow.0',
-    hoverBg: 'yellow.1'
+    bg: 'red.0',
+    hoverBg: 'red.1'
   },
   red: {
     fg: 'white.0',

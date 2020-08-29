@@ -8,6 +8,7 @@ import {RoomEvents} from '../lib/Room'
 import IconText from './common/IconText'
 import {mdiAccount, mdiCrown} from '@mdi/js'
 import {AppState} from './App'
+import {Game} from '../Game/Game'
 
 const propTypes = {
   setState: PropTypes.func.isRequired
@@ -22,6 +23,9 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
   useEffect(() => {
     room.on(RoomEvents.SET_PLAYERS, setPlayers)
     room.on(RoomEvents.SET_HOST, setHost)
+    room.on(RoomEvents.START_GAME, (game: Game) => {
+      setState(AppState.GAME, game)
+    })
   }, [])
   return (
     <Flex sx={{flexDirection: 'column'}}>
@@ -39,12 +43,12 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
       </Flex>
       <Divider my={3}/>
       <Flex>
-        <Button sx={{flex: 1}} variant='danger' onClick={() => setState(AppState.HOME)}>Back</Button>
+        <Button sx={{flex: 1}} variant='warning' onClick={() => setState(AppState.HOME)}>Back</Button>
         <Button
           sx={{flex: 1, visibility: (host === room.myId ? null : 'hidden')}}
           ml={3}
           variant='primary'
-          onClick={host === room.myId ? () => setState(AppState.GAME) : undefined}
+          onClick={host === room.myId ? room.startGame : undefined}
         >
           Start
         </Button>
