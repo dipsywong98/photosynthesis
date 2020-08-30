@@ -20,6 +20,7 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
     if (game !== undefined) {
       setGameOver(false)
       game.on(GameEvent.GAME_OVER, ({ data }) => {
+        console.log('set game over true')
         setGameOver(true)
         alert?.({
           title: 'Game Over',
@@ -27,9 +28,9 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
         })
       })
     }
-  }, [alert, game])
+  }, [game])
   if (game === null || gameState === null || gameState === undefined) return <Box/>
-  console.log(gameState.board)
+  console.log(gameOver, gameState.board)
   return (
     <Box>
       {gameState.board.map((a: Array<string | null>, x: number) => (

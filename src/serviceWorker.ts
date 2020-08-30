@@ -51,7 +51,7 @@ export function register (config?: Config): void {
             'This web app is being served cache-first by a service ' +
             'worker. To learn more, visit https://bit.ly/CRA-PWA'
           )
-        }).catch(console.log)
+        }).catch(console.error)
       } else {
         // Is not localhost. Just register service worker
         registerValidSW(swUrl, config)
@@ -118,8 +118,8 @@ function checkValidServiceWorker (swUrl: string, config?: Config): void {
         navigator.serviceWorker.ready.then(registration => {
           registration.unregister().then(() => {
             window.location.reload()
-          }).catch(console.log)
-        }).catch(console.log)
+          }).catch(console.error)
+        }).catch(console.error)
       } else {
         // Service worker found. Proceed as normal.
         registerValidSW(swUrl, config)
@@ -136,7 +136,7 @@ export function unregister (): void {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready
       .then(registration => {
-        registration.unregister().catch(console.log)
+        registration.unregister().catch(console.error)
       })
       .catch((error: Error) => {
         console.error(error.message)

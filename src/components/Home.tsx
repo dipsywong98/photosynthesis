@@ -32,7 +32,7 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
         } else {
           setError('Error when creating room')
         }
-        console.log(e)
+        console.error(e)
       })
       .finally(() => {
         setMessage('')
@@ -49,7 +49,7 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
       })
       .catch(e => {
         setError(`Room '${roomCode}' does not exist`)
-        console.log(e)
+        console.error(e)
       })
       .finally(() => {
         setMessage('')

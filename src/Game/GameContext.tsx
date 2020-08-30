@@ -9,9 +9,9 @@ export const GameContextProvider: FunctionComponent<{ value: (Game | undefined) 
   const [gameState, setGameState] = useState<GameState|undefined>(undefined)
   useEffect(() => {
     setGameState(undefined)
-    game?.on(GameEvent.UPDATE_GAME_STATE, ({ data }) => setGameState(data as GameState))
+    game?.on(GameEvent.UPDATE_GAME_STATE, ({ data }) => setGameState({ ...data as GameState }))
   }, [game])
-  return <GameContext.Provider value={[game, gameState]} {...props} />
+  return <GameContext.Provider value={[game, game?.state]} {...props} />
 }
 
 GameContextProvider.propTypes = {

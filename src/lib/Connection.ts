@@ -56,8 +56,8 @@ export class Connection extends Observable<typeof ConnEvent, ConnectionListenerP
   }
 
   private readonly dataHandler = (conn?: DataConnection) => ([pid, data]: PayloadData) => {
-    console.log(data)
-    if (data !== undefined && data._t !== PkgType.ACK) {
+    this.log(data, typeof data === 'object', data._t !== undefined)
+    if (data._t !== PkgType.ACK) {
       let response: unknown
       const ack = (v: unknown): void => {
         response = v
@@ -68,7 +68,7 @@ export class Connection extends Observable<typeof ConnEvent, ConnectionListenerP
       }
       if (conn !== undefined) {
         if (response === undefined) {
-          conn.send([pid])
+          conn.send([pid, { _t: PkgType.ACK, data: response }])
         } else {
           conn.send([pid, { _t: PkgType.ACK, data: response }])
         }
@@ -80,7 +80,11 @@ export class Connection extends Observable<typeof ConnEvent, ConnectionListenerP
         }
       }
     } else {
-      this.emit(ConnEvent.CONN_ACK, { conn: this, data, pid })
+      if (typeof data === 'object' && data._t !== undefined) {
+        this.emit(ConnEvent.CONN_ACK, { conn: this, data: data.data, type: data._t, pid })
+      } else {
+        this.emit(ConnEvent.CONN_ACK, { conn: this, data, pid })
+      }
     }
   }
 

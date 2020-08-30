@@ -18,7 +18,7 @@ export enum AppState {
 
 const App: FunctionComponent = () => {
   const [state, _setState] = useState(AppState.HOME)
-  const [game, setGame] = useState<undefined|Game>(undefined)
+  const [game, setGame] = useState<undefined | Game>(undefined)
   const room = useRoom()
   const setState = (newState: AppState, param: unknown): void => {
     if (newState !== state) {
@@ -62,9 +62,11 @@ const App: FunctionComponent = () => {
           <Room setState={setState}/>
         </Flex>
         <Flex sx={{ minWidth: '100vw', justifyContent: 'center', alignItems: 'center' }}>
-          <GameContextProvider value={game}>
-            <GamePlayer setState={setState}/>
-          </GameContextProvider>
+          {(// state === AppState.GAME &&
+            <GameContextProvider value={game}>
+              <GamePlayer setState={setState}/>
+            </GameContextProvider>)
+          }
         </Flex>
       </Flex>
     </Flex>
