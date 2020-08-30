@@ -14,11 +14,11 @@ const propTypes = {
 export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({ setState }) => {
   const room = useRoom()
   const [name, setName] = useState('')
-  const [roomCode, setRoomCode] = useState(window.location.pathname.match(/^\/(.*)$/)?.[1] ?? '')
+  const [roomCode, setRoomCode] = useState(/^\/(.*)$/.exec(window.location.pathname)?.[1] ?? '')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  const createRoom = () => {
+  const createRoom = (): void => {
     setMessage('Creating Room...')
     setLoading(true)
     room.create(name, roomCode)
@@ -26,7 +26,7 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
         setError('')
         setState(AppState.ROOM)
       })
-      .catch(e => {
+      .catch((e: {type: string}) => {
         if (e.type === 'unavailable-id') {
           setError(`Room ${roomCode} already exists`)
         } else {
@@ -39,7 +39,7 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
         setLoading(false)
       })
   }
-  const joinRoom = () => {
+  const joinRoom = (): void => {
     setMessage('Joining Room...')
     setLoading(true)
     room.join(name, roomCode)
@@ -68,14 +68,14 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
         fullwidth={true}
         disabled={loading}
         label='Name'
-        onChange={({ target }) => setName?.(target.value)}
+        onChange={({ target }) => setName?.((target as HTMLInputElement).value)}
         value={name}
       />
       <Input
         fullwidth={true}
         disabled={loading}
         label='Room'
-        onChange={({ target }) => setRoomCode?.(target.value.toUpperCase())}
+        onChange={({ target }) => setRoomCode?.((target as HTMLInputElement).value.toUpperCase())}
         value={roomCode}
       />
       <Flex mt={3}>
@@ -88,3 +88,5 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
     </Flex>
   )
 }
+
+Home.propTypes = propTypes

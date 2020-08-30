@@ -15,7 +15,7 @@ export class FakeConn implements DataConnection {
   parse (): any {
   }
 
-  stringify (data: any): string {
+  stringify (data: Record<any, any> | number | string | any[]): string {
     return data.toString()
   }
 

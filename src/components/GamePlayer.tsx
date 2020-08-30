@@ -17,26 +17,27 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
   const [gameOver, setGameOver] = useState(false)
   const alert = useAlert()
   useEffect(() => {
-    if (game) {
+    if (game !== undefined) {
       setGameOver(false)
-      game.on(GameEvent.GAME_OVER, (data: string) => {
+      game.on(GameEvent.GAME_OVER, ({ data }) => {
         setGameOver(true)
         alert?.({
           title: 'Game Over',
-          message: data
+          message: data as string
         })
       })
     }
-  }, [game])
+  }, [alert, game])
   if (game === null || gameState === null || gameState === undefined) return <Box/>
   console.log(gameState.board)
   return (
     <Box>
-      {gameState.board.map((a: string[], x: number) => (
-        <Flex>
+      {gameState.board.map((a: Array<string | null>, x: number) => (
+        <Flex key={x}>
           {
-            a.map((b: string, y) => (
+            a.map((b: (string | null), y) => (
               <Box
+                key={y}
                 sx={{ width: '40px', height: '40px', border: '1px solid black' }}
                 onClick={() => game?.send(GameEvent.CLICK, [x, y])}>
                 {b}
@@ -49,10 +50,12 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
         gameOver && (
           <Box>
             <Divider/>
-            <Button variant='primary' onClick={() => setState(AppState.ROOM)}>Next Round</Button>
+            <Button variant='primary' onClick={() => { setState(AppState.ROOM) }}>Next Round</Button>
           </Box>
         )
       }
     </Box>
   )
 }
+
+GamePlayer.propTypes = propTypes

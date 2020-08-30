@@ -12,12 +12,10 @@
 
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost' ||
-    // [::1] is the IPv6 localhost address.
-    window.location.hostname === '[::1]' ||
-    // 127.0.0.0/8 are considered localhost for IPv4.
-    window.location.hostname.match(
-      /^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/
-    )
+  // [::1] is the IPv6 localhost address.
+  window.location.hostname === '[::1]' ||
+  // 127.0.0.0/8 are considered localhost for IPv4.
+  /^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/.exec(window.location.hostname)
 )
 
 interface Config {
@@ -25,7 +23,7 @@ interface Config {
   onUpdate?: (registration: ServiceWorkerRegistration) => void
 }
 
-export function register (config?: Config) {
+export function register (config?: Config): void {
   if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
     // The URL constructor is available in all browsers that support SW.
     const publicUrl = new URL(
@@ -51,9 +49,9 @@ export function register (config?: Config) {
         navigator.serviceWorker.ready.then(() => {
           console.log(
             'This web app is being served cache-first by a service ' +
-              'worker. To learn more, visit https://bit.ly/CRA-PWA'
+            'worker. To learn more, visit https://bit.ly/CRA-PWA'
           )
-        })
+        }).catch(console.log)
       } else {
         // Is not localhost. Just register service worker
         registerValidSW(swUrl, config)
@@ -62,7 +60,7 @@ export function register (config?: Config) {
   }
 }
 
-function registerValidSW (swUrl: string, config?: Config) {
+function registerValidSW (swUrl: string, config?: Config): void {
   navigator.serviceWorker
     .register(swUrl)
     .then(registration => {
@@ -73,17 +71,17 @@ function registerValidSW (swUrl: string, config?: Config) {
         }
         installingWorker.onstatechange = () => {
           if (installingWorker.state === 'installed') {
-            if (navigator.serviceWorker.controller) {
+            if (navigator.serviceWorker.controller !== null) {
               // At this point, the updated precached content has been fetched,
               // but the previous service worker will still serve the older
               // content until all client tabs are closed.
               console.log(
                 'New content is available and will be used when all ' +
-                  'tabs for this page are closed. See https://bit.ly/CRA-PWA.'
+                'tabs for this page are closed. See https://bit.ly/CRA-PWA.'
               )
 
               // Execute callback
-              if (config && config.onUpdate) {
+              if (config?.onUpdate !== undefined) {
                 config.onUpdate(registration)
               }
             } else {
@@ -93,9 +91,7 @@ function registerValidSW (swUrl: string, config?: Config) {
               console.log('Content is cached for offline use.')
 
               // Execute callback
-              if (config && config.onSuccess) {
-                config.onSuccess(registration)
-              }
+              config?.onSuccess?.(registration)
             }
           }
         }
@@ -106,7 +102,7 @@ function registerValidSW (swUrl: string, config?: Config) {
     })
 }
 
-function checkValidServiceWorker (swUrl: string, config?: Config) {
+function checkValidServiceWorker (swUrl: string, config?: Config): void {
   // Check if the service worker can be found. If it can't reload the page.
   fetch(swUrl, {
     headers: { 'Service-Worker': 'script' }
@@ -122,8 +118,8 @@ function checkValidServiceWorker (swUrl: string, config?: Config) {
         navigator.serviceWorker.ready.then(registration => {
           registration.unregister().then(() => {
             window.location.reload()
-          })
-        })
+          }).catch(console.log)
+        }).catch(console.log)
       } else {
         // Service worker found. Proceed as normal.
         registerValidSW(swUrl, config)
@@ -136,13 +132,13 @@ function checkValidServiceWorker (swUrl: string, config?: Config) {
     })
 }
 
-export function unregister () {
+export function unregister (): void {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready
       .then(registration => {
-        registration.unregister()
+        registration.unregister().catch(console.log)
       })
-      .catch(error => {
+      .catch((error: Error) => {
         console.error(error.message)
       })
   }

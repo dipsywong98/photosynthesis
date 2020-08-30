@@ -22,7 +22,9 @@ export interface RoomEventPayload {
   data: unknown
 }
 
-interface PlayersDict { [id: string]: string }
+export interface PlayersDict {
+  [id: string]: string
+}
 
 type JoinEventAckPayload = [PlayersDict, string]
 
@@ -108,20 +110,21 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
         this.players[conn.id] = data as string
         ack?.([this.players, this.myConnectionManager.id]) // return the players list back to the new joiner, and notify the host's player id
         hostConnection?.broadcastPkg(PkgType.NEW_JOIN, [data, conn.id]) // notify other users on the new joiner
+          .catch(console.log)
       } else {
         // this is not quite possible
         throw new Error('missing conn')
       }
     })
     hostConnection.on(ConnEvent.CONN_CLOSE, ({ conn }) => {
-      if (conn) {
-        delete this.players[conn.id]
+      if (conn !== undefined) {
+        this.removePlayer(conn.id)
       }
     })
     // if there are existing players, probably the players were connected to a disconnected host
     // so update them to use the new host
     if (Object.keys(this.players).length > 0) {
-      await Promise.all(Object.keys(this.players).map((id: string) => hostConnection?.connect(id)))
+      await Promise.all(Object.keys(this.players).map(async (id: string): Promise<Connection> => await hostConnection?.connect(id)))
       await hostConnection.broadcastPkg(PkgType.CHANGE_HOST, this.myConnectionManager.id)
     }
   }
@@ -135,7 +138,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
    * @param myName
    * @param roomCode
    */
-  public join = async (myName: string, roomCode: string) => {
+  public join = async (myName: string, roomCode: string): Promise<Connection[]> => {
     this.meToHostConnection = await this.myConnectionManager.connectPrefix(roomCode) // connect ot the room beacon
     const { data } = await this.sendToHost(PkgType.JOIN, myName)
     const [players, hostId] = data as JoinEventAckPayload
@@ -144,22 +147,23 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
     this.emit(RoomEvents.SET_PLAYERS, { data: { ...this.players } })
     this.emit(RoomEvents.SET_HOST, { data: hostId })
     this.roomCode = roomCode
-    return await Promise.all(Object.keys(players).map((id) => this.myConnectionManager.connect(id))) // connect to rest of the players to form mesh
+    return await Promise.all(Object.keys(players).map(async (id): Promise<Connection> => await this.myConnectionManager.connect(id))) // connect to rest of the players to form mesh
   }
 
-  private readonly setUpMyConnectionListener = (myConnection: ConnectionManager) => {
+  private readonly setUpMyConnectionListener = (myConnection: ConnectionManager): void => {
     // triggered when other enter the room
     myConnection.onPkg(PkgType.NEW_JOIN, ({ data }) => {
       const [name, id] = data as [string, string]
       myConnection.connect(id)
+        .catch(console.log)
       this.players[id] = name
       this.emit(RoomEvents.SET_PLAYERS, { data: { ...this.players } })
     })
     myConnection.on(ConnEvent.CONN_CLOSE, ({ conn }) => {
-      if (conn) {
+      if (conn !== undefined) {
         if (conn.id in this.players) {
-          delete this.players[conn.id]
-        } else if (this.hostPlayerId && conn.id === this.meToHostConnection?.id) {
+          this.removePlayer(conn.id)
+        } else if (this.hostPlayerId !== undefined && conn.id === this.meToHostConnection?.id) {
           this.handleHostClosed(myConnection)
         }
         this.emit(RoomEvents.SET_PLAYERS, { data: { ...this.players } })
@@ -175,50 +179,57 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
       game.on(GameEvent.GAME_OVER, () => {
         this.game = undefined
       })
-      this.emit(RoomEvents.START_GAME, game)
+      this.emit(RoomEvents.START_GAME, { data: game })
     })
   }
 
-  private readonly handleHostClosed = (myConnection: ConnectionManager) => {
+  private readonly handleHostClosed = (myConnection: ConnectionManager): void => {
     if (this.myConnectionManager.isClosed()) {
       return
     }
-    if (this.hostPlayerId) {
-      delete this.players[this.hostPlayerId]
+    if (this.hostPlayerId !== undefined) {
+      this.removePlayer(this.hostPlayerId)
     }
-    if (this.meToHostConnection) {
+    if (this.meToHostConnection !== undefined) {
       myConnection.untilPkg(PkgType.CHANGE_HOST).then(async ({ data }) => {
-        this.emit(RoomEvents.SET_HOST, data)
-        this.meToHostConnection = await myConnection.connect(data)
+        this.emit(RoomEvents.SET_HOST, { data })
+        this.meToHostConnection = await myConnection.connect(data as string)
       })
-      if (Object.keys(this.players)[0] === myConnection.id && this.roomCode) {
+        .catch(console.log)
+      if (Object.keys(this.players)[0] === myConnection.id && this.roomCode !== undefined) {
         this.host(this.roomCode)
+          .catch(console.log)
       }
     }
   }
 
-  public rename = (name: string) => {
-    return this.broadcast(PkgType.RENAME, [this.myId, name])
+  public rename = async (name: string): Promise<ConnectionListenerPayload[]> => {
+    return await this.broadcast(PkgType.RENAME, [this.myId, name])
   }
 
-  public leaveRoom = async () => {
-    await this.myConnectionManager.close()
+  public leaveRoom = (): void => {
+    this.myConnectionManager.close()
     this.myConnectionManager = new ConnectionManager()
-    if (this.hostConnectionManager) {
-      await this.hostConnectionManager?.close()
+    if (this.hostConnectionManager !== undefined) {
+      this.hostConnectionManager?.close()
     }
     this.setUpMyConnectionListener(this.myConnectionManager)
     this.hostConnectionManager = undefined
-    await this.meToHostConnection?.close()
+    this.meToHostConnection?.close()
     this.meToHostConnection = undefined
     this.players = {}
     this.hostPlayerId = undefined
     this.roomCode = undefined
-    this.emit(RoomEvents.SET_HOST, undefined)
-    this.emit(RoomEvents.SET_PLAYERS, {})
+    this.emit(RoomEvents.SET_HOST, { data: undefined })
+    this.emit(RoomEvents.SET_PLAYERS, { data: {} })
   }
 
-  public startGame = () => {
-    return this.broadcast(PkgType.START_GAME, undefined)
+  public startGame = async (): Promise<ConnectionListenerPayload[]> => {
+    return await this.broadcast(PkgType.START_GAME, undefined)
+  }
+
+  private removePlayer (playerId: string): void {
+    const { [playerId]: s, ...rest } = this.players
+    this.players = rest
   }
 }

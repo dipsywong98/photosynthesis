@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { FunctionComponent, useState } from 'react'
 import { useRoom } from '../lib/RoomContext'
 import { Flex } from 'theme-ui'
 import NavBar from './NavBar'
@@ -16,15 +16,15 @@ export enum AppState {
   GAME
 }
 
-function App () {
+const App: FunctionComponent = () => {
   const [state, _setState] = useState(AppState.HOME)
-  const [game, setGame] = useState<null|Game>(null)
+  const [game, setGame] = useState<undefined|Game>(undefined)
   const room = useRoom()
-  const setState = (newState: AppState, param: unknown) => {
+  const setState = (newState: AppState, param: unknown): void => {
     if (newState !== state) {
       if (newState === AppState.HOME) {
         window.setTimeout(() => {
-          setGame(null)
+          setGame(undefined)
         }, 300)
         room.leaveRoom()
         window.history.pushState({
@@ -32,11 +32,11 @@ function App () {
         }, '', './')
       } else if (newState === AppState.ROOM) {
         window.setTimeout(() => {
-          setGame(null)
+          setGame(undefined)
         }, 300)
         window.history.pushState({
-          pageTitle: room.roomCode + ' - Whatever Game'
-        }, '', './' + room.roomCode)
+          pageTitle: (room.roomCode ?? '') + ' - Whatever Game'
+        }, '', `./${room.roomCode ?? ''}`)
       } else if (newState === AppState.GAME) {
         setGame(param as Game)
       }
