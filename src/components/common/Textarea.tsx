@@ -1,8 +1,8 @@
 /** @jsx jsx */
-import {jsx} from 'theme-ui'
-import {Box, Label, Text} from '@theme-ui/components'
+import { jsx } from 'theme-ui'
+import { Box, Label, Text } from '@theme-ui/components'
 import PropTypes from 'prop-types'
-import {FunctionComponent} from 'react'
+import { FunctionComponent } from 'react'
 import BasicTextarea from './BasicTextarea'
 
 const Textarea: FunctionComponent<{ fullwidth?: boolean, sx?: object, label: string, name?: string, value?: string, onChange?: Function, helperText?: string }> = props => (

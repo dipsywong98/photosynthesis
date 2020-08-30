@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "target": "es5",
+    "downlevelIteration": true,
     "lib": [
+      "es2016",
       "dom",
       "dom.iterable",
       "esnext"
@@ -19,7 +21,14 @@
     "noEmit": true,
     "jsx": "react"
   },
+//  "exclude": [
+//    "node_modules"
+//  ],
   "include": [
-    "src"
+    "src",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx"
   ]
 }

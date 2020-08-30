@@ -1,13 +1,13 @@
-import React, {forwardRef, FunctionComponent, useEffect, useState} from 'react'
-import PropTypes, {InferProps} from 'prop-types'
+import React, { forwardRef, FunctionComponent, useEffect, useState } from 'react'
+import PropTypes, { InferProps } from 'prop-types'
 import Well from './Well'
-import {Box, BoxOwnProps, BoxProps, Flex} from '@theme-ui/components'
+import { Box, BoxOwnProps, BoxProps, Flex } from '@theme-ui/components'
 import Icon from './Icon'
-import {mdiChevronDown} from '@mdi/js'
-import {transition} from '../../theme/transitions'
+import { mdiChevronDown } from '@mdi/js'
+import { transition } from '../../theme/transitions'
 import Collapsible from './Collapsible'
-import {isDefined} from '../../utils/componentHelpers'
-import {baseWell} from '../../theme/wells'
+import { isDefined } from '../../utils/componentHelpers'
+import { baseWell } from '../../theme/wells'
 
 const collapsibleWellProps = {
   defaultOpen: PropTypes.bool,
@@ -56,7 +56,7 @@ const CollapsibleWell: FunctionComponent<CollapsibleWellProps & BoxOwnProps> = f
 
     return (
       <Well
-    // @ts-ignore
+        // @ts-expect-error
         ref={ref}
         {...boxProps}
         sx={{ p: [0, 0, 0, 0], ...(boxProps.sx) }}>

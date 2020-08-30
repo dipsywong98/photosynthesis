@@ -1,20 +1,20 @@
-import React, {FunctionComponent, useEffect, useState} from 'react'
-import {Divider, Flex, Heading} from '@theme-ui/components'
+import React, { FunctionComponent, useEffect, useState } from 'react'
+import { Divider, Flex, Heading } from '@theme-ui/components'
 import Input from './common/Input'
 import PropTypes from 'prop-types'
 import Button from './common/Button'
-import {useRoom} from '../lib/RoomContext'
-import {RoomEvents} from '../lib/Room'
+import { useRoom } from '../lib/RoomContext'
+import { RoomEvents } from '../lib/Room'
 import IconText from './common/IconText'
-import {mdiAccount, mdiCrown} from '@mdi/js'
-import {AppState} from './App'
-import {Game} from '../Game/Game'
+import { mdiAccount, mdiCrown } from '@mdi/js'
+import { AppState } from './App'
+import { Game } from '../Game/Game'
 
 const propTypes = {
   setState: PropTypes.func.isRequired
 }
 
-export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({setState}) => {
+export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({ setState }) => {
   const room = useRoom()
   const [players, setPlayers] = useState<Record<string, string>>({})
   const [host, setHost] = useState('')
@@ -28,11 +28,11 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
     })
   }, [])
   return (
-    <Flex sx={{flexDirection: 'column'}}>
+    <Flex sx={{ flexDirection: 'column' }}>
       <Heading>{room.roomCode}</Heading>
-      <Input label='My Name' value={name} onChange={({target}) => rename(target.value)}/>
+      <Input label='My Name' value={name} onChange={({ target }) => rename(target.value)}/>
       <Divider my={3}/>
-      <Flex sx={{flexDirection: 'column'}}>
+      <Flex sx={{ flexDirection: 'column' }}>
         {
           Object.entries(players).map(([id, name]) => (
             id === host
@@ -43,13 +43,12 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
       </Flex>
       <Divider my={3}/>
       <Flex>
-        <Button sx={{flex: 1}} variant='warning' onClick={() => setState(AppState.HOME)}>Back</Button>
+        <Button sx={{ flex: 1 }} variant='warning' onClick={() => setState(AppState.HOME)}>Back</Button>
         <Button
-          sx={{flex: 1, visibility: (host === room.myId ? null : 'hidden')}}
+          sx={{ flex: 1, visibility: (host === room.myId ? null : 'hidden') }}
           ml={3}
           variant='primary'
-          onClick={host === room.myId ? room.startGame : undefined}
-        >
+          onClick={host === room.myId ? room.startGame : undefined}>
           Start
         </Button>
       </Flex>

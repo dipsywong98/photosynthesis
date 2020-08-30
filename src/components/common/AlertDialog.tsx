@@ -1,4 +1,4 @@
-import React, {FunctionComponent} from 'react'
+import React, { FunctionComponent } from 'react'
 import ConfirmDialog from './ConfirmDialog'
 import PropTypes from 'prop-types'
 
@@ -10,7 +10,7 @@ const propTypes = {
   yesText: PropTypes.string,
   children: PropTypes.node.isRequired,
   title: PropTypes.string,
-  size: PropTypes.number,
+  size: PropTypes.number
 }
 
 const AlertDialog: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = props => (

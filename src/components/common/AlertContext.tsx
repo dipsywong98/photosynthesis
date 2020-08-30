@@ -1,4 +1,4 @@
-import React, {Context, createContext, FunctionComponent, useContext, useState} from 'react'
+import React, { Context, createContext, FunctionComponent, useContext, useState } from 'react'
 import AlertDialog from './AlertDialog'
 
 export interface AlertMessage {
@@ -41,4 +41,3 @@ export const withAlertQueue = (WrappedComponent: FunctionComponent): FunctionCom
 export const useAlert = (): AlertFunction | null => useContext(AlertContext)
 export const AlertContext: Context<AlertFunction | null> = createContext<AlertFunction | null>(null)
 AlertContext.displayName = 'AlertContext'
-

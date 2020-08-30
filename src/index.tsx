@@ -3,10 +3,10 @@ import ReactDOM from 'react-dom'
 import './index.css'
 import App from './components/App'
 import * as serviceWorker from './serviceWorker'
-import {AxiosProvider} from './components/common/Axios'
-import {Global} from '@emotion/core'
+import { AxiosProvider } from './components/common/Axios'
+import { Global } from '@emotion/core'
 import theme from './theme'
-import {ThemeProvider} from 'theme-ui'
+import { ThemeProvider } from 'theme-ui'
 
 const MyGlobal = () => (
   <Global

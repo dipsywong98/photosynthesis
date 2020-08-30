@@ -1,17 +1,17 @@
-import React, {FunctionComponent, useState} from 'react'
-import {Flex, Heading, Text} from '@theme-ui/components'
+import React, { FunctionComponent, useState } from 'react'
+import { Flex, Heading, Text } from '@theme-ui/components'
 import Input from './common/Input'
 import PropTypes from 'prop-types'
 import Button from './common/Button'
 import Well from './common/Well'
-import {useRoom} from '../lib/RoomContext'
-import {AppState} from './App'
+import { useRoom } from '../lib/RoomContext'
+import { AppState } from './App'
 
 const propTypes = {
   setState: PropTypes.func.isRequired
 }
 
-export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({setState}) => {
+export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({ setState }) => {
   const room = useRoom()
   const [name, setName] = useState('')
   const [roomCode, setRoomCode] = useState(window.location.pathname.match(/^\/(.*)$/)?.[1] ?? '')
@@ -57,21 +57,31 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
       })
   }
   return (
-    <Flex sx={{flexDirection: 'column'}}>
+    <Flex sx={{ flexDirection: 'column' }}>
       <Heading>Welcome to Whatever Game</Heading>
       {
         error !== '' && (
           <Well variant='danger'>{error}</Well>
         )
       }
-      <Input fullwidth={true} disabled={loading} label='Name' onChange={({target}) => setName?.(target.value)}
-             value={name}/>
-      <Input fullwidth={true} disabled={loading} label='Room'
-             onChange={({target}) => setRoomCode?.(target.value.toUpperCase())} value={roomCode}/>
+      <Input
+        fullwidth={true}
+        disabled={loading}
+        label='Name'
+        onChange={({ target }) => setName?.(target.value)}
+        value={name}
+      />
+      <Input
+        fullwidth={true}
+        disabled={loading}
+        label='Room'
+        onChange={({ target }) => setRoomCode?.(target.value.toUpperCase())}
+        value={roomCode}
+      />
       <Flex mt={3}>
-        <Button sx={{flex: 1}} disabled={loading || name === ''} variant='warning' onClick={createRoom}>New
+        <Button sx={{ flex: 1 }} disabled={loading || name === ''} variant='warning' onClick={createRoom}>New
           Room</Button>
-        <Button sx={{flex: 1}} disabled={loading || name === ''} ml={3} variant='primary' onClick={joinRoom}>Join
+        <Button sx={{ flex: 1 }} disabled={loading || name === ''} ml={3} variant='primary' onClick={joinRoom}>Join
           Room</Button>
       </Flex>
       <Text>{message}</Text>
