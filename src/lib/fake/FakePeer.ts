@@ -40,6 +40,7 @@ class FakePeer implements Peer {
   }
 
   off (event: string, fn: Function, once?: boolean): void {
+    return
   }
 
   public callbacks: Record<string | 'data' | 'open' | 'close' | 'error', Function[]> = {}
@@ -62,5 +63,6 @@ class FakePeer implements Peer {
   }
 
   reconnect (): void {
+    return
   }
 }

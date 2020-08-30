@@ -1,4 +1,4 @@
-import Peer, { DataConnection, MediaConnection } from 'peerjs'
+import Peer, { MediaConnection } from 'peerjs'
 
 export class FakeMediaConnection implements MediaConnection {
   bufferSize: any
@@ -15,7 +15,7 @@ export class FakeMediaConnection implements MediaConnection {
   parse (): any {
   }
 
-  stringify (data: any): string {
+  stringify (data: Record<any, any> | string | number | any[]): string {
     return data.toString()
   }
 

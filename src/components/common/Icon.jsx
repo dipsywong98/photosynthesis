@@ -29,7 +29,8 @@ Icon.propTypes = {
   size: PropTypes.oneOfType([
     PropTypes.number,
     PropTypes.arrayOf(PropTypes.number)
-  ])
+  ]),
+  sx: PropTypes.object
 }
 
 Icon.defaultProps = {

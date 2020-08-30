@@ -4,7 +4,7 @@ import Input from './common/Input'
 import PropTypes from 'prop-types'
 import Button from './common/Button'
 import { useRoom } from '../lib/RoomContext'
-import { RoomEvents } from '../lib/Room'
+import { PlayersDict, RoomEvents } from '../lib/Room'
 import IconText from './common/IconText'
 import { mdiAccount, mdiCrown } from '@mdi/js'
 import { AppState } from './App'
@@ -16,21 +16,21 @@ const propTypes = {
 
 export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({ setState }) => {
   const room = useRoom()
-  const [players, setPlayers] = useState<Record<string, string>>({})
+  const [players, setPlayers] = useState<PlayersDict>({})
   const [host, setHost] = useState('')
-  const name = players[room.myId] || ''
+  const name = players[room.myId] ?? ''
   const rename = room.rename
   useEffect(() => {
-    room.on(RoomEvents.SET_PLAYERS, setPlayers)
-    room.on(RoomEvents.SET_HOST, setHost)
-    room.on(RoomEvents.START_GAME, (game: Game) => {
-      setState(AppState.GAME, game)
+    room.on(RoomEvents.SET_PLAYERS, ({ data }) => setPlayers(data as PlayersDict))
+    room.on(RoomEvents.SET_HOST, ({ data }) => setHost(data as string))
+    room.on(RoomEvents.START_GAME, ({ data: game }) => {
+      setState(AppState.GAME, game as Game)
     })
-  }, [])
+  }, [room, setState])
   return (
     <Flex sx={{ flexDirection: 'column' }}>
       <Heading>{room.roomCode}</Heading>
-      <Input label='My Name' value={name} onChange={({ target }) => rename(target.value)}/>
+      <Input label='My Name' value={name} onChange={async ({ target }: InputEvent) => { await rename((target as HTMLInputElement)?.value ?? '') }}/>
       <Divider my={3}/>
       <Flex sx={{ flexDirection: 'column' }}>
         {
@@ -43,7 +43,7 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
       </Flex>
       <Divider my={3}/>
       <Flex>
-        <Button sx={{ flex: 1 }} variant='warning' onClick={() => setState(AppState.HOME)}>Back</Button>
+        <Button sx={{ flex: 1 }} variant='warning' onClick={(): void => { setState(AppState.HOME) }}>Back</Button>
         <Button
           sx={{ flex: 1, visibility: (host === room.myId ? null : 'hidden') }}
           ml={3}
@@ -55,3 +55,5 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
     </Flex>
   )
 }
+
+Room.propTypes = propTypes
