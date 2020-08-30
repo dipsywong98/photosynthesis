@@ -110,7 +110,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
         this.players[conn.id] = data as string
         ack?.([this.players, this.myConnectionManager.id]) // return the players list back to the new joiner, and notify the host's player id
         hostConnection?.broadcastPkg(PkgType.NEW_JOIN, [data, conn.id]) // notify other users on the new joiner
-          .catch(console.log)
+          .catch(console.error)
       } else {
         // this is not quite possible
         throw new Error('missing conn')
@@ -141,6 +141,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   public join = async (myName: string, roomCode: string): Promise<Connection[]> => {
     this.meToHostConnection = await this.myConnectionManager.connectPrefix(roomCode) // connect ot the room beacon
     const { data } = await this.sendToHost(PkgType.JOIN, myName)
+    console.log(data)
     const [players, hostId] = data as JoinEventAckPayload
     this.players = players
     this.hostPlayerId = hostId
@@ -155,7 +156,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
     myConnection.onPkg(PkgType.NEW_JOIN, ({ data }) => {
       const [name, id] = data as [string, string]
       myConnection.connect(id)
-        .catch(console.log)
+        .catch(console.error)
       this.players[id] = name
       this.emit(RoomEvents.SET_PLAYERS, { data: { ...this.players } })
     })
@@ -195,10 +196,10 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
         this.emit(RoomEvents.SET_HOST, { data })
         this.meToHostConnection = await myConnection.connect(data as string)
       })
-        .catch(console.log)
+        .catch(console.error)
       if (Object.keys(this.players)[0] === myConnection.id && this.roomCode !== undefined) {
         this.host(this.roomCode)
-          .catch(console.log)
+          .catch(console.error)
       }
     }
   }

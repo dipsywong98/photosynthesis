@@ -6,8 +6,6 @@ import { PkgType } from './PkgType'
 import { ConnectionTimeoutError } from './errors/ConnectionTimeoutError'
 import { PeerFactory } from './PeerFactory'
 
-type Matcher = (payload: ConnectionListenerPayload) => boolean
-
 export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionListenerPayload> {
   public id: string
   protected peer: Peer
@@ -169,7 +167,7 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   }
 
   public emit (event: ConnEvent, payload: ConnectionListenerPayload): void {
-    // this.log('emit', event, payload)
+    this.log('emit', event, payload)
     super.emit(event, payload)
   }
 

@@ -85,7 +85,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
           if (accepted && prevState !== this.state) {
             this.hostBroadcast(GameEvent.UPDATE_GAME_STATE, this.state)
               .then(() => console.log('update state'))
-              .catch(console.log)
+              .catch(console.error)
           }
         } else {
           ack?.(false)
@@ -104,7 +104,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
           this.state.turn = this.nextPlayerId(this.state.turn)
           this.state = { ...this.state }
           if (x === 0 && y === 0) {
-            this.hostBroadcast(GameEvent.GAME_OVER, this.room.hostPlayerId).then(console.log).catch(console.log)
+            this.hostBroadcast(GameEvent.GAME_OVER, this.room.hostPlayerId).then(console.log).catch(console.error)
           }
           return true
         } else {
@@ -112,7 +112,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         }
       }
       case GameEvent.REQUEST_GAME_STATE:
-        this.hostSend(id, GameEvent.UPDATE_GAME_STATE, this.state).then(console.log).catch(console.log)
+        this.hostSend(id, GameEvent.UPDATE_GAME_STATE, this.state).then(console.log).catch(console.error)
         return true
       default:
         return true
@@ -129,7 +129,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         }
         this.emit(event, { data: payload })
       })
-      this.send(GameEvent.REQUEST_GAME_STATE, undefined).then(console.log).catch(console.log)
+      this.send(GameEvent.REQUEST_GAME_STATE, undefined).then(console.log).catch(console.error)
     }
   }
 
