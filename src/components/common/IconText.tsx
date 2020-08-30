@@ -1,7 +1,7 @@
-import React, {FunctionComponent} from 'react'
-import {FlexProps} from 'theme-ui'
-import {Flex, Text} from '@theme-ui/components'
-import PropTypes, {InferProps} from 'prop-types'
+import React, { FunctionComponent } from 'react'
+import { FlexProps } from 'theme-ui'
+import { Flex, Text } from '@theme-ui/components'
+import PropTypes, { InferProps } from 'prop-types'
 import Icon from './Icon'
 
 const iconTextProps = {

@@ -1,11 +1,11 @@
 /** @jsx jsx */
-import {jsx} from 'theme-ui'
-import {Box, Label, Text} from '@theme-ui/components'
+import { jsx } from 'theme-ui'
+import { Box, Label, Text } from '@theme-ui/components'
 import PropTypes from 'prop-types'
 import BasicInput from './BasicInput'
-import {FunctionComponent} from 'react'
+import { FunctionComponent } from 'react'
 import IconButton from './IconButton'
-import {mdiClose} from '@mdi/js'
+import { mdiClose } from '@mdi/js'
 
 const propTypes = {
   fullwidth: PropTypes.bool,

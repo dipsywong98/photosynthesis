@@ -1,119 +1,131 @@
-import {v4 as uuidv4} from 'uuid'
+import { v4 as uuidv4 } from 'uuid'
+import { equals } from 'ramda'
 
 const TIMEOUT_DURATION = 5000
 
-export class Observable {
-  private _onEventListeners: { [event: string]: { [uuid: string]: Function } } = {}
-  private _onceEventListeners: { [event: string]: { [uuid: string]: Function } } = {}
+interface PayloadEssential {
+  toString: () => string
+}
 
-  constructor() {
-    this._onEventListeners = {}
-    this._onceEventListeners = {}
-  }
+// eslint-disable-next-line @typescript-eslint/ban-types
+type Payload = Exclude<PayloadEssential, Function>
 
-  public on(event: number | string, listener: Function) {
-    if (!this._onEventListeners) {
-      this._onEventListeners = {}
-    }
-    if (!(event in this._onEventListeners)) {
-      this._onEventListeners[event] = {}
+type Listener<P extends Payload> = (payload: P, preventClear?: () => void) => void
+type Matcher<P extends Payload> = (payload: P) => boolean
+
+function isMatcher<P extends Payload> (match: P | Matcher<P>): match is Matcher<P> {
+  return typeof match === 'function'
+}
+
+/**
+ * @template E `typeof MyEnum` or a general `Record` with event names as keys paired with unique values
+ * @template P type of payload
+ */
+export class Observable<E extends Record<any, string | number> = never, P extends Payload = never> {
+  private _onEventListeners: { [k in E[keyof E]]?: Record<string, Listener<P>> } = {}
+  private _onceEventListeners: { [k in E[keyof E]]?: Record<string, Listener<P>> } = {}
+
+  public on (event: E[keyof E], listener: Listener<P>): string {
+    let events = this._onEventListeners[event]
+    if (events === undefined) {
+      events = this._onEventListeners[event] = {}
     }
     const uuid = uuidv4()
-    this._onEventListeners[event][uuid] = listener
+    events[uuid] = listener
     return uuid
   }
 
-  public onMatch(event: number | string, ...params: any[]): string {
-    const listener = params.pop()
-    return this.on(event, (...values: any[]) => {
-      if((typeof params[0] === 'function' && params[0](...values))){
-        listener(...values)
-      } else if (
-        !((params.length !== 0) && (
-          (params.length !== values.length)
-          || (!params.reduce((prev, curr, k) => prev && curr === values[k], true))
-        ))
-      ) {
-        listener(...values)
+  /**
+   * Given event, if the value going to feed to listener is equal to the params, call the listener
+   * @param event A value of E
+   * @param listener
+   * @param match
+   */
+  public onMatch (event: E[keyof E], listener: Listener<P>, match: P | Matcher<P>): string {
+    return this.on(event, (value: P) => {
+      if (isMatcher(match)) {
+        if (match(value)) {
+          listener(value)
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      } else if (equals(match, value) as unknown as boolean) {
+        listener(value)
       }
     })
   }
 
-  public once(event: number | string, listener: Function) {
-    if (!this._onceEventListeners) {
-      this._onceEventListeners = {}
-    }
-    if (!(event in this._onceEventListeners)) {
-      this._onceEventListeners[event] = {}
+  public once (event: E[keyof E], listener: Listener<P>): string {
+    let events = this._onceEventListeners[event]
+    if (events === undefined) {
+      events = this._onceEventListeners[event] = {}
     }
     const uuid = uuidv4()
-    this._onceEventListeners[event][uuid] = listener
+    events[uuid] = listener
     return uuid
   }
 
   /**
    *
    * @param event
-   * @param params values to match, if match call the callback and unsubscribe, or pass a function, return true to call the callback and unsubscribe
-   *  last param is the callback
+   * @param listener
+   * @param match
    */
-  public onceMatch(event: number | string, ...params: any[]): string {
-    const listener = params.pop()
-    return this.once(event, (...values: any[]) => {
-      const preventClear = values.pop()
-      if((typeof params[0] === 'function' && params[0](...values))){
-        listener(...values, preventClear)
-      } else if (
-        (params.length !== 0) && (
-          (params.length !== values.length)
-          || (!params.reduce((prev, curr, k) => prev && curr === values[k], true))
-        )
-      ) {
-        preventClear()
+  public onceMatch (event: E[keyof E], listener: Listener<P>, match: P | Matcher<P>): string {
+    return this.once(event, (value: P, preventClear?: () => void) => {
+      if (isMatcher(match)) {
+        if (match(value)) {
+          listener(value, preventClear)
+        } else {
+          preventClear?.()
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      } else if (equals(match, value) as unknown as boolean) {
+        listener(value, preventClear)
       } else {
-        listener(...values, preventClear)
+        preventClear?.()
       }
     })
   }
 
-  public until(event: number | string, timeout = TIMEOUT_DURATION): Promise<any[]> {
-    return new Promise((resolve, reject) => {
+  public async until (event: E[keyof E], timeout = TIMEOUT_DURATION): Promise<P> {
+    return await new Promise((resolve, reject) => {
       const cb = window.setTimeout(() => {
-        reject(event + ' timeout')
+        reject(new Error(event.toString() + ' timeout'))
       }, timeout)
-      this.once(event, (...params: any[]) => {
+      this.once(event, (value) => {
         window.clearTimeout(cb)
-        resolve(...params)
+        resolve(value)
       })
     })
   }
 
-  public untilMatch(event: number | string, value: any, timeout = TIMEOUT_DURATION): Promise<any> {
-    return new Promise((resolve, reject) => {
+  public async untilMatch (event: E[keyof E], value: P | Matcher<P>, timeout = TIMEOUT_DURATION): Promise<P> {
+    return await new Promise((resolve, reject) => {
       const cb = window.setTimeout(() => {
-        reject(`${event} ${value.toString()} timeout`)
+        reject(new Error(`${event} ${value.toString()} timeout`))
       }, timeout)
-      this.onceMatch(event, value, (...params: any[]) => {
+      this.onceMatch(event, (value) => {
         window.clearTimeout(cb)
-        resolve(...params)
-      })
+        resolve(value)
+      }, value)
     })
   }
 
-  public off(event: number | string, uuid: string) {
+  public off (event: E[keyof E], uuid: string): void {
     delete this._onEventListeners?.[event]?.[uuid]
     delete this._onceEventListeners?.[event]?.[uuid]
   }
 
-  public emit(...params: any[]) {
-    const event: number | string = params.shift()
-    Object.values(this._onEventListeners?.[event] || {})?.forEach((listener) => {
-      listener(...params)
+  public emit (event: E[keyof E], value: P): void {
+    Object.values(this._onEventListeners?.[event] ?? {})?.forEach((listener) => {
+      listener(value)
     })
     const clearUuid: string[] = []
-    Object.entries(this._onceEventListeners?.[event] || {})?.forEach(([uuid, listener]) => {
+    Object.entries(this._onceEventListeners?.[event] ?? {})?.forEach(([uuid, listener]) => {
       let preventClear = false
-      listener(...params, () => preventClear = true)
+      listener(value, () => {
+        preventClear = true
+      })
       if (!preventClear) {
         clearUuid.push(uuid)
       }

@@ -1,7 +1,7 @@
-import {Connection} from './Connection'
-import {ConnectionManager} from './ConnectionManager'
-import {FakeConn} from './fake/FakeConn'
-import {ConnEvent} from './ConnectionTypes'
+import { Connection } from './Connection'
+import { ConnectionManager } from './ConnectionManager'
+import { FakeConn } from './fake/FakeConn'
+import { ConnEvent } from './ConnectionTypes'
 
 describe('Connection', () => {
   describe('send', () => {
@@ -105,10 +105,8 @@ describe('Connection', () => {
       expect(cb).toHaveBeenCalledWith({
         ack: expect.any(Function),
         conn: connection,
-        data: {
-          _t: 'pkgType',
-          data: '123'
-        }
+        data: '123',
+        type: 'pkgType'
       })
     })
   })

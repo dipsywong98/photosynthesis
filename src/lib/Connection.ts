@@ -1,27 +1,27 @@
-import {DataConnection} from "peerjs"
-import {v4} from 'uuid'
-import {ConnectionListenerPayload, ConnEvent} from './ConnectionTypes'
-import {ConnectionManager} from './ConnectionManager'
-import {Observable} from './Observable'
-import {PkgType} from './PkgType'
+import { DataConnection } from 'peerjs'
+import { v4 } from 'uuid'
+import { ConnectionListenerPayload, ConnEvent, Package, PayloadData } from './ConnectionTypes'
+import { ConnectionManager } from './ConnectionManager'
+import { Observable } from './Observable'
+import { PkgType } from './PkgType'
 
-export class Connection extends Observable {
+export class Connection extends Observable<typeof ConnEvent, ConnectionListenerPayload> {
   protected conn?: DataConnection // undefined if it is connecting to itself
   protected manager: ConnectionManager
 
-  protected log(...params: any[]) {
+  protected log (...params: unknown[]): void {
     this.manager.log(...params)
   }
 
-  public get id() {
-    if (this.conn) {
+  public get id (): string {
+    if (this.conn !== undefined) {
       return this.conn.peer
     } else {
       return this.manager.id
     }
   }
 
-  constructor(conn: DataConnection | 'self', connectionManager: ConnectionManager) {
+  constructor (conn: DataConnection | 'self', connectionManager: ConnectionManager) {
     super()
     if (conn !== 'self') {
       this.conn = conn
@@ -30,72 +30,75 @@ export class Connection extends Observable {
     this.manager = connectionManager
   }
 
-  public send(data: any): Promise<any> {
-    let pid = v4().split('-')[0]
-    const promise = this.manager.untilMatch(ConnEvent.CONN_ACK, ({pid: p}: ConnectionListenerPayload) => p === pid)
-      .then(({data, ...rest}: ConnectionListenerPayload) => ({data: data?.data, ...rest, type: data?._t})).catch((e) => console.log('ack error '+pid))
-    if (this.conn) {
+  public async send (data: Package): Promise<ConnectionListenerPayload> {
+    const pid = v4().split('-')[0]
+    const promise = this.manager.untilMatch(
+      ConnEvent.CONN_ACK,
+      ({ pid: p }: ConnectionListenerPayload) => p === pid)
+    if (this.conn !== undefined) {
       this.conn.send([pid, data])
     } else {
-      this.dataHandler()( [pid, data])
+      this.dataHandler()([pid, data])
     }
-    return promise
+    return await promise
   }
 
-  public sendPkg(type: string | number, data: any): Promise<ConnectionListenerPayload> {
-    return this.send({
+  public async sendPkg (type: PkgType, data: unknown): Promise<ConnectionListenerPayload> {
+    return await this.send({
       data,
       _t: type
     })
   }
 
-  public close(): void {
+  public close (): void {
     this.conn?.close()
     this.emit(ConnEvent.CONN_CLOSE, {})
   }
 
-  private dataHandler = (conn?: DataConnection) => ([pid, data]: any) => {
+  private readonly dataHandler = (conn?: DataConnection) => ([pid, data]: PayloadData) => {
     console.log(data)
     if (data !== undefined && data._t !== PkgType.ACK) {
-      let response = undefined
-      const ack = (v: any) => response = v
-      this.emit(ConnEvent.CONN_DATA, {conn: this, data, ack})
-      if (typeof data === 'object' && data._t !== undefined) {
-        this.emit(ConnEvent.CONN_PKG, {conn: this, data, ack})
+      let response: unknown
+      const ack = (v: unknown): void => {
+        response = v
       }
-      if(conn) {
+      this.emit(ConnEvent.CONN_DATA, { conn: this, data, ack })
+      if (typeof data === 'object' && data._t !== undefined) {
+        this.emit(ConnEvent.CONN_PKG, { conn: this, data: data.data, type: data._t, ack })
+      }
+      if (conn !== undefined) {
         if (response === undefined) {
           conn.send([pid])
         } else {
-          conn.send([pid, {_t: PkgType.ACK, data: response}])
+          conn.send([pid, { _t: PkgType.ACK, data: response }])
         }
       } else {
-        if(response === undefined) {
-          this.dataHandler()([pid])
-        }else{
-          this.dataHandler()([pid, {_t: PkgType.ACK, data: response}])
+        if (response === undefined) {
+          this.dataHandler()([pid, { _t: PkgType.ACK, data: undefined }])
+        } else {
+          this.dataHandler()([pid, { _t: PkgType.ACK, data: response }])
         }
       }
     } else {
-      this.emit(ConnEvent.CONN_ACK, {conn: this, data, pid})
+      this.emit(ConnEvent.CONN_ACK, { conn: this, data, pid })
     }
   }
 
-  private enrichConn(conn: DataConnection): DataConnection {
+  private enrichConn (conn: DataConnection): DataConnection {
     conn.on('open', () => {
-      this.emit(ConnEvent.CONN_OPEN, {conn: this})
+      this.emit(ConnEvent.CONN_OPEN, { conn: this })
     })
     conn.on('data', this.dataHandler(conn))
-    conn.on('error', (error) => {
-      this.emit(ConnEvent.CONN_ERROR, {conn: this, error})
+    conn.on('error', (error: Error) => {
+      this.emit(ConnEvent.CONN_ERROR, { conn: this, error })
     })
     conn.on('close', () => {
-      this.emit(ConnEvent.CONN_CLOSE, {conn: this})
+      this.emit(ConnEvent.CONN_CLOSE, { conn: this })
     })
     return conn
   }
 
-  public emit(event: ConnEvent, payload: ConnectionListenerPayload): void {
+  public emit (event: ConnEvent, payload: ConnectionListenerPayload): void {
     super.emit(event, payload)
     this.manager.emit(event, payload)
   }

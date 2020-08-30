@@ -1,37 +1,41 @@
-import Peer, {DataConnection} from "peerjs"
-import {Observable} from './Observable'
-import {ConnectionListener, ConnectionListenerPayload, ConnEvent} from './ConnectionTypes'
-import {Connection} from './Connection'
-import {PkgType} from './PkgType'
+import Peer, { DataConnection } from 'peerjs'
+import { Observable } from './Observable'
+import { ConnectionListener, ConnectionListenerPayload, ConnEvent, Package } from './ConnectionTypes'
+import { Connection } from './Connection'
+import { PkgType } from './PkgType'
+import { ConnectionTimeoutError } from './errors/ConnectionTimeoutError'
+import { PeerFactory } from './PeerFactory'
 
 type Matcher = (payload: ConnectionListenerPayload) => boolean
 
-export class ConnectionManager extends Observable {
+export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionListenerPayload> {
   public id: string
   protected peer: Peer
   protected connections: Connection[] = []
   protected closed = false
-  public isClosed(){
+
+  public isClosed (): boolean {
     return this.closed
   }
-  public log = (...params: any[]) => {
+
+  public log = (...params: unknown[]): void => {
     console.log(this.id, ...params)
   }
 
-  public static prefixId(id = ''): string {
+  public static prefixId (id = ''): string {
     return 'creamy9tale000000' + id
   }
 
-  public static withPrefix(id = ''): ConnectionManager {
+  public static withPrefix (id = ''): ConnectionManager {
     return new ConnectionManager(ConnectionManager.prefixId(id))
   }
 
-  public static startPrefix(id = ''): Promise<ConnectionManager> {
-    return ConnectionManager.startAs(ConnectionManager.prefixId(id))
+  public static async startPrefix (id = ''): Promise<ConnectionManager> {
+    return await ConnectionManager.startAs(ConnectionManager.prefixId(id))
   }
 
-  public static startAs(id?: string): Promise<ConnectionManager> {
-    return new Promise<ConnectionManager>(((resolve, reject) => {
+  public static async startAs (id?: string): Promise<ConnectionManager> {
+    return await new Promise<ConnectionManager>((resolve, reject) => {
       const manager = new ConnectionManager(id)
       manager.once(ConnEvent.PEER_OPEN, () => {
         resolve(manager)
@@ -39,30 +43,27 @@ export class ConnectionManager extends Observable {
       manager.once(ConnEvent.PEER_ERROR, (payload) => {
         reject(payload.error)
       })
-    }))
+    })
   }
 
-  constructor(id?: string) {
+  constructor (id?: string) {
     super()
     this.peer = this.initPeer(id)
     this.id = this.peer.id
   }
 
-  public async connect(id: string, timeout: number = 5000): Promise<Connection> {
+  public async connect (id: string, timeout = 5000): Promise<Connection> {
     if (id === this.id) {
-      return Promise.resolve(this.enrichConn(new Connection('self', this)))
+      return this.enrichConn(new Connection('self', this))
     }
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
       const id1 = setTimeout(() => {
-        reject({
-            type: 'connection timeout',
-            message: 'connection timeout to peer ' + id
-        })
+        reject(new ConnectionTimeoutError(id))
       }, timeout)
-      const id2 = this.once(ConnEvent.PEER_ERROR, ({error}: ConnectionListenerPayload) => {
+      const id2 = this.once(ConnEvent.PEER_ERROR, ({ error }: ConnectionListenerPayload) => {
         reject(error)
       })
-      const openHandler = () => {
+      const openHandler = (): void => {
         const connection: Connection = this.enrichConn(new Connection(conn, this))
         this.off(ConnEvent.CONN_ERROR, id2)
         resolve(connection)
@@ -79,24 +80,24 @@ export class ConnectionManager extends Observable {
     })
   }
 
-  public async connectPrefix(id: string): Promise<Connection> {
-    return this.connect(ConnectionManager.prefixId(id))
+  public async connectPrefix (id: string): Promise<Connection> {
+    return await this.connect(ConnectionManager.prefixId(id))
   }
 
-  public broadcast(data: any): Promise<unknown> {
-    return Promise.all(this.connections.map(conn => {
-      return conn.send(data)
+  public async broadcast (data: Package): Promise<unknown> {
+    return await Promise.all(this.connections.map(async conn => {
+      return await conn.send(data)
     }))
   }
 
-  public broadcastPkg(pkgType: PkgType, data: any): Promise<unknown> {
-    return Promise.all(this.connections.map(conn => {
+  public async broadcastPkg (pkgType: PkgType, data: unknown): Promise<unknown> {
+    return await Promise.all(this.connections.map(async conn => {
       console.log(conn.id)
-      return conn.sendPkg(pkgType, data)
+      return await conn.sendPkg(pkgType, data)
     }))
   }
 
-  public conn(id: string): Connection {
+  public conn (id: string): Connection {
     const find = this.connections.find(c => c.id === id)
     if (find === undefined) {
       throw new Error(`connection lost with ${id}`)
@@ -104,23 +105,19 @@ export class ConnectionManager extends Observable {
     return find
   }
 
-  public send(id: string, data: any): Promise<ConnectionListenerPayload> {
-    return this.conn(id).send(data)
+  public async send (id: string, data: Package): Promise<ConnectionListenerPayload> {
+    return await this.conn(id).send(data)
   }
 
-  public sendPkg(id: string, pkgType: PkgType, data: any): Promise<ConnectionListenerPayload> {
-    return this.conn(id).sendPkg(pkgType, data)
+  public async sendPkg (id: string, pkgType: PkgType, data: unknown): Promise<ConnectionListenerPayload> {
+    return await this.conn(id).sendPkg(pkgType, data)
   }
 
-  private initPeer(id?: string): Peer {
-    const peer = new Peer(id, {
-      host: 'localhost',
-      port: 9000,
-      path: '/peer'
-    })
+  private initPeer (id?: string): Peer {
+    const peer = PeerFactory.make(id)
     peer.on('open', this.onPeerOpenHandler(peer))
-    peer.on('error', (error) => {
-      this.emit(ConnEvent.PEER_ERROR, {error})
+    peer.on('error', (error: Error) => {
+      this.emit(ConnEvent.PEER_ERROR, { error })
     })
     peer.on('close', () => {
       this.emit(ConnEvent.PEER_CLOSE, {})
@@ -132,79 +129,64 @@ export class ConnectionManager extends Observable {
     return peer
   }
 
-  private onPeerOpenHandler = (peer: Peer) => (id: string): void => {
+  private readonly onPeerOpenHandler = (peer: Peer) => (id: string): void => {
     this.id = id
     this.emit(ConnEvent.PEER_OPEN, {})
     peer.on('connection', this.onPeerConnectionHandler)
   }
 
-  private onPeerConnectionHandler = (conn: DataConnection) => {
-    this.log('connect',conn.peer)
+  private readonly onPeerConnectionHandler = (conn: DataConnection): void => {
+    this.log('connect', conn.peer)
     const connection = this.enrichConn(new Connection(conn, this))
-    this.emit(ConnEvent.PEER_CONNECT, {conn: connection})
+    this.emit(ConnEvent.PEER_CONNECT, { conn: connection })
   }
 
-  public onPkg(pkgType: PkgType, listener: ConnectionListener): string {
-    return super.onMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, ({data, ...rest}: ConnectionListenerPayload) => {
-      listener({...rest, data: data.data, type: pkgType})
-    })
+  public onPkg (pkgType: PkgType, listener: ConnectionListener): string {
+    return super.onMatch(ConnEvent.CONN_PKG, ({ data, ...rest }: ConnectionListenerPayload) => {
+      listener({ ...rest, data: data, type: pkgType })
+    }, ({ type }: ConnectionListenerPayload) => type === pkgType)
   }
 
-  public oncePkg(pkgType: PkgType, listener: ConnectionListener): string {
-    return super.onceMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, ({data, ...rest}: ConnectionListenerPayload) => {
-      listener({...rest, data: data.data, type: pkgType})
-    })
+  public oncePkg (pkgType: PkgType, listener: ConnectionListener): string {
+    return super.onceMatch(ConnEvent.CONN_PKG, ({ data, ...rest }: ConnectionListenerPayload) => {
+      listener({ ...rest, data: data, type: pkgType })
+    }, ({ type }: ConnectionListenerPayload) => type === pkgType)
   }
 
-  public untilPkg(pkgType: PkgType, timeout?: number): Promise<any> {
-    return super.untilMatch(ConnEvent.CONN_PKG, ({data}: ConnectionListenerPayload) => data._t === pkgType, timeout).then(({data, ...rest}: any) => {
-      return {...rest, data: data.data, type: pkgType}
-    })
+  public async untilPkg (pkgType: PkgType, timeout?: number): Promise<ConnectionListenerPayload> {
+    return await super.untilMatch(ConnEvent.CONN_PKG, ({ type }: ConnectionListenerPayload) => type === pkgType, timeout)
+      .then(({ data, ...rest }: ConnectionListenerPayload) => {
+        return { ...rest, data: data, type: pkgType }
+      })
   }
 
-  public on(event: ConnEvent, listener: ConnectionListener): string {
+  public on (event: ConnEvent, listener: ConnectionListener): string {
     return super.on(event, listener)
   }
 
-  public once(event: ConnEvent, listener: ConnectionListener): string {
+  public once (event: ConnEvent, listener: ConnectionListener): string {
     return super.once(event, listener)
   }
 
-  public onceMatch(event: ConnEvent, value: (unknown | Matcher), listener: ConnectionListener) {
-    return super.onceMatch(event, value, listener)
-  }
-
-  public until(event: ConnEvent, timeout?: number): Promise<any[]> {
-    return super.until(event, timeout).then((result: any[]) => result[0])
-  }
-
-  public untilMatch(event: ConnEvent, value: (unknown | Matcher), timeout?: number) {
-    return super.untilMatch(event, value, timeout)
-  }
-
-  public off(event: ConnEvent, uuid: string): void {
-    super.off(event, uuid)
-  }
-
-  public emit(event: ConnEvent, payload: ConnectionListenerPayload): void {
+  public emit (event: ConnEvent, payload: ConnectionListenerPayload): void {
     // this.log('emit', event, payload)
     super.emit(event, payload)
   }
 
-  private enrichConn(connection: Connection): Connection {
+  private enrichConn (connection: Connection): Connection {
     this.connections.push(connection)
     return connection
   }
 
-  public disconnect(data: string) {
+  public disconnect (data: string): void {
     this.conn(data).close()
   }
 
-  public disconnectAll() {
-    return Promise.all(this.connections.map(conn => conn.close()))
+  public disconnectAll (): void {
+    this.connections.map(conn => conn.close())
   }
 
-  public close() {
+  public close (): void {
     this.closed = true
     this.peer.destroy()
   }

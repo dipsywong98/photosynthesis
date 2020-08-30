@@ -1,7 +1,7 @@
-import React, {FunctionComponent, useEffect, useRef, useState} from 'react'
-import PropTypes, {InferProps} from 'prop-types'
-import {Box, BoxProps} from '@theme-ui/components'
-import {SLOW, transition} from '../../theme/transitions'
+import React, { FunctionComponent, useEffect, useRef, useState } from 'react'
+import PropTypes, { InferProps } from 'prop-types'
+import { Box, BoxProps } from '@theme-ui/components'
+import { SLOW, transition } from '../../theme/transitions'
 
 const OPEN = 0b001
 const DURING = 0b010

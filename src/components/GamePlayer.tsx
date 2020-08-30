@@ -1,17 +1,17 @@
-import React, {FunctionComponent, useEffect, useState} from 'react'
+import React, { FunctionComponent, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import {useGame} from '../Game/GameContext'
-import {GameEvent} from '../Game/Game'
-import {Box, Divider, Flex} from '@theme-ui/components'
-import {useAlert} from './common/AlertContext'
+import { useGame } from '../Game/GameContext'
+import { GameEvent } from '../Game/Game'
+import { Box, Divider, Flex } from '@theme-ui/components'
+import { useAlert } from './common/AlertContext'
 import Button from './common/Button'
-import {AppState} from './App'
+import { AppState } from './App'
 
 const propTypes = {
   setState: PropTypes.func.isRequired
 }
 
-export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({setState}) => {
+export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({ setState }) => {
   const [game] = useGame()
   const gameState = game?.state
   const [gameOver, setGameOver] = useState(false)
@@ -35,8 +35,13 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
       {gameState.board.map((a: string[], x: number) => (
         <Flex>
           {
-            a.map((b: string, y) => <Box sx={{width: '40px', height: '40px', border: '1px solid black'}}
-                                         onClick={() => game?.send(GameEvent.CLICK, [x, y])}>{b}</Box>)
+            a.map((b: string, y) => (
+              <Box
+                sx={{ width: '40px', height: '40px', border: '1px solid black' }}
+                onClick={() => game?.send(GameEvent.CLICK, [x, y])}>
+                {b}
+              </Box>
+            ))
           }
         </Flex>
       ))}

@@ -1,15 +1,19 @@
-import React, {createContext, FunctionComponent, useContext, useEffect, useState} from 'react'
-import {Game, GameEvent} from './Game'
+import React, { createContext, FunctionComponent, useContext, useEffect, useState } from 'react'
+import { Game, GameEvent, GameState } from './Game'
+import PropTypes from 'prop-types'
 
-export const GameContext = createContext<[Game|null, any]>([null, null])
-export const useGame = () => useContext(GameContext)
-export const useGameState = () => useContext(GameContext)?.[1]
+export const GameContext = createContext<[Game | undefined, GameState | undefined]>([undefined, undefined])
+export const useGame = (): [Game | undefined, GameState | undefined] => useContext(GameContext)
 
-export const GameContextProvider: FunctionComponent<{value: Game | null}> = ({value: game, ...props}) => {
-  const [gameState, setGameState] = useState(null)
+export const GameContextProvider: FunctionComponent<{ value: (Game | undefined) }> = ({ value: game, ...props }) => {
+  const [gameState, setGameState] = useState<GameState|undefined>(undefined)
   useEffect(() => {
-    setGameState(null)
-    game?.on(GameEvent.UPDATE_GAME_STATE, setGameState)
+    setGameState(undefined)
+    game?.on(GameEvent.UPDATE_GAME_STATE, ({ data }) => setGameState(data as GameState))
   }, [game])
-  return <GameContext.Provider value={[game, {...game?.state}]} {...props} />
+  return <GameContext.Provider value={[game, gameState]} {...props} />
+}
+
+GameContextProvider.propTypes = {
+  value: PropTypes.any
 }
