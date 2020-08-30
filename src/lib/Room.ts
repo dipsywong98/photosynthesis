@@ -8,7 +8,7 @@ import { Game, GameEvent } from '../Game/Game'
 
 const CH = 'ABCDEFGHJKLMNOPQRSTUVWXYZ'
 
-const generateRoomCode = () => {
+const generateRoomCode = (): string => {
   return [0, 0, 0, 0].map(() => CH[Math.floor(Math.random() * CH.length)]).join('')
 }
 
@@ -22,7 +22,7 @@ export interface RoomEventPayload {
   data: unknown
 }
 
-type PlayersDict = { [id: string]: string }
+interface PlayersDict { [id: string]: string }
 
 type JoinEventAckPayload = [PlayersDict, string]
 
