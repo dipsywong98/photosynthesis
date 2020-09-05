@@ -4373,6 +4373,16 @@ ecc-jsbn@~0.1.1:
     jsbn "~0.1.0"
     safer-buffer "^2.1.0"
 
+ecsy-three@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/ecsy-three/-/ecsy-three-0.1.2.tgz#db6965f7722868e7f93bd8dc585377aac42514a9"
+  integrity sha512-fz8r1K6sIAqqwEvQdDh4blS6Uv3IcsbF7pz9+9LPwaMFQuVlkkJ9ZK/pQjdd00W2ZdnoCKzwPohci8krSEh1Cg==
+
+ecsy@^0.4.1:
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/ecsy/-/ecsy-0.4.1.tgz#3fc2fd53027e98112b045aacea89931d506e1634"
+  integrity sha512-KxRumB2cgj5wq7hEOuSrWSaILcfJBWgFbRseTzfWgbhRP+NDDNLoFBgl9V8bUMviYEjLbSuAUE3sZAV91WPCVA==
+
 ee-first@1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
@@ -10543,6 +10553,11 @@ theme-ui@^0.3.1:
     "@theme-ui/css" "^0.3.1"
     "@theme-ui/mdx" "^0.3.0"
     "@theme-ui/theme-provider" "^0.3.1"
+
+three@^0.120.1:
+  version "0.120.1"
+  resolved "https://registry.yarnpkg.com/three/-/three-0.120.1.tgz#dbd8894f8ab87c109f1602933e7c740c98137377"
+  integrity sha512-ktaCRFUR7JUZcKec+cBRz+oBex5pOVaJhrtxvFF2T7on53o9UkEux+/Nh1g/4zeb4t/pbxIFcADbn/ACu3LC1g==
 
 throat@^4.0.0:
   version "4.1.0"
