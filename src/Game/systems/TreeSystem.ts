@@ -18,7 +18,7 @@ export default class TreeSystem extends System {
     (this.queries.trees.results ?? []).forEach(entity => {
       const treeComp = entity.getMutableComponent(TreeComponent)
       if (treeComp !== undefined) {
-        if (treeComp.previousTreeType !== treeComp.treeType) {
+        if (treeComp.previousTreeType !== treeComp.color) {
           console.log('Tree type has been changed')
           TreeSystem.setupTreeTop(treeComp).catch(console.error)
         }
@@ -29,9 +29,9 @@ export default class TreeSystem extends System {
   private static async setupTreeTop (treeComp: TreeComponent): Promise<void> {
     const topObj = treeComp.topObj
     topObj.children.splice(0)
-    topObj.add(await getObject(TREE_MODELS[treeComp.treeType]))
+    topObj.add(await getObject(TREE_MODELS[treeComp.color]))
     topObj.position.y = 10
-    treeComp.previousTreeType = treeComp.treeType
+    treeComp.previousTreeType = treeComp.color
   }
 }
 

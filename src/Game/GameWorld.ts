@@ -5,6 +5,7 @@ import { WebGLRenderer } from 'three'
 export default class GameWorld {
   world: ECSYThreeWorld
   sceneEntity: Entity
+  messages: Record<string, unknown[]> = {}
 
   constructor (world: ECSYThreeWorld, sceneEntity: Entity) {
     this.world = world
@@ -16,5 +17,20 @@ export default class GameWorld {
     initialize(this.world, {
       renderer
     })
+  }
+
+  /**
+   * Send and receive messages between main game logic and ECS
+   * @param target Recipient
+   * @param message Message to recipient
+   */
+  public send (target: string, message: unknown): void {
+    const queue = this.messages[target] ?? []
+
+    if (this.messages[target] === undefined) {
+      this.messages[target] = queue
+    }
+
+    queue.push(message)
   }
 }
