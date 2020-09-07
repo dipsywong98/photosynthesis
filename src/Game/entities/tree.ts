@@ -27,6 +27,6 @@ export const createTree = async (gameWorld: GameWorld, { color, growthStage = 0 
       growthStage,
       topObj,
       trunkObj,
-      shade
+      shadeObj: shade
     })
 }
