@@ -20,7 +20,12 @@ export enum Color {
   GREEN
 }
 
-export type GrowthStage = 0 | 1 | 2 | 3
+export enum GrowthStage {
+  SEED,
+  SHORT,
+  MID,
+  TALL
+}
 
 export type ModelName = typeof MODELS[keyof typeof MODELS]
 
@@ -39,6 +44,52 @@ export const SEED_MODELS: Record<Color, ModelName> = {
 } as const
 
 // Rendering specifics
-export const shadeHeights = [-18, -10.7, -5.63, 0]
+export const SHADE_Y: { [k in GrowthStage]: number } = [-18, -10.7, -5.63, 0]
 
 export const SUN_ANGLE = 52.6
+
+export const TREE_TOP_Y = 10
+
+export interface TreeGrowthProp {
+  tree: {
+    scale: [number, number, number]
+  }
+  seed: {
+    scale: [number, number, number]
+  }
+}
+
+export const TREE_GROWTH_PROPS: { [k in GrowthStage]: TreeGrowthProp } = {
+  [GrowthStage.SEED]: {
+    tree: {
+      scale: [0, 0, 0]
+    },
+    seed: {
+      scale: [1, 1, 1]
+    }
+  },
+  [GrowthStage.SHORT]: {
+    tree: {
+      scale: [0.333, 0.333, 0.333]
+    },
+    seed: {
+      scale: [0, 0, 0]
+    }
+  },
+  [GrowthStage.MID]: {
+    tree: {
+      scale: [0.666, 0.666, 0.666]
+    },
+    seed: {
+      scale: [0, 0, 0]
+    }
+  },
+  [GrowthStage.TALL]: {
+    tree: {
+      scale: [1, 1, 1]
+    },
+    seed: {
+      scale: [0, 0, 0]
+    }
+  }
+}

@@ -1,7 +1,7 @@
 import { getObject, objects, resetAssets, startLoad } from './assets'
 import GLTFLoaderUtils, { GLTF } from 'three/examples/jsm/loaders/GLTFLoader'
 import { Object3D } from 'three'
-import { createMockGltf, mockManager } from './__helpers__/threeHelprs'
+import { createMockGltf, mockManager } from './__helpers__/threeHelpers'
 
 jest.mock('three/examples/jsm/loaders/GLTFLoader', () => ({
   GLTFLoader: jest.fn()
