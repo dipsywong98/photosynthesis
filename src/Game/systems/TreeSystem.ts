@@ -1,24 +1,22 @@
-import { System } from 'ecsy'
 import TreeComponent from '../components/TreeComponent'
 import { getObject } from '../../3d/assets'
 import { Color, MODELS, SEED_MODELS, SHADE_Y, TREE_GROWTH_PROPS, TREE_MODELS, TREE_TOP_Y } from '../../3d/constants'
-import { Object3DComponent } from 'ecsy-three'
+import { ECSYThreeEntity, ECSYThreeSystem, Object3DComponent } from 'ecsy-three'
 import { Object3D } from 'three'
+import SunOrientationComponent from '../components/SunOrientationComponent'
 
-export default class TreeSystem extends System {
+export default class TreeSystem extends ECSYThreeSystem {
   execute (delta: number, time: number): void {
     this.queries.trees.added?.forEach((entity) => {
       // Added
       const treeComp = entity.getMutableComponent(TreeComponent)
-      const objComp = entity.getMutableComponent(Object3DComponent)
-      if (treeComp === undefined || objComp === undefined) {
+      const obj3d = entity.getObject3D()
+      if (treeComp === undefined || obj3d === undefined) {
         return
       }
       const { color } = treeComp
-      const obj3d = objComp.value ?? new Object3D()
-      if (objComp.value === undefined) {
-        objComp.value = obj3d
-      }
+      obj3d.name = 'tree-' + entity.id.toString() + '-' + Color[color]
+
       // setup components
       const objectsToFetch = [
         getObject(TREE_MODELS[color]),
@@ -35,14 +33,19 @@ export default class TreeSystem extends System {
         ] = objs.map(o => o.clone())
 
         const shadeObj = new Object3D()
-        shadeObj.name = 'shade'
+        shadeObj.name = 'shadeContainer'
         shadeObj.add(objs[3])
         shadeObj.position.y = SHADE_Y[treeComp.growthStage]
+        const shadeEntity = this.world
+          .createEntity()
+          .addComponent(Object3DComponent, { value: shadeObj })
+          .addComponent(SunOrientationComponent)
         treeComp.shadeObj = shadeObj
+        treeComp.shadeEntity = shadeEntity
 
         const treeObj = new Object3D()
         treeComp.treeObj = treeObj
-        treeObj.name = 'tree-' + Color[color] + '-' + entity.id.toString()
+        treeObj.name = 'tree'
         topObj.position.y = TREE_TOP_Y
         treeComp.topObj = topObj
         treeComp.trunkObj = trunkObj
@@ -50,34 +53,18 @@ export default class TreeSystem extends System {
 
         treeComp.seedObj = seedObj
 
-        obj3d.add(treeObj, seedObj, shadeObj)
+        const plantContainerObj = new Object3D()
+        plantContainerObj.name = 'plantContainer'
+        plantContainerObj.rotation.y = Math.random() * Math.PI * 2
+        plantContainerObj.add(treeObj, seedObj)
+
+        obj3d.add(plantContainerObj, shadeObj)
+
+        TreeSystem.updateGrowthStage(entity)
       }).catch(console.error)
     })
 
-    this.queries.trees.changed?.forEach((entity) => {
-      // Changed
-      const treeComp = entity.getMutableComponent(TreeComponent)
-      if (treeComp === undefined) {
-        return
-      }
-
-      const {
-        treeObj,
-        seedObj,
-        shadeObj
-      } = treeComp
-
-      // Flexibility for animations
-      if (shadeObj !== null) {
-        shadeObj.position.y = SHADE_Y[treeComp.growthStage]
-      }
-      if (treeObj !== null) {
-        treeObj.scale.set(...TREE_GROWTH_PROPS[treeComp.growthStage].tree.scale)
-      }
-      if (seedObj !== null) {
-        seedObj.scale.set(...TREE_GROWTH_PROPS[treeComp.growthStage].seed.scale)
-      }
-    })
+    this.queries.trees.changed?.forEach(TreeSystem.updateGrowthStage.bind(this))
 
     this.queries.trees.results.forEach((entity) => {
       // Always
@@ -99,6 +86,40 @@ export default class TreeSystem extends System {
         seedObj.visible = false
       }
     })
+
+    this.queries.trees.removed?.forEach((entity) => {
+      // Removed
+      const treeComp = entity.getComponent(TreeComponent)
+      if (treeComp === undefined) {
+        return
+      }
+      treeComp.shadeEntity?.remove()
+    })
+  }
+
+  private static updateGrowthStage (entity: ECSYThreeEntity): void {
+    // Changed
+    const treeComp = entity.getMutableComponent(TreeComponent)
+    if (treeComp === undefined) {
+      return
+    }
+
+    const {
+      treeObj,
+      seedObj,
+      shadeObj
+    } = treeComp
+
+    // Flexibility for animations
+    if (shadeObj !== undefined) {
+      shadeObj.position.y = SHADE_Y[treeComp.growthStage]
+    }
+    if (treeObj !== undefined) {
+      treeObj.scale.set(...TREE_GROWTH_PROPS[treeComp.growthStage].tree.scale)
+    }
+    if (seedObj !== undefined) {
+      seedObj.scale.set(...TREE_GROWTH_PROPS[treeComp.growthStage].seed.scale)
+    }
   }
 }
 
@@ -117,6 +138,7 @@ TreeSystem.queries = {
     ],
     listen: {
       added: true,
+      removed: true,
       changed: [TreeComponent]
     }
   }

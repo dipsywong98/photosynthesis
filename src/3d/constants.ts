@@ -52,7 +52,7 @@ export const SKY_COLOR = 0xcaf1fc
 
 export const SHADE_Y: { [k in GrowthStage]: number } = [-18, -10.7, -5.63, 0]
 
-export const SUN_ANGLE = 52.6
+export const SUN_ANGLE = 52.725
 
 export const TREE_TOP_Y = 10
 
