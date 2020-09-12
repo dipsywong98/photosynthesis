@@ -1,32 +1,34 @@
 import Peer, { MediaConnection } from 'peerjs'
 
 export class FakeMediaConnection implements MediaConnection {
-  bufferSize: any
-  dataChannel: any
+  bufferSize: unknown
+  dataChannel: unknown
   label = 'my label'
-  metadata: any
+  metadata: unknown
   open = true
   peer = 'peer'
-  peerConnection: any
+  peerConnection!: RTCPeerConnection
   reliable = true
   serialization = 'binary'
   type = 'data'
 
-  parse (): any {
+  parse (): void {
+    console.log('parse')
   }
 
-  stringify (data: Record<any, any> | string | number | any[]): string {
-    return data.toString()
+  stringify (data: Record<string, unknown> | string | number | unknown[]): string {
+    return ''
   }
 
   close (): void {
     this.open = false
   }
 
-  off (event: string, fn: Function, once?: boolean): void {
+  off (event: string, fn: () => void, once?: boolean): void {
+    this.callbacks[event] = this.callbacks[event].filter(f => f !== fn)
   }
 
-  public callbacks: Record<string | 'data' | 'open' | 'close' | 'error', Function[]> = {}
+  public callbacks: Record<string | 'data' | 'open' | 'close' | 'error', Array<(d?: unknown) => void>> = {}
 
   // on (event: string, cb: () => void): void
   // on (event: 'data', cb: (data: any) => void): void
@@ -40,27 +42,28 @@ export class FakeMediaConnection implements MediaConnection {
   //   this.callbacks[event].push(cb)
   // }
 
-  public trigger (event: string | 'data' | 'open' | 'close' | 'error', data: any) {
+  public trigger (event: string | 'data' | 'open' | 'close' | 'error', data: unknown | undefined): void {
     this.callbacks[event]?.forEach(cb => cb(data))
   }
 
-  public sent: any[] = []
+  public sent: unknown[] = []
 
-  send (data: any): void {
+  send (data: unknown): void {
     this.sent.push(data)
   }
 
   answer (stream?: MediaStream, options?: Peer.AnswerOption): void {
+    console.log('answer')
   }
 
   on (event: string, cb: () => void): void
   on (event: 'stream', cb: (stream: MediaStream) => void): void
   on (event: 'close', cb: () => void): void
-  on (event: 'error', cb: (err: any) => void): void
-  on (event: string | 'stream' | 'close' | 'error', cb: (() => void) | ((stream: MediaStream) => void) | ((err: any) => void)): void {
+  on (event: 'error', cb: (err: unknown) => void): void
+  on (event: string | 'stream' | 'close' | 'error', cb: (() => void) | ((stream: MediaStream) => void) | ((err: unknown) => void)): void {
     if (!(event in this.callbacks)) {
       this.callbacks[event] = []
     }
-    this.callbacks[event].push(cb)
+    this.callbacks[event].push(cb as (d: unknown) => void)
   }
 }

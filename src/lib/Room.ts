@@ -225,7 +225,11 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   }
 
   public rename = async (name: string): Promise<ConnectionListenerPayload[]> => {
-    return await this.broadcast(PkgType.RENAME, [this.myId, name])
+    if (!Object.values(this.players).includes(name)) {
+      return await this.broadcast(PkgType.RENAME, [this.myId, name])
+    } else {
+      throw new Error(`Name '${name}' is taken`)
+    }
   }
 
   public leaveRoom = (): void => {

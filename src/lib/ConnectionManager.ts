@@ -9,7 +9,7 @@ import { PeerFactory } from './PeerFactory'
 export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionListenerPayload> {
   public id: string
   protected peer: Peer
-  protected connections: Connection[] = []
+  public connections: Connection[] = []
   protected closed = false
 
   public isClosed (): boolean {
@@ -51,6 +51,8 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   }
 
   public async connect (id: string, timeout = 5000): Promise<Connection> {
+    const existing = this.connections.find(({ id: _id }) => _id === id)
+    if (existing !== undefined) return Promise.resolve(existing)
     if (id === this.id) {
       return this.enrichConn(new Connection('self', this))
     }
@@ -88,7 +90,7 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
     }))
   }
 
-  public async broadcastPkg (pkgType: PkgType, data: unknown): Promise<unknown> {
+  public async broadcastPkg (pkgType: PkgType, data: unknown): Promise<ConnectionListenerPayload[]> {
     return await Promise.all(this.connections.map(async conn => {
       console.log(conn.id)
       return await conn.sendPkg(pkgType, data)
@@ -136,7 +138,9 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   private readonly onPeerConnectionHandler = (conn: DataConnection): void => {
     this.log('connect', conn.peer)
     const connection = this.enrichConn(new Connection(conn, this))
-    this.emit(ConnEvent.PEER_CONNECT, { conn: connection })
+    connection.once(ConnEvent.CONN_OPEN, () => {
+      this.emit(ConnEvent.PEER_CONNECT, { conn: connection })
+    })
   }
 
   public onPkg (pkgType: PkgType, listener: ConnectionListener): string {
@@ -167,7 +171,8 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   }
 
   public emit (event: ConnEvent, payload: ConnectionListenerPayload): void {
-    this.log('emit', event, payload)
+    const { conn, ...toLog } = payload
+    this.log('emit', event, { ...toLog, ...(conn !== undefined ? { conn: { id: conn?.id } } : {}) })
     super.emit(event, payload)
   }
 
