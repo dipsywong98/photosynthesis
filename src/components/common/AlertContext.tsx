@@ -38,6 +38,6 @@ export const withAlertQueue = (WrappedComponent: FunctionComponent): FunctionCom
   return AlertWrapper
 }
 
-export const useAlert = (): AlertFunction | null => useContext(AlertContext)
-export const AlertContext: Context<AlertFunction | null> = createContext<AlertFunction | null>(null)
+export const useAlert = (): AlertFunction => useContext(AlertContext)
+export const AlertContext: Context<AlertFunction> = createContext<AlertFunction>(window.alert)
 AlertContext.displayName = 'AlertContext'

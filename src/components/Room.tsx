@@ -9,6 +9,7 @@ import IconText from './common/IconText'
 import { mdiAccount, mdiCrown } from '@mdi/js'
 import { AppState } from './App'
 import { Game } from '../Game/Game'
+import { useAlert } from './common/AlertContext'
 
 const propTypes = {
   setState: PropTypes.func.isRequired
@@ -18,6 +19,7 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
   const room = useRoom()
   const [players, setPlayers] = useState<PlayersDict>({})
   const [host, setHost] = useState('')
+  const alert = useAlert()
   const name = players[room.myId] ?? ''
   const rename = room.rename
   useEffect(() => {
@@ -27,10 +29,21 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
       setState(AppState.GAME, game as Game)
     })
   }, [room, setState])
+  const startGame = (): void => {
+    room?.startGame().catch((e: Error) => {
+      alert(e.message)
+    })
+  }
   return (
     <Flex sx={{ flexDirection: 'column' }}>
       <Heading>{room.roomCode}</Heading>
-      <Input label='My Name' value={name} onChange={async ({ target }: InputEvent) => { await rename((target as HTMLInputElement)?.value ?? '') }}/>
+      <Input
+        label='My Name'
+        value={name}
+        onChange={async ({ target }: InputEvent) => {
+          await rename((target as HTMLInputElement)?.value ?? '')
+        }}
+      />
       <Divider my={3}/>
       <Flex sx={{ flexDirection: 'column' }}>
         {
@@ -43,12 +56,19 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
       </Flex>
       <Divider my={3}/>
       <Flex>
-        <Button sx={{ flex: 1 }} variant='warning' onClick={(): void => { setState(AppState.HOME) }}>Back</Button>
+        <Button
+          sx={{ flex: 1 }}
+          variant='warning'
+          onClick={(): void => {
+            setState(AppState.HOME)
+          }}>
+          Back
+        </Button>
         <Button
           sx={{ flex: 1, visibility: (host === room.myId ? null : 'hidden') }}
           ml={3}
           variant='primary'
-          onClick={host === room.myId ? room.startGame : undefined}>
+          onClick={host === room.myId ? startGame : undefined}>
           Start
         </Button>
       </Flex>

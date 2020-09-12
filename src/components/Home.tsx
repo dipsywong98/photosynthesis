@@ -47,8 +47,8 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
         setError('')
         setState(AppState.ROOM)
       })
-      .catch(e => {
-        setError(`Room '${roomCode}' does not exist`)
+      .catch((e: Error) => {
+        setError(e.message)
         console.error(e)
       })
       .finally(() => {
