@@ -36,7 +36,13 @@ export class Connection extends Observable<typeof ConnEvent, ConnectionListenerP
       ConnEvent.CONN_ACK,
       ({ pid: p }: ConnectionListenerPayload) => p === pid)
     if (this.conn !== undefined) {
-      this.conn.send([pid, data])
+      if (this.conn.open) {
+        this.conn.send([pid, data])
+      } else {
+        this.conn.on('open', () => {
+          this.conn?.send([pid, data])
+        })
+      }
     } else {
       this.dataHandler()([pid, data])
     }

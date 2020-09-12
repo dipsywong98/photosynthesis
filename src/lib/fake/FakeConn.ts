@@ -31,18 +31,20 @@ export class FakeConn implements DataConnection {
   }
 
   close (): void {
-    this.open = false
-    if (this.hostPeer !== undefined) {
-      this.hostPeer.connections = this.hostPeer?.connections.filter(conn => conn !== this)
-    }
-    if (this.otherEnd !== undefined) {
-      this.otherEnd.open = false
-      if (this.otherEnd.hostPeer !== undefined) {
-        this.otherEnd.hostPeer.connections = this.otherEnd.hostPeer?.connections.filter(conn => conn !== this.otherEnd)
+    if (this.open) {
+      this.open = false
+      if (this.hostPeer !== undefined) {
+        this.hostPeer.connections = this.hostPeer?.connections.filter(conn => conn !== this)
       }
-      this.otherEnd.trigger('close')
+      if (this.otherEnd !== undefined) {
+        this.otherEnd.open = false
+        if (this.otherEnd.hostPeer !== undefined) {
+          this.otherEnd.hostPeer.connections = this.otherEnd.hostPeer?.connections.filter(conn => conn !== this.otherEnd)
+        }
+        this.otherEnd.trigger('close')
+      }
+      this.trigger('close')
     }
-    this.trigger('close')
   }
 
   off (event: string, fn: () => void, once?: boolean): void {

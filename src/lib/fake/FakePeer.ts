@@ -14,7 +14,7 @@ export class FakePeer implements Peer {
   constructor (id?: string, options?: unknown) {
     this.id = id ?? uuidv4()
     if (this.id in FakePeer.allPeers) {
-      throw new Error()
+      throw new Error(`Peer '${this.id}' already exist`)
     }
     FakePeer.allPeers[this.id] = this
     window.setTimeout(() => {
@@ -47,10 +47,14 @@ export class FakePeer implements Peer {
 
   destroy (): void {
     this.destroyed = true
+    const { [this.id]: t, ...ap } = FakePeer.allPeers
+    FakePeer.allPeers = ap
   }
 
   disconnect (): void {
     this.disconnected = true
+    const { [this.id]: t, ...ap } = FakePeer.allPeers
+    FakePeer.allPeers = ap
   }
 
   getConnection (peerId: string, connectionId: string): Peer.MediaConnection | Peer.DataConnection | null {

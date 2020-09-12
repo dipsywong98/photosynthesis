@@ -13,7 +13,7 @@ export class FakeMediaConnection implements MediaConnection {
   type = 'data'
 
   parse (): void {
-    console.log('parse')
+    throw new Error('not implemented')
   }
 
   stringify (data: Record<string, unknown> | string | number | unknown[]): string {
@@ -53,7 +53,7 @@ export class FakeMediaConnection implements MediaConnection {
   }
 
   answer (stream?: MediaStream, options?: Peer.AnswerOption): void {
-    console.log('answer')
+    throw new Error('not implemented')
   }
 
   on (event: string, cb: () => void): void

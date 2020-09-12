@@ -17,7 +17,7 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   }
 
   public log = (...params: unknown[]): void => {
-    console.log(this.id, ...params)
+    // console.log(this.id, ...params)
   }
 
   public static prefixId (id = ''): string {
@@ -92,7 +92,6 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
 
   public async broadcastPkg (pkgType: PkgType, data: unknown): Promise<ConnectionListenerPayload[]> {
     return await Promise.all(this.connections.map(async conn => {
-      console.log(conn.id)
       return await conn.sendPkg(pkgType, data)
     }))
   }
@@ -187,6 +186,10 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
 
   public disconnectAll (): void {
     this.connections.map(conn => conn.close())
+  }
+
+  public destroy (): void {
+    this.peer.destroy()
   }
 
   public close (): void {

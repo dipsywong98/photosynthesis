@@ -153,7 +153,6 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
         throw new Error(`Room '${roomCode}' does not exist`)
       })
     const { data } = await this.sendToHost(PkgType.JOIN, myName)
-    console.log(data)
     if (!isJoinEventAckPayload(data)) {
       this.meToHostConnection.close()
       if (typeof data === 'string') {

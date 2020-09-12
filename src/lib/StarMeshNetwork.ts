@@ -12,6 +12,21 @@ export type StarMeshAction = Record<string, unknown>
 
 export type StarMeshReducer = <T>(prevState: T, action: StarMeshAction) => T
 
+interface MemberChangePayload {
+  members: string[]
+  host: string
+}
+
+const idMemberChangePayload = (data: unknown): data is MemberChangePayload => {
+  if (typeof data === 'object' && data !== null) {
+    if ('members' in data && 'host' in data) {
+      const d = data as { members: unknown, host: unknown }
+      return typeof data.host === 'string' && Array.isArray(d.members) && d.members.reduce((p: boolean, c) => p && typeof c === 'string', true)
+    }
+  }
+  return false
+}
+
 export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents, T> {
   hostConnectionManager?: ConnectionManager
   myConnectionManager: ConnectionManager
@@ -22,6 +37,7 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
   networkName?: string
 
   reducer?: StarMeshReducer
+  hostId?: string
 
   public get id (): string {
     return this.myConnectionManager.id
@@ -57,8 +73,7 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
 
   private readonly initMyConnectionManagerListeners = (): void => {
     this.myConnectionManager.onPkg(PkgType.MEMBER_CHANGE, ({ data }) => {
-      console.log(this.id, 'member change', data)
-      this.connectMembers(data)
+      this.handleMemberChange(data)
     })
     this.myConnectionManager.onPkg(PkgType.DISPATCH, this.dispatchHandler)
   }
@@ -75,36 +90,45 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
 
   private readonly host = async (networkName: string): Promise<void> => {
     const hostConnection = await ConnectionManager.startPrefix(networkName)
+    this.hostId = this.id
     this.hostConnectionManager = hostConnection
     this.hostConnectionManager.on(ConnEvent.CONN_OPEN, ({ conn }) => {
       if (conn !== undefined) {
-        console.log('broadcase member change', [...this.members, conn.id])
-        this.hostConnectionManager?.broadcastPkg(PkgType.MEMBER_CHANGE, [...this.members, conn.id])
+        this.hostConnectionManager?.broadcastPkg(PkgType.MEMBER_CHANGE, {
+          host: this.hostId,
+          members: [...this.members, conn.id]
+        })
           .catch(console.log)
       }
     })
+    this.hostConnectionManager.on(ConnEvent.CONN_CLOSE, ({ conn }) => {
+      this.hostConnectionManager?.broadcastPkg(PkgType.MEMBER_CHANGE, this.members.filter(id => id !== conn?.id))
+        .catch(e => console.log(e))
+    })
     // if there are existing members, probably the members were connected to a disconnected host
     // so update them to use the new host
-    if (Object.keys(this.members).length > 0) {
-      await Promise.all(Object.keys(this.members).map(async (id: string): Promise<Connection> => await hostConnection?.connect(id)))
+    if (this.members.length > 0) {
+      await Promise.all(this.members.map(async (id: string): Promise<Connection> => await hostConnection?.connect(id)))
     }
   }
 
   private readonly join = async (networkName: string): Promise<void> => {
     const refreshMembersPromise = this.myConnectionManager.untilPkg(PkgType.MEMBER_CHANGE)
     this.meToHostConnection = await this.myConnectionManager.connectPrefix(networkName)
-    this.meToHostConnection.on(ConnEvent.CONN_CLOSE, ({ conn }) => {
-      if (conn !== undefined) {
-        this.removeMember(conn.id)
+    this.meToHostConnection.on(ConnEvent.CONN_CLOSE, () => {
+      this.members = this.members.filter(n => n !== this.hostId)
+      if (this.members[0] === this.id) {
+        this.host(networkName).catch((e) => console.log(e))
       }
     })
     const { data } = await refreshMembersPromise
-    this.connectMembers(data)
+    this.handleMemberChange(data)
   }
 
-  private readonly connectMembers = (data: unknown): void => {
-    if (Array.isArray(data) && data.reduce((d: boolean, dd) => d && typeof dd === 'string', true)) {
-      const newList = data as string[]
+  private readonly handleMemberChange = (data: unknown): void => {
+    if (idMemberChangePayload(data)) {
+      this.hostId = data.host
+      const newList = data.members.filter(d => d !== this.hostConnectionManager?.id && d !== this.meToHostConnection?.id)
       // connect to new member
       newList.filter(n => !this.members.includes(n)).map(async n => {
         return await this.myConnectionManager.connect(n)
@@ -113,11 +137,9 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
       this.members.filter(n => !newList.includes(n)).forEach(n => {
         this.myConnectionManager.disconnect(n)
       })
-      console.log(this.id, 'set members', newList)
       this.members = [...newList]
     } else {
-      console.log(data)
-      throw new Error('wrong list')
+      // throw new Error('wrong list')
     }
   }
 
@@ -131,7 +153,6 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
 
   public dispatch = async (action: StarMeshAction): Promise<void> => {
     const responses = await this.myConnectionManager.broadcastPkg(PkgType.DISPATCH, action)
-    console.log(responses)
     responses.forEach(({ data }) => {
       if (data !== undefined && data !== true) {
         throw data
