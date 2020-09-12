@@ -2,14 +2,11 @@ import { ECSYThreeWorld, initialize, Object3DComponent } from 'ecsy-three'
 import { Entity } from 'ecsy'
 import {
   AmbientLight,
-  CircleBufferGeometry,
   DirectionalLight,
   Group,
-  Mesh,
-  MeshPhongMaterial,
   Object3D,
   PerspectiveCamera,
-  ShadowMaterial,
+  sRGBEncoding,
   VSMShadowMap,
   WebGLRenderer
 } from 'three'
@@ -20,8 +17,13 @@ import TreeComponent from './components/TreeComponent'
 import TweenBaseComponent from './components/TweenBaseComponent'
 import TweenObject3DComponent from './components/TweenObject3DComponent'
 import TweenMaterialComponent from './components/TweenMaterialComponent'
-import HexCoordsComponent from './components/HexCoordsComponent'
-import { AMBIENT_COLOR, SKY_COLOR, SUN_ANGLE, SUN_COLOR } from '../3d/constants'
+import AxialCoordsComponent from './components/AxialCoordsComponent'
+import { AMBIENT_COLOR, MODELS, SKY_COLOR, SUN_ANGLE, SUN_COLOR } from '../3d/constants'
+import { getObject } from '../3d/assets'
+import HexCube from '../3d/Coordinates/HexCube'
+import TileComponent from './components/TileComponent'
+import AxialCoordsSystem from './systems/AxialCoordsSystem'
+import TileSystem from './systems/TileSystem'
 
 export default class GameWorld {
   renderer: WebGLRenderer
@@ -59,14 +61,16 @@ export default class GameWorld {
     this.world.registerComponent(TweenBaseComponent)
     this.world.registerComponent(TweenObject3DComponent)
     this.world.registerComponent(TweenMaterialComponent)
-    this.world.registerComponent(HexCoordsComponent)
+    this.world.registerComponent(AxialCoordsComponent)
+    this.world.registerComponent(TileComponent)
 
     // Replace default renderer system
     // this.world.unregisterSystem(WebGLRendererSystem)
     // this.world.registerSystem(MyWebGLRendererSystem, { priority: 999 })
 
+    this.world.registerSystem(AxialCoordsSystem)
+    this.world.registerSystem(TileSystem)
     this.world.registerSystem(TreeSystem)
-
     this.world.registerSystem(TweenSystem)
   }
 
@@ -74,6 +78,7 @@ export default class GameWorld {
     this.renderer.shadowMap.enabled = true
     this.renderer.shadowMap.type = VSMShadowMap
     this.renderer.setClearColor(SKY_COLOR)
+    this.renderer.outputEncoding = sRGBEncoding
   }
 
   private initScene (): void {
@@ -112,26 +117,9 @@ export default class GameWorld {
     commonLights.name = 'commonLights'
     commonLights.add(ambientLight, sky)
 
-    const floorGeometry = new CircleBufferGeometry(500, 32)
-    const floorMesh = new Mesh(
-      floorGeometry,
-      new MeshPhongMaterial({
-        color: 0x9AC640,
-        specular: 0.5
-      })
-    )
-    floorMesh.receiveShadow = false
-    const floorMeshShadow = new Mesh(
-      floorGeometry,
-      new ShadowMaterial({
-        color: 0x194B21
-      })
-    )
-    floorMeshShadow.receiveShadow = true
     const floorObj = new Object3D()
+    getObject(MODELS.LANDSCAPE).then(obj => floorObj.add(obj.clone())).catch(console.error)
     floorObj.name = 'floor'
-    floorObj.add(floorMesh, floorMeshShadow)
-    floorObj.rotateX(-Math.PI / 2)
 
     this.world
       .createEntity()
@@ -144,6 +132,23 @@ export default class GameWorld {
     this.world
       .createEntity()
       .addObject3DComponent(sunContainer, this.sceneEntity)
+
+    this.generateGrid()
+  }
+
+  private generateGrid (): void {
+    getObject(MODELS.RING).then(ring => {
+      for (let i = 0; i < 4; i++) {
+        new HexCube(0, 0, 0).range(i).forEach(hexCube => {
+          console.log(hexCube)
+          this.world
+            .createEntity()
+            .addObject3DComponent(ring.clone(), this.sceneEntity)
+            .addComponent(TileComponent)
+            .addComponent(AxialCoordsComponent, { position: hexCube.toAxial() })
+        })
+      }
+    }).catch(console.error)
   }
 
   /**

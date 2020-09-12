@@ -1,5 +1,3 @@
-import { VSMShadowMap } from 'three'
-
 export const MODELS_LOCATION = '/models'
 
 export const MODELS = {
@@ -12,7 +10,9 @@ export const MODELS = {
   ACORN: 'acorn',
   PINE_CONE: 'pineCone',
   MAPLE_SEED: 'mapleSeed',
-  BASSWOOD_SEED: 'basswoodSeed'
+  BASSWOOD_SEED: 'basswoodSeed',
+  RING: 'ring',
+  LANDSCAPE: 'landscape'
 } as const
 
 export enum Color {
@@ -55,6 +55,8 @@ export const SHADE_Y: { [k in GrowthStage]: number } = [-18, -10.7, -5.63, 0]
 export const SUN_ANGLE = 52.6
 
 export const TREE_TOP_Y = 10
+
+export const TILE_SIZE = 5
 
 export interface TreeGrowthProp {
   tree: {

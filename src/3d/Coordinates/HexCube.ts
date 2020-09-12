@@ -30,12 +30,12 @@ export default class HexCube implements Coordinates<HexCube> {
     return new HexCube(0, 0, 0)
   }
 
-  public get asArray (): [number, number, number] {
+  public toArray (): [number, number, number] {
     return [this.x, this.y, this.z]
   }
 
-  public get asString (): string {
-    return this.asArray.join(',')
+  public toString (): string {
+    return this.toArray().join(',')
   }
 
   public toAxial (): Axial {

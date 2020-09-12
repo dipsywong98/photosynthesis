@@ -33,12 +33,12 @@ export default class Axial implements Coordinates<Axial> {
     return new Axial(0, 0)
   }
 
-  public get asArray (): [number, number] {
+  public toArray (): [number, number] {
     return [this.q, this.r]
   }
 
-  public get asString (): string {
-    return this.asArray.join(',')
+  public toString (): string {
+    return this.toArray().join(',')
   }
 
   public toHexCube (): HexCube {

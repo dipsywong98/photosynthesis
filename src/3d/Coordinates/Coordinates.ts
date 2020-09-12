@@ -1,7 +1,6 @@
 export default interface Coordinates<T> {
-  readonly asArray: number[]
-  readonly asString: string
-
+  toArray: () => number[]
+  toString: () => string
   add: (t: T) => T
   scale: (n: number) => T
 }

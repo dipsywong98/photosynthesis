@@ -109,7 +109,7 @@ describe('Assets test', () => {
 
     callbacks.forEach(cb => cb(createMockGltf()))
 
-    expect(promise).rejects.toEqual(new Error('Model not found')).catch(e => { throw e })
+    expect(promise).rejects.toEqual(new Error('Model not found: z')).catch(e => { throw e })
     expect(errorSpy).toHaveBeenCalledTimes(0)
   })
 })

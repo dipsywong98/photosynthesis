@@ -24,12 +24,12 @@ export default class Cartesian3D implements Coordinates<Cartesian3D> {
     return new Cartesian3D(0, 0, 0)
   }
 
-  public get asArray (): [number, number, number] {
+  public toArray (): [number, number, number] {
     return [this.x, this.y, this.z]
   }
 
-  public get asString (): string {
-    return this.asArray.join(',')
+  public toString (): string {
+    return this.toArray().join(',')
   }
 
   public add (coords: Cartesian3D): Cartesian3D {

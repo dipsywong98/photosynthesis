@@ -6,6 +6,7 @@ import * as serviceWorker from './serviceWorker'
 import { Global } from '@emotion/core'
 import theme from './theme'
 import { ThemeProvider } from 'theme-ui'
+import { startLoad } from './3d/assets'
 
 const MyGlobal: FunctionComponent = () => (
   <Global
@@ -29,6 +30,8 @@ ReactDOM.render(
   </React.StrictMode>,
   document.getElementById('root')
 )
+
+startLoad()
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
