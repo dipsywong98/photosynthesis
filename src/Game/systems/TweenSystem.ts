@@ -1,9 +1,8 @@
-import { System } from 'ecsy'
 import TweenBaseComponent from '../components/TweenBaseComponent'
-import { Object3DComponent } from 'ecsy-three'
+import { ECSYThreeSystem, Object3DComponent } from 'ecsy-three'
 import TweenObject3DComponent from '../components/TweenObject3DComponent'
 
-export default class TweenSystem extends System {
+export default class TweenSystem extends ECSYThreeSystem {
   execute (delta: number, time: number): void {
     (this.queries.object3DTweens?.results ?? []).forEach(entity => {
       const objComp = entity.getComponent(Object3DComponent)

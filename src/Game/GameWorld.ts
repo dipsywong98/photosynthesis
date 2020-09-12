@@ -1,5 +1,4 @@
-import { ECSYThreeWorld, initialize, Object3DComponent } from 'ecsy-three'
-import { Entity } from 'ecsy'
+import { ECSYThreeEntity, ECSYThreeWorld, initialize, Object3DComponent } from 'ecsy-three'
 import {
   AmbientLight,
   DirectionalLight,
@@ -18,29 +17,41 @@ import TweenBaseComponent from './components/TweenBaseComponent'
 import TweenObject3DComponent from './components/TweenObject3DComponent'
 import TweenMaterialComponent from './components/TweenMaterialComponent'
 import AxialCoordsComponent from './components/AxialCoordsComponent'
-import { AMBIENT_COLOR, MODELS, SKY_COLOR, SUN_ANGLE, SUN_COLOR } from '../3d/constants'
+import { AMBIENT_COLOR, Color, GrowthStage, MODELS, SKY_COLOR, SUN_ANGLE, SUN_COLOR } from '../3d/constants'
 import { getObject } from '../3d/assets'
 import HexCube from '../3d/Coordinates/HexCube'
 import TileComponent from './components/TileComponent'
 import AxialCoordsSystem from './systems/AxialCoordsSystem'
 import TileSystem from './systems/TileSystem'
+import SunOrientationComponent from './components/SunOrientationComponent'
+import SunOrientationSystem from './systems/SunOrientationSystem'
+import { createTree } from './entities/tree'
+import dat from 'dat.gui'
 
 export default class GameWorld {
+  gui: dat.GUI
+
   renderer: WebGLRenderer
   world: ECSYThreeWorld
-  sceneEntity?: Entity
+  sceneEntity?: ECSYThreeEntity
   camera?: PerspectiveCamera
   messages: Record<string, unknown[]> = {}
 
+  sunOrientationRad = 0
+
   constructor () {
+    this.gui = new dat.GUI()
     this.renderer = new WebGLRenderer()
     this.world = new ECSYThreeWorld()
     this.resetWorld()
   }
 
   public resetWorld (): void {
+    this.resetGUI()
     this.world.stop()
     disposeObj3D(this.sceneEntity?.getComponent(Object3DComponent)?.value)
+    this.sunOrientationRad = 0
+
     const {
       camera,
       sceneEntity
@@ -56,6 +67,15 @@ export default class GameWorld {
     this.world.play()
   }
 
+  private resetGUI (): void {
+    this.gui.destroy()
+    this.gui = new dat.GUI()
+
+    const sunControl = this.gui.add(this, 'sunOrientationRad', 0, 2 * Math.PI)
+    sunControl.name('Sun orientation')
+    sunControl.step(0.01)
+  }
+
   private initECS (): void {
     this.world.registerComponent(TreeComponent)
     this.world.registerComponent(TweenBaseComponent)
@@ -63,15 +83,13 @@ export default class GameWorld {
     this.world.registerComponent(TweenMaterialComponent)
     this.world.registerComponent(AxialCoordsComponent)
     this.world.registerComponent(TileComponent)
-
-    // Replace default renderer system
-    // this.world.unregisterSystem(WebGLRendererSystem)
-    // this.world.registerSystem(MyWebGLRendererSystem, { priority: 999 })
+    this.world.registerComponent(SunOrientationComponent)
 
     this.world.registerSystem(AxialCoordsSystem)
     this.world.registerSystem(TileSystem)
     this.world.registerSystem(TreeSystem)
     this.world.registerSystem(TweenSystem)
+    this.world.registerSystem(SunOrientationSystem, { gameWorld: this })
   }
 
   private initRenderer (): void {
@@ -82,36 +100,63 @@ export default class GameWorld {
   }
 
   private initScene (): void {
-    if (this.camera !== undefined) {
-      this.camera.position.set(25, 20, 25)
-      this.camera.rotation.y = 0.67
+    if (this.camera !== undefined && this.sceneEntity !== undefined) {
+      this.camera.position.set(0, 0, 150)
+      this.camera.fov = 40
+
+      this.sceneEntity.getObject3D()?.remove(this.camera)
+
+      const cameraTiltObj = new Object3D()
+      cameraTiltObj.name = 'cameraTilt'
+      cameraTiltObj.rotation.x = -0.4
+      cameraTiltObj.add(this.camera)
+
+      const cameraPivotObj = new Object3D()
+      cameraPivotObj.name = 'cameraPivot'
+      cameraPivotObj.add(cameraTiltObj)
+
+      const cameraFolder = this.gui.addFolder('Camera')
+
+      cameraFolder.add(this.camera.position, 'z', 20, 300, 1).name('zoom')
+      cameraFolder.add(cameraTiltObj.rotation, 'x', -Math.PI / 2, 0, 0.01).name('tilt')
+      cameraFolder.add(cameraPivotObj.rotation, 'y', 0, Math.PI * 2, 0.01).name('rotation')
+      cameraFolder.open()
+
+      this.world.createEntity()
+        .addObject3DComponent(cameraPivotObj, this.sceneEntity)
     }
 
     const ambientLight = new AmbientLight(AMBIENT_COLOR, 0.5)
-    const sun = new DirectionalLight(SUN_COLOR, 1)
-    sun.position.set(0, Math.sin(SUN_ANGLE) * 100, 100)
+    const sun = new DirectionalLight(SUN_COLOR, 1.2)
+    sun.position.set(0, Math.sin(SUN_ANGLE) * 150, 150)
     sun.castShadow = true
     sun.shadow.camera.visible = true
-    sun.shadow.bias = -0.0005
+    sun.shadow.bias = -0.001
     sun.shadow.radius = 32
-    sun.shadow.camera.near = 10
-    sun.shadow.camera.far = 150
-    sun.shadow.camera.top = -10
-    sun.shadow.camera.bottom = 20
-    sun.shadow.mapSize.set(2 ** 11, 2 ** 11)
+    sun.shadow.camera.near = 50
+    sun.shadow.camera.far = 300
+    sun.shadow.camera.top = -100
+    sun.shadow.camera.bottom = 50
+    sun.shadow.camera.left = -100
+    sun.shadow.camera.right = 100
+    sun.shadow.mapSize.set(2 ** 13, 2 ** 13)
     const sunContainer = new Group()
     sunContainer.name = 'sun'
     sunContainer.add(sun)
 
     const sky = new DirectionalLight(0xFFFFFF, 0.2)
     sky.name = 'sky'
+    sky.position.y = 100
     sky.castShadow = true
-    sky.shadow.bias = -0.0005
+    sky.shadow.bias = -0.001
     sky.shadow.radius = 128
     sky.shadow.camera.near = 10
     sky.shadow.camera.far = 150
-    sky.shadow.mapSize.set(2 ** 12, 2 ** 12)
-    sky.position.y = 100
+    sky.shadow.camera.top = -30
+    sky.shadow.camera.bottom = 30
+    sky.shadow.camera.left = -30
+    sky.shadow.camera.right = 30
+    sky.shadow.mapSize.set(2 ** 13, 2 ** 13)
 
     const commonLights = new Group()
     commonLights.name = 'commonLights'
@@ -132,23 +177,33 @@ export default class GameWorld {
     this.world
       .createEntity()
       .addObject3DComponent(sunContainer, this.sceneEntity)
+      .addComponent(SunOrientationComponent)
 
-    this.generateGrid()
+    this.generateGrid().catch(console.error)
+
+    createTree(this, { color: Color.YELLOW, growthStage: GrowthStage.SEED })
   }
 
-  private generateGrid (): void {
-    getObject(MODELS.RING).then(ring => {
-      for (let i = 0; i < 4; i++) {
-        new HexCube(0, 0, 0).range(i).forEach(hexCube => {
-          console.log(hexCube)
-          this.world
-            .createEntity()
-            .addObject3DComponent(ring.clone(), this.sceneEntity)
-            .addComponent(TileComponent)
-            .addComponent(AxialCoordsComponent, { position: hexCube.toAxial() })
-        })
-      }
-    }).catch(console.error)
+  private async generateGrid (): Promise<void> {
+    const boardObj = new Object3D()
+    boardObj.name = 'gameBoard'
+
+    const boardEntity = this.world
+      .createEntity()
+      .addObject3DComponent(boardObj, this.sceneEntity)
+
+    const ringObj = await getObject(MODELS.RING)
+
+    for (let i = 0; i < 4; i++) {
+      new HexCube(0, 0, 0).range(i).forEach(hexCube => {
+        console.log(hexCube)
+        this.world
+          .createEntity()
+          .addObject3DComponent(ringObj.clone(), boardEntity)
+          .addComponent(TileComponent)
+          .addComponent(AxialCoordsComponent, { position: hexCube.toAxial() })
+      })
+    }
   }
 
   /**

@@ -1,9 +1,8 @@
-import { System } from 'ecsy'
 import AxialCoordsComponent from '../components/AxialCoordsComponent'
-import { Object3DComponent } from 'ecsy-three'
+import { ECSYThreeSystem, Object3DComponent } from 'ecsy-three'
 import { TILE_SIZE } from '../../3d/constants'
 
-export default class AxialCoordsSystem extends System {
+export default class AxialCoordsSystem extends ECSYThreeSystem {
   execute (delta: number, time: number): void {
     this.queries.axialPositions.results.forEach(entity => {
       const axialCoordsComp = entity.getComponent(AxialCoordsComponent)
