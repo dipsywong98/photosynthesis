@@ -2,6 +2,7 @@ import { Room } from '../lib/Room'
 import { PkgType } from '../lib/PkgType'
 import { Observable } from '../lib/Observable'
 import { ConnectionListenerPayload } from '../lib/ConnectionTypes'
+import GameWorld from './GameWorld'
 
 export enum GameEvent {
   UPDATE_GAME_STATE,
@@ -25,6 +26,7 @@ export interface GameEventPayload {
 export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   room: Room
   state: GameState
+  gameWorld: GameWorld = new GameWorld()
 
   constructor (room: Room) {
     super()

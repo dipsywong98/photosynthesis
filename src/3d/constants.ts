@@ -1,3 +1,5 @@
+import { VSMShadowMap } from 'three'
+
 export const MODELS_LOCATION = '/models'
 
 export const MODELS = {
@@ -44,6 +46,10 @@ export const SEED_MODELS: Record<Color, ModelName> = {
 } as const
 
 // Rendering specifics
+export const AMBIENT_COLOR = 0x191F48
+export const SUN_COLOR = 0xF8FFB2
+export const SKY_COLOR = 0xcaf1fc
+
 export const SHADE_Y: { [k in GrowthStage]: number } = [-18, -10.7, -5.63, 0]
 
 export const SUN_ANGLE = 52.6
