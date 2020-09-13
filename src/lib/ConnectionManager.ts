@@ -150,17 +150,17 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   public onPkg (pkgType: PkgType, listener: ConnectionListener): string {
     return super.onMatch(ConnEvent.CONN_PKG, ({ data, ...rest }: ConnectionListenerPayload) => {
       listener({ ...rest, data: data, type: pkgType })
-    }, ({ type }: ConnectionListenerPayload) => type === pkgType)
+    }, { _: { type: pkgType } })
   }
 
   public oncePkg (pkgType: PkgType, listener: ConnectionListener): string {
     return super.onceMatch(ConnEvent.CONN_PKG, ({ data, ...rest }: ConnectionListenerPayload) => {
       listener({ ...rest, data: data, type: pkgType })
-    }, ({ type }: ConnectionListenerPayload) => type === pkgType)
+    }, { _: { type: pkgType } })
   }
 
   public async untilPkg (pkgType: PkgType, timeout?: number): Promise<ConnectionListenerPayload> {
-    return await super.untilMatch(ConnEvent.CONN_PKG, ({ type }: ConnectionListenerPayload) => type === pkgType, timeout, pkgType)
+    return await super.untilMatch(ConnEvent.CONN_PKG, { _: { type: pkgType } }, timeout, pkgType)
       .then(({ data, ...rest }: ConnectionListenerPayload) => {
         return { ...rest, data: data, type: pkgType }
       })

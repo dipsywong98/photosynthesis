@@ -13,7 +13,7 @@ type Payload = Exclude<PayloadEssential, Function>
 type Listener<P extends Payload> = (payload: P, preventClear?: () => void) => void
 type Matcher<P extends Payload> = (payload: P) => boolean
 
-function isMatcher<P extends Payload> (match: P | Matcher<P>): match is Matcher<P> {
+function isMatcher<P extends Payload> (match: P | Matcher<P> | { _: Partial<P> }): match is Matcher<P> {
   return typeof match === 'function'
 }
 
@@ -41,7 +41,7 @@ export class Observable<E extends Record<string, string | number> = never, P ext
    * @param listener
    * @param match
    */
-  public onMatch (event: E[keyof E], listener: Listener<P>, match: P | Matcher<P>): string {
+  public onMatch (event: E[keyof E], listener: Listener<P>, match: P | Matcher<P> | { _: Partial<P> }): string {
     return this.on(event, (value: P) => {
       if (isMatcher(match)) {
         if (match(value)) {
@@ -49,6 +49,19 @@ export class Observable<E extends Record<string, string | number> = never, P ext
         }
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       } else if (equals(match, value) as unknown as boolean) {
+        listener(value)
+      } else if (
+        '_' in match &&
+        Object.keys(match._)
+          .reduce(
+            (flag: boolean, key) => (
+              flag && equals(
+                (match._ as Record<string, unknown>)[key],
+                (value as Record<string, unknown>)[key])
+            ),
+            true
+          )
+      ) {
         listener(value)
       }
     })
@@ -70,7 +83,7 @@ export class Observable<E extends Record<string, string | number> = never, P ext
    * @param listener
    * @param match
    */
-  public onceMatch (event: E[keyof E], listener: Listener<P>, match: P | Matcher<P>): string {
+  public onceMatch (event: E[keyof E], listener: Listener<P>, match: P | Matcher<P> | { _: Partial<P> }): string {
     return this.once(event, (value: P, preventClear?: () => void) => {
       if (isMatcher(match)) {
         if (match(value)) {
@@ -80,6 +93,19 @@ export class Observable<E extends Record<string, string | number> = never, P ext
         }
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       } else if (equals(match, value) as unknown as boolean) {
+        listener(value, preventClear)
+      } else if (
+        '_' in match &&
+        Object.keys(match._)
+          .reduce(
+            (flag: boolean, key) => (
+              flag && equals(
+                (match._ as Record<string, unknown>)[key],
+                (value as Record<string, unknown>)[key])
+            ),
+            true
+          )
+      ) {
         listener(value, preventClear)
       } else {
         preventClear?.()
@@ -99,10 +125,10 @@ export class Observable<E extends Record<string, string | number> = never, P ext
     })
   }
 
-  public async untilMatch (event: E[keyof E], value: P | Matcher<P>, timeout = TIMEOUT_DURATION, _message?: unknown): Promise<P> {
+  public async untilMatch (event: E[keyof E], value: P | Matcher<P> | { _: Partial<P> }, timeout = TIMEOUT_DURATION, _message?: unknown): Promise<P> {
     return await new Promise((resolve, reject) => {
       const cb = window.setTimeout(() => {
-        reject(new Error(`${event} ${value.toString()} timeout`))
+        reject(new Error(`${event} ${JSON.stringify(value)} timeout`))
       }, timeout)
       this.onceMatch(event, (value) => {
         window.clearTimeout(cb)
