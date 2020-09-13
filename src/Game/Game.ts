@@ -1,7 +1,7 @@
 import { Room, RoomActionTypes } from '../lib/Room'
 import { Observable } from '../lib/Observable'
 import GameWorld from './GameWorld'
-import { StarMeshAction, StarMeshReducer } from '../lib/StarMeshNetwork'
+import { StarMeshAction, StarMeshNetworkEvents, StarMeshReducer } from '../lib/StarMeshNetwork'
 
 export enum GameEvent {
   UPDATE_GAME_STATE,
@@ -20,6 +20,7 @@ export type Coords = [number, number]
 export interface GameState {
   turn: number
   board: Array<Array<string | null>>
+  gameOver?: string
 }
 
 export interface GameEventPayload {
@@ -28,7 +29,7 @@ export interface GameEventPayload {
 
 export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   room: Room
-  gameWorld: GameWorld = new GameWorld()
+  gameWorld!: GameWorld
 
   public get state (): GameState {
     if (this.room.network.state.game === undefined) {
@@ -60,17 +61,20 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   constructor (room: Room) {
     super()
     this.room = room
+    this.room.network.on(StarMeshNetworkEvents.STATE_CHANGE, ({ state }) => {
+      this.emit(GameEvent.UPDATE_GAME_STATE, { data: state?.game })
+    })
   }
 
   public start (): void {
-    //
+    this.gameWorld = new GameWorld()
   }
 
   public async click (x: number, y: number): Promise<void> {
     return await this.dispatch({
       action: GameActions.CLICK,
       payload: [x, y]
-    })
+    }).catch(this.errorHandler)
   }
 
   public dispatch = async (action: StarMeshAction): Promise<void> => {
@@ -90,10 +94,13 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
       case GameActions.CLICK: {
         const [x, y] = payload as Coords
         if (prevState.board[x][y] === null && prevState.turn === pid) {
-          prevState.board[x][y] = connId === '0' ? 'O' : 'X'
+          prevState.board[x][y] = pid === 0 ? 'O' : 'X'
           prevState.turn = 1 - prevState.turn
           if (x === 0 && y === 0) {
+            prevState.gameOver = connId
+            console.log('emit game over')
             this.room.endGame(connId).catch(this.errorHandler)
+            this.emit(GameEvent.GAME_OVER, { data: connId })
           }
           return { ...prevState }
         } else {

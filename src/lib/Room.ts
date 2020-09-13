@@ -25,6 +25,7 @@ export enum RoomEvents {
   SET_HOST,
   START_GAME,
   ERROR,
+  END_GAME,
 }
 
 export interface RoomEventPayload {
@@ -47,7 +48,7 @@ interface RoomState {
 export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   network: StarMeshNetwork<RoomState>
   manager: ConnectionManager
-  game?: Game
+  game: Game
 
   public get hostPlayerId (): string | undefined {
     return this.network.hostId
@@ -130,7 +131,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
         this.emit(RoomEvents.SET_HOST, { data: host })
       }
     })
-    // this.game = new Game(this)
+    this.game = new Game(this)
   }
 
   public create = async (myName: string, roomCode?: string): Promise<string> => {
@@ -260,6 +261,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
         prevState.idDict = undefined
         prevState.nameDict = undefined
         prevState.game = undefined
+        this.emit(RoomEvents.END_GAME, { data: payload })
         return { ...prevState }
       }
       case RoomActionTypes.GAME_EVENT: {
