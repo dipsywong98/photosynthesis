@@ -13,7 +13,7 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   protected closed = false
 
   public isClosed (): boolean {
-    return this.closed
+    return this.closed || this.peer.disconnected
   }
 
   public log = (..._params: unknown[]): void => {

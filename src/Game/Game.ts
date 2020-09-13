@@ -32,14 +32,18 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     super()
     this.room = room
     this.state = this.initGame()
-    if (this.room.hostConnectionManager !== undefined) {
+    if (this.room.isHost() === true) {
       this.initAsHost()
       this.emit(GameEvent.GAME_INIT, { data: undefined })
     }
-    if (this.room.myConnectionManager !== undefined) {
+    if (this.room.isHost() === false) {
       this.initAsPlayer()
     }
     // this.startGame()
+  }
+
+  public start (): void {
+    //
   }
 
   public initGame (): GameState {

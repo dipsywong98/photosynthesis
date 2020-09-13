@@ -4,7 +4,7 @@ import { pause } from './pause'
 import { prepareFakePeerSystem } from './fake/prepareFakePeerSystem'
 
 const SET_FOO = 'SET_FOO'
-const reducer: StarMeshReducer = (prevState, { action, payload }) => {
+const reducer: StarMeshReducer<Record<string, unknown>> = (prevState, { action, payload }) => {
   switch (action) {
     case SET_FOO:
       return { ...prevState, foo: payload }
@@ -90,10 +90,12 @@ describe('StarMeshNetwork', () => {
     await net2.joinOrHost('my-net')
     await pause(1)
     expect(net1.members).toContain(net2.id)
-    manager2.destroy()
+    net2.leave()
+    // manager2.destroy()
     await pause(1)
     expect(net1.members).not.toContain(net2.id)
     expect(net1.isHost()).toBeTruthy()
+    await pause(1)
     done()
   })
 
@@ -110,9 +112,10 @@ describe('StarMeshNetwork', () => {
     await net2.joinOrHost('my-net')
     await pause(1)
     expect(net1.members).toContain(net2.id)
-    net1.hostConnectionManager?.destroy()
-    manager1.disconnectAll()
-    net1.hostConnectionManager?.disconnectAll()
+    net1.leave()
+    // net1.hostConnectionManager?.destroy()
+    // manager1.disconnectAll()
+    // net1.hostConnectionManager?.disconnectAll()
     expect(net2.members).not.toContain(net1.id)
     await pause(2)
     expect(net2.isHost()).toBeTruthy()
@@ -154,7 +157,7 @@ describe('StarMeshNetwork', () => {
     const manager1 = await ConnectionManager.startAs('1')
     const manager2 = await ConnectionManager.startAs('2')
     const manager3 = await ConnectionManager.startAs('3')
-    const net1 = new StarMeshNetwork(manager1, { foo: 0 })
+    const net1 = new StarMeshNetwork<Record<string, unknown>>(manager1, { foo: 0 })
     const net2 = new StarMeshNetwork(manager2, {})
     const net3 = new StarMeshNetwork(manager3, {})
     expect(net2.state).toEqual({})
