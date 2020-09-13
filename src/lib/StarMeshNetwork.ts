@@ -9,13 +9,15 @@ export enum StarMeshNetworkEvents {
   MEMBERS_CHANGE,
   MEMBERS_JOIN,
   MEMBERS_LEFT,
-  NETWORK_ERROR
+  NETWORK_ERROR,
+  HOST_CHANGE
 }
 
 export interface StarMeshEventPayload<T> {
   state?: T
   members?: string[]
   error?: Error
+  host?: string
 }
 
 export type StarMeshAction = Record<string, unknown>
@@ -48,6 +50,7 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
 
   reducer?: StarMeshReducer
   hostId?: string
+  initialState: T
 
   public get id (): string {
     return this.myConnectionManager.id
@@ -56,9 +59,10 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
   constructor (myConnectionManager: ConnectionManager, initialState: T, reducer?: StarMeshReducer) {
     super()
     this.reducer = reducer
+    this.initialState = Object.freeze(initialState)
     this.myConnectionManager = myConnectionManager
     this.initMyConnectionManagerListeners()
-    this.state = initialState
+    this.state = { ...initialState }
   }
 
   private readonly networkErrorHandler = (error: Error): void => {
@@ -151,6 +155,9 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
 
   private readonly handleMemberChange = async (data: unknown): Promise<void> => {
     if (idMemberChangePayload(data)) {
+      if (this.hostId !== data.host) {
+        this.emit(StarMeshNetworkEvents.HOST_CHANGE, { host: data.host })
+      }
       if (data.members.length === this.members.length && this.members.reduce((f: boolean, c) => f && data.members.includes(c), true)) {
         return
       }
@@ -213,5 +220,16 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
   private readonly setState = (newState: T): void => {
     this.emit(StarMeshNetworkEvents.STATE_CHANGE, { state: newState })
     this.state = newState
+  }
+
+  public leave = (): void => {
+    this.meToHostConnection?.close()
+    this.hostConnectionManager?.destroy()
+    this.meToHostConnection = undefined
+    this.hostConnectionManager = undefined
+    this.state = { ...this.initialState }
+    this.networkName = undefined
+    this.members = []
+    this.hostId = undefined
   }
 }

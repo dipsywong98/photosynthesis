@@ -129,11 +129,11 @@ describe('StarMeshNetwork', () => {
       net2.hostConnectionManager?.id,
       net3.id
     ])
-    expect(net3.myConnectionManager.connections.map(({ id }) => id)).toEqual([
-      net2.hostConnectionManager?.id,
-      net3.id,
-      net2.id
-    ])
+    const connections = net3.myConnectionManager.connections.map(({ id }) => id)
+    expect(connections).toContain(net2.hostConnectionManager?.id)
+    expect(connections).toContain(net2.id)
+    expect(connections).toContain(net3.id)
+    expect(connections).toHaveLength(3)
     const SET_FOO = 'SET_FOO'
     await pause(1)
     await net3.dispatch({

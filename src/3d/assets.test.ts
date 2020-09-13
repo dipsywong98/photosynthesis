@@ -57,8 +57,8 @@ describe('Assets test', () => {
 
     startLoad()
 
-    expect(mockLoad).toHaveBeenCalledWith('location/x.glb', expect.any(Function))
-    expect(mockLoad).toHaveBeenCalledWith('location/y.glb', expect.any(Function))
+    expect(mockLoad).toHaveBeenCalledWith('location/x.glb', expect.any(Function), undefined, expect.any(Function))
+    expect(mockLoad).toHaveBeenCalledWith('location/y.glb', expect.any(Function), undefined, expect.any(Function))
     expect(objects).toEqual({
       x: expect.any(Object3D) as Object3D,
       y: expect.any(Object3D) as Object3D
@@ -73,8 +73,9 @@ describe('Assets test', () => {
     expect(errorSpy).toHaveBeenCalledTimes(0)
   })
 
-  it('getObject if model not exists should reject Error', () => {
-    expect(getObject('x')).rejects.toEqual(new Error('Model not found')).catch(e => { throw e })
+  it('getObject if model not exists should reject Error', async (done) => {
+    await expect(getObject('x')).rejects.toEqual(new Error('Model not found: x')).catch(e => { throw e })
+    done()
   })
 
   it('getObject when model is still loading should wait to resolve object', () => {
@@ -96,7 +97,7 @@ describe('Assets test', () => {
     expect(errorSpy).toHaveBeenCalledTimes(0)
   })
 
-  it('getObject when model will not be loaded in loading process should wait to reject Error', () => {
+  it('getObject when model will not be loaded in loading process should wait to reject Error', async (done) => {
     const callbacks: Array<(gltf: GLTF) => void> = []
 
     mockLoad.mockImplementation((_: string, cb: (gltf: GLTF) => void): void => {
@@ -109,7 +110,8 @@ describe('Assets test', () => {
 
     callbacks.forEach(cb => cb(createMockGltf()))
 
-    expect(promise).rejects.toEqual(new Error('Model not found: z')).catch(e => { throw e })
+    await expect(promise).rejects.toEqual(new Error('Model not found: z')).catch(e => { throw e })
     expect(errorSpy).toHaveBeenCalledTimes(0)
+    done()
   })
 })
