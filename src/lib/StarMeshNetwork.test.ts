@@ -1,8 +1,7 @@
-import { PeerFactory } from './PeerFactory'
 import { StarMeshNetwork, StarMeshNetworkEvents, StarMeshReducer } from './StarMeshNetwork'
 import { ConnectionManager } from './ConnectionManager'
 import { pause } from './pause'
-import { FakePeer } from './fake/FakePeer'
+import { prepareFakePeerSystem } from './fake/prepareFakePeerSystem'
 
 const SET_FOO = 'SET_FOO'
 const reducer: StarMeshReducer = (prevState, { action, payload }) => {
@@ -14,11 +13,7 @@ const reducer: StarMeshReducer = (prevState, { action, payload }) => {
   }
 }
 
-PeerFactory.useFake = true
-
-beforeEach(() => {
-  FakePeer.allPeers = {}
-})
+prepareFakePeerSystem()
 
 describe('StarMeshNetwork', () => {
   it('can host and join', async (done) => {
@@ -63,7 +58,7 @@ describe('StarMeshNetwork', () => {
     await net2.joinOrHost('my-net')
     net1.setReducer(reducer)
     net2.setReducer(reducer)
-    net2.on(StarMeshNetworkEvents.STATE_CHANGE, (state) => {
+    net2.on(StarMeshNetworkEvents.STATE_CHANGE, ({ state }) => {
       expect(state).toEqual({
         foo: 123
       })
@@ -181,5 +176,102 @@ describe('StarMeshNetwork', () => {
       foo: 0
     })
     done()
+  })
+
+  describe('subscribable events', () => {
+    it('triggers set state when connected', async (done) => {
+      const manager1 = await ConnectionManager.startAs('1')
+      const manager2 = await ConnectionManager.startAs('2')
+      const net1 = new StarMeshNetwork(manager1, { foo: 0 })
+      const net2 = new StarMeshNetwork(manager2, {})
+      const fb = jest.fn()
+      net2.on(StarMeshNetworkEvents.STATE_CHANGE, fb)
+      await net1.joinOrHost('my-net')
+      await net2.joinOrHost('my-net')
+      expect(fb).toHaveBeenCalledWith({
+        state: {
+          foo: 0
+        }
+      })
+      done()
+    })
+
+    it('triggers set state when dispatch', async (done) => {
+      const manager1 = await ConnectionManager.startAs('1')
+      const manager2 = await ConnectionManager.startAs('2')
+      const net1 = new StarMeshNetwork(manager1, { foo: 0 }, reducer)
+      const net2 = new StarMeshNetwork(manager2, {}, reducer)
+      await net1.joinOrHost('my-net')
+      await net2.joinOrHost('my-net')
+      const fb1 = jest.fn()
+      const fb2 = jest.fn()
+      net1.on(StarMeshNetworkEvents.STATE_CHANGE, fb1)
+      net2.on(StarMeshNetworkEvents.STATE_CHANGE, fb2)
+      await net2.dispatch({
+        action: SET_FOO,
+        payload: 123
+      })
+      expect(fb1).toHaveBeenCalledWith({
+        state: {
+          foo: 123
+        }
+      })
+      expect(fb2).toHaveBeenCalledWith({
+        state: {
+          foo: 123
+        }
+      })
+      done()
+    })
+
+    it('triggers member join, left, member change when someone join', async (done) => {
+      const manager1 = await ConnectionManager.startAs('1')
+      const manager2 = await ConnectionManager.startAs('2')
+      const net1 = new StarMeshNetwork(manager1, { foo: 0 })
+      const net2 = new StarMeshNetwork(manager2, {})
+      const fb1c = jest.fn()
+      const fb1j = jest.fn()
+      const fb1l = jest.fn()
+      const fb2c = jest.fn()
+      const fb2j = jest.fn()
+      net1.on(StarMeshNetworkEvents.MEMBERS_JOIN, fb1j)
+      net1.on(StarMeshNetworkEvents.MEMBERS_CHANGE, fb1c)
+      net1.on(StarMeshNetworkEvents.MEMBERS_LEFT, fb1l)
+      net2.on(StarMeshNetworkEvents.MEMBERS_JOIN, fb2j)
+      net2.on(StarMeshNetworkEvents.MEMBERS_CHANGE, fb2c)
+      await net1.joinOrHost('my-net')
+      expect(fb1j).toHaveBeenCalledWith({ members: ['1'] })
+      expect(fb1c).toHaveBeenCalledWith({ members: ['1'] })
+      expect(net1.members).toEqual(['1'])
+      await net2.joinOrHost('my-net')
+      await pause(5)
+      expect(net1.members).toEqual(['1', '2'])
+      expect(net2.members).toEqual(['1', '2'])
+      expect(fb1c).toHaveBeenCalledTimes(2)
+      expect(fb1c).toHaveBeenCalledWith({
+        members: ['1', '2']
+      })
+      expect(fb1j).toHaveBeenCalledWith({
+        members: ['2']
+      })
+      expect(fb1j).toHaveBeenCalledWith({ members: ['1'] })
+      expect(fb1j).toHaveBeenCalledWith({ members: ['2'] })
+      expect(fb2c).toHaveBeenCalledWith({
+        members: ['1', '2']
+      })
+      expect(fb2c).toHaveBeenCalledWith({
+        members: ['1', '2']
+      })
+      net2.myConnectionManager.destroy()
+      await pause(5)
+      expect(fb1c).toHaveBeenCalledTimes(3)
+      expect(fb1c).toHaveBeenCalledWith({
+        members: ['1']
+      })
+      expect(fb1l).toHaveBeenCalledWith({
+        members: ['2']
+      })
+      done()
+    })
   })
 })

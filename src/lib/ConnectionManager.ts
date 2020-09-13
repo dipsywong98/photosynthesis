@@ -16,8 +16,8 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
     return this.closed
   }
 
-  public log = (...params: unknown[]): void => {
-    console.log(this.id, ...params)
+  public log = (..._params: unknown[]): void => {
+    // console.log(this.id, ..._params)
   }
 
   public static prefixId (id = ''): string {
@@ -185,8 +185,8 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
     return connection
   }
 
-  public disconnect (data: string): void {
-    this.conn(data).close()
+  public disconnect (id: string): void {
+    this.connections.find(c => c.id === id)?.close()
   }
 
   public disconnectAll (): void {

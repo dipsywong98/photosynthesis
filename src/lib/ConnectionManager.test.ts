@@ -1,10 +1,10 @@
 import { ConnectionManager } from './ConnectionManager'
-import { PeerFactory } from './PeerFactory'
 import { ConnEvent } from './ConnectionTypes'
 import { PkgType } from './PkgType'
 import { pause } from './pause'
+import { prepareFakePeerSystem } from './fake/prepareFakePeerSystem'
 
-PeerFactory.useFake = true
+prepareFakePeerSystem()
 
 describe('Connection Manager', () => {
   it('can be constructed', () => {
