@@ -3,6 +3,8 @@ import {
   AmbientLight,
   DirectionalLight,
   Group,
+  Mesh,
+  MeshStandardMaterial,
   Object3D,
   PerspectiveCamera,
   sRGBEncoding,
@@ -27,6 +29,8 @@ import SunOrientationComponent from './components/SunOrientationComponent'
 import SunOrientationSystem from './systems/SunOrientationSystem'
 import { createTree } from './entities/tree'
 import dat from 'dat.gui'
+import { Axial } from '../3d/Coordinates/Axial'
+import { CYLINDER_OBJ } from '../3d/extraObjects'
 
 export default class GameWorld {
   gui: dat.GUI
@@ -39,6 +43,8 @@ export default class GameWorld {
 
   sunOrientationRad = 0
 
+  tileEntities: Map<string, ECSYThreeEntity> = new Map<string, ECSYThreeEntity>()
+
   constructor () {
     this.gui = new dat.GUI()
     this.renderer = new WebGLRenderer()
@@ -49,6 +55,7 @@ export default class GameWorld {
   public resetWorld (): void {
     this.resetGUI()
     this.world.stop()
+    this.tileEntities.clear()
     disposeObj3D(this.sceneEntity?.getComponent(Object3DComponent)?.value)
     this.sunOrientationRad = 0
 
@@ -87,7 +94,7 @@ export default class GameWorld {
 
     this.world.registerSystem(AxialCoordsSystem)
     this.world.registerSystem(TileSystem)
-    this.world.registerSystem(TreeSystem)
+    this.world.registerSystem(TreeSystem, { gameWorld: this })
     this.world.registerSystem(TweenSystem)
     this.world.registerSystem(SunOrientationSystem, { gameWorld: this })
   }
@@ -132,31 +139,31 @@ export default class GameWorld {
     sun.castShadow = true
     sun.shadow.camera.visible = true
     sun.shadow.bias = -0.001
-    sun.shadow.radius = 32
+    sun.shadow.radius = 8
     sun.shadow.camera.near = 50
     sun.shadow.camera.far = 300
     sun.shadow.camera.top = -100
     sun.shadow.camera.bottom = 50
     sun.shadow.camera.left = -100
     sun.shadow.camera.right = 100
-    sun.shadow.mapSize.set(2 ** 13, 2 ** 13)
+    sun.shadow.mapSize.set(2 ** 12, 2 ** 11)
     const sunContainer = new Group()
     sunContainer.name = 'sun'
     sunContainer.add(sun)
 
     const sky = new DirectionalLight(0xFFFFFF, 0.2)
     sky.name = 'sky'
-    sky.position.y = 100
-    sky.castShadow = true
-    sky.shadow.bias = -0.001
-    sky.shadow.radius = 128
-    sky.shadow.camera.near = 10
-    sky.shadow.camera.far = 150
-    sky.shadow.camera.top = -30
-    sky.shadow.camera.bottom = 30
-    sky.shadow.camera.left = -30
-    sky.shadow.camera.right = 30
-    sky.shadow.mapSize.set(2 ** 13, 2 ** 13)
+    // sky.position.y = 100
+    // sky.castShadow = true
+    // sky.shadow.bias = -0.001
+    // sky.shadow.radius = 128
+    // sky.shadow.camera.near = 10
+    // sky.shadow.camera.far = 150
+    // sky.shadow.camera.top = -30
+    // sky.shadow.camera.bottom = 30
+    // sky.shadow.camera.left = -30
+    // sky.shadow.camera.right = 30
+    // sky.shadow.mapSize.set(2 ** 13, 2 ** 13)
 
     const commonLights = new Group()
     commonLights.name = 'commonLights'
@@ -179,12 +186,12 @@ export default class GameWorld {
       .addObject3DComponent(sunContainer, this.sceneEntity)
       .addComponent(SunOrientationComponent)
 
-    this.generateGrid().catch(console.error)
+    this.generateGrid()
 
-    createTree(this, { color: Color.YELLOW, growthStage: GrowthStage.SEED })
+    createTree(this, { color: Color.YELLOW, growthStage: GrowthStage.MID, axial: new Axial(0, 1) })
   }
 
-  private async generateGrid (): Promise<void> {
+  private generateGrid (): void {
     const boardObj = new Object3D()
     boardObj.name = 'gameBoard'
 
@@ -192,18 +199,41 @@ export default class GameWorld {
       .createEntity()
       .addObject3DComponent(boardObj, this.sceneEntity)
 
-    const ringObj = await getObject(MODELS.RING)
+    new HexCube(0, 0, 0).range(3).forEach(hexCube => {
+      const axial = hexCube.toAxial()
+      const tileContainer = new Group()
+      tileContainer.name = 'tileContainer-' + axial.toString()
+      console.log(tileContainer.name)
+      const tileEntity = this.world
+        .createEntity()
+        .addObject3DComponent(tileContainer, boardEntity)
+        .addComponent(AxialCoordsComponent, { axial })
+      this.tileEntities.set(axial.toString(), tileEntity)
+    })
 
-    for (let i = 0; i < 4; i++) {
-      new HexCube(0, 0, 0).range(i).forEach(hexCube => {
-        console.log(hexCube)
-        this.world
-          .createEntity()
-          .addObject3DComponent(ringObj.clone(), boardEntity)
-          .addComponent(TileComponent)
-          .addComponent(AxialCoordsComponent, { position: hexCube.toAxial() })
+    getObject(MODELS.RING)
+      .then(ring => {
+        this.tileEntities.forEach(entity => {
+          const ringContainerObj = new Object3D()
+          ringContainerObj.name = 'ringContainer'
+          const ringClone = ring.clone()
+          const mesh = ringClone.children.find((o): o is Mesh => o instanceof Mesh)
+          // Assuming material exists and is a MeshStandardMaterial
+          const originalMaterial = mesh?.material
+          const axialComp = entity.getComponent(AxialCoordsComponent)
+          if (mesh !== undefined && originalMaterial instanceof MeshStandardMaterial && axialComp !== undefined) {
+            const material = originalMaterial.clone()
+            mesh.material = material
+            mesh.material.name = 'tileRing-' + axialComp.axial.toString()
+            entity.addComponent(TileComponent, { material })
+          } else {
+            console.error('Cannot find standard material inside ring object')
+          }
+          ringContainerObj.add(ringClone, CYLINDER_OBJ.clone())
+          entity.getObject3D()?.add(ringContainerObj)
+        })
       })
-    }
+      .catch(console.error)
   }
 
   /**

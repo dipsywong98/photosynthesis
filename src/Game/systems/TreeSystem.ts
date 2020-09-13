@@ -1,19 +1,29 @@
 import TreeComponent from '../components/TreeComponent'
 import { getObject } from '../../3d/assets'
 import { Color, MODELS, SEED_MODELS, SHADE_Y, TREE_GROWTH_PROPS, TREE_MODELS, TREE_TOP_Y } from '../../3d/constants'
-import { ECSYThreeEntity, ECSYThreeSystem, Object3DComponent } from 'ecsy-three'
+import { ECSYThreeEntity, Object3DComponent } from 'ecsy-three'
 import { Object3D } from 'three'
 import SunOrientationComponent from '../components/SunOrientationComponent'
+import GameWorldSystem from './GameWorldSystem'
+import AxialCoordsComponent from '../components/AxialCoordsComponent'
+import TileComponent from '../components/TileComponent'
 
-export default class TreeSystem extends ECSYThreeSystem {
+export default class TreeSystem extends GameWorldSystem {
   execute (delta: number, time: number): void {
     this.queries.trees.added?.forEach((entity) => {
       // Added
       const treeComp = entity.getMutableComponent(TreeComponent)
+      const axialComp = entity.getComponent(AxialCoordsComponent)
       const obj3d = entity.getObject3D()
-      if (treeComp === undefined || obj3d === undefined) {
+      if (treeComp === undefined || obj3d === undefined || axialComp === undefined) {
         return
       }
+
+      const linkedTileComp = this.gameWorld.tileEntities.get(axialComp.axial.toString())?.getMutableComponent(TileComponent)
+      if (linkedTileComp !== undefined) {
+        linkedTileComp.treeEntity = entity
+      }
+
       const { color } = treeComp
       obj3d.name = 'tree-' + entity.id.toString() + '-' + Color[color]
 
@@ -66,6 +76,20 @@ export default class TreeSystem extends ECSYThreeSystem {
 
     this.queries.trees.changed?.forEach(TreeSystem.updateGrowthStage.bind(this))
 
+    this.queries.trees.removed?.forEach(entity => {
+      // Removed
+      const treeComp = entity.getComponent(TreeComponent)
+      const axialComp = entity.getComponent(AxialCoordsComponent)
+      if (treeComp === undefined || axialComp === undefined) {
+        return
+      }
+
+      const linkedTileComp = this.gameWorld.tileEntities.get(axialComp.axial.toString())?.getMutableComponent(TileComponent)
+      if (linkedTileComp !== undefined) {
+        linkedTileComp.treeEntity = undefined
+      }
+    })
+
     this.queries.trees.results.forEach((entity) => {
       // Always
       const treeComp = entity.getComponent(TreeComponent)
@@ -85,15 +109,6 @@ export default class TreeSystem extends ECSYThreeSystem {
       if (seedObj?.scale.lengthSq() === 0) {
         seedObj.visible = false
       }
-    })
-
-    this.queries.trees.removed?.forEach((entity) => {
-      // Removed
-      const treeComp = entity.getComponent(TreeComponent)
-      if (treeComp === undefined) {
-        return
-      }
-      treeComp.shadeEntity?.remove()
     })
   }
 
@@ -139,7 +154,7 @@ TreeSystem.queries = {
     listen: {
       added: true,
       removed: true,
-      changed: [TreeComponent]
+      changed: [TreeComponent, AxialCoordsComponent]
     }
   }
 }

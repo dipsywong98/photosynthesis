@@ -22,6 +22,8 @@ export default class TreeComponent extends Component<TreeComponent> {
     this.treeObj = undefined
     this.topObj = undefined
     this.trunkObj = undefined
+    this.shadeEntity?.remove()
+    this.shadeEntity = undefined
   }
 }
 
