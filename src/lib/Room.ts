@@ -27,6 +27,9 @@ export interface PlayersDict {
 }
 
 type JoinEventAckPayload = [PlayersDict, string]
+const isJoinEventAckPayload = (payload: unknown): payload is JoinEventAckPayload => {
+  return Array.isArray(payload) && payload.length === 2 && typeof payload[0] === 'object' && typeof payload[1] === 'string'
+}
 
 export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   myConnectionManager: ConnectionManager
@@ -36,6 +39,8 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   hostPlayerId?: string
   roomCode?: string
   game?: Game
+  minPlayers = 2
+  maxPlayers = 4
 
   public get playerIds (): string[] {
     return Object.keys(this.players)
@@ -107,10 +112,14 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   private readonly setUpHostConnectionManagerListeners = async (hostConnection: ConnectionManager): Promise<void> => {
     hostConnection.onPkg(PkgType.JOIN, ({ conn, data, ack }) => {
       if (conn !== undefined) {
-        this.players[conn.id] = data as string
-        ack?.([this.players, this.myConnectionManager.id]) // return the players list back to the new joiner, and notify the host's player id
-        hostConnection?.broadcastPkg(PkgType.NEW_JOIN, [data, conn.id]) // notify other users on the new joiner
-          .catch(console.error)
+        if (this.playerIds.length < this.maxPlayers) {
+          this.players[conn.id] = data as string
+          ack?.([this.players, this.myConnectionManager.id]) // return the players list back to the new joiner, and notify the host's player id
+          hostConnection?.broadcastPkg(PkgType.NEW_JOIN, [data, conn.id]) // notify other users on the new joiner
+            .catch(console.error)
+        } else {
+          ack?.(`Room '${this.roomCode ?? ''}' is full`)
+        }
       } else {
         // this is not quite possible
         throw new Error('missing conn')
@@ -140,9 +149,19 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
    */
   public join = async (myName: string, roomCode: string): Promise<Connection[]> => {
     this.meToHostConnection = await this.myConnectionManager.connectPrefix(roomCode) // connect ot the room beacon
+      .catch(() => {
+        throw new Error(`Room '${roomCode}' does not exist`)
+      })
     const { data } = await this.sendToHost(PkgType.JOIN, myName)
-    console.log(data)
-    const [players, hostId] = data as JoinEventAckPayload
+    if (!isJoinEventAckPayload(data)) {
+      this.meToHostConnection.close()
+      if (typeof data === 'string') {
+        throw new Error(data)
+      } else {
+        throw new Error('room join error')
+      }
+    }
+    const [players, hostId] = data
     this.players = players
     this.hostPlayerId = hostId
     this.emit(RoomEvents.SET_PLAYERS, { data: { ...this.players } })
@@ -205,7 +224,11 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   }
 
   public rename = async (name: string): Promise<ConnectionListenerPayload[]> => {
-    return await this.broadcast(PkgType.RENAME, [this.myId, name])
+    if (!Object.values(this.players).includes(name)) {
+      return await this.broadcast(PkgType.RENAME, [this.myId, name])
+    } else {
+      throw new Error(`Name '${name}' is taken`)
+    }
   }
 
   public leaveRoom = (): void => {
@@ -226,6 +249,9 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   }
 
   public startGame = async (): Promise<ConnectionListenerPayload[]> => {
+    if (this.minPlayers > this.playerIds.length) {
+      throw new Error(`Not enough players, need ${this.minPlayers} but got ${this.playerIds.length}`)
+    }
     return await this.broadcast(PkgType.START_GAME, undefined)
   }
 

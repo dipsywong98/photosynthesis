@@ -14,6 +14,7 @@ describe('Connection', () => {
 
     it('can send data', () => {
       const conn = new FakeConn()
+      conn.open = true
       const manager = new ConnectionManager()
       const connection = new Connection(conn, manager)
       connection.send('123')
@@ -24,6 +25,7 @@ describe('Connection', () => {
 
     it('can send package', () => {
       const conn = new FakeConn()
+      conn.open = true
       const manager = new ConnectionManager()
       const connection = new Connection(conn, manager)
       connection.sendPkg('pkg type', '123')
@@ -37,15 +39,17 @@ describe('Connection', () => {
 
     it('can send ack', () => {
       const conn = new FakeConn()
+      conn.open = true
       const manager = new ConnectionManager()
       new Connection(conn, manager)
       conn.trigger('data', ['pid', 'dataContent'])
       expect(conn.sent.length).toEqual(1)
-      expect(conn.sent[0]).toEqual(['pid'])
+      expect(conn.sent[0][0]).toEqual('pid')
     })
 
     it('can send ack package', () => {
       const conn = new FakeConn()
+      conn.open = true
       const manager = new ConnectionManager()
       new Connection(conn, manager)
       conn.trigger('data', ['pid', {
@@ -53,11 +57,12 @@ describe('Connection', () => {
         data: '123'
       }])
       expect(conn.sent.length).toEqual(1)
-      expect(conn.sent[0]).toEqual(['pid'])
+      expect(conn.sent[0][0]).toEqual('pid')
     })
 
     it('can await send ack', () => {
       const conn = new FakeConn()
+      conn.open = true
       const manager = new ConnectionManager()
       const connection = new Connection(conn, manager)
       const promise = connection.send('something')
@@ -75,6 +80,7 @@ describe('Connection', () => {
     it('can subscribe to data event', () => {
       const cb = jest.fn()
       const conn = new FakeConn()
+      conn.open = true
       const manager = new ConnectionManager()
       const connection = new Connection(conn, manager)
       connection.on('data', cb)
@@ -92,6 +98,7 @@ describe('Connection', () => {
     it('can subscribe to pkgType', () => {
       const cb = jest.fn()
       const conn = new FakeConn()
+      conn.open = true
       const manager = new ConnectionManager()
       const connection = new Connection(conn, manager)
       connection.on(ConnEvent.CONN_PKG, cb)

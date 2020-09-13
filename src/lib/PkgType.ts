@@ -2,7 +2,7 @@ export enum PkgType {
   ALERT = 'alert',
   XD = 'xd',
   JOIN = 0,
-  PLAYERS,
+  MEMBER_CHANGE,
   NEW_JOIN,
   ACK,
   PLAYER_LEFT,
@@ -11,4 +11,6 @@ export enum PkgType {
   START_GAME,
   GAME_EVENT,
   UPDATE_GAME_STATE,
+  DISPATCH,
+  SET_STATE,
 }
