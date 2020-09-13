@@ -17,7 +17,7 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   }
 
   public log = (...params: unknown[]): void => {
-    // console.log(this.id, ...params)
+    console.log(this.id, ...params)
   }
 
   public static prefixId (id = ''): string {
@@ -48,6 +48,11 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
     super()
     this.peer = this.initPeer(id)
     this.id = this.peer.id
+    this.on(ConnEvent.CONN_CLOSE, ({ conn }) => {
+      if (conn !== undefined) {
+        this.connections = this.connections.filter(({ id }) => id !== conn.id)
+      }
+    })
   }
 
   public async connect (id: string, timeout = 5000): Promise<Connection> {
@@ -189,11 +194,14 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   }
 
   public destroy (): void {
+    this.closed = true
     this.peer.destroy()
+    this.disconnectAll()
   }
 
   public close (): void {
     this.closed = true
     this.peer.destroy()
+    this.disconnectAll()
   }
 }

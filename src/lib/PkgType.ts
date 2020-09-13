@@ -12,4 +12,5 @@ export enum PkgType {
   GAME_EVENT,
   UPDATE_GAME_STATE,
   DISPATCH,
+  SET_STATE,
 }
