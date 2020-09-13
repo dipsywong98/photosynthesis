@@ -1,8 +1,9 @@
 import { ConnectionManager } from './ConnectionManager'
 import { Observable } from './Observable'
-import { Game } from '../Game/Game'
+import { Game, GameState } from '../Game/Game'
 import { StarMeshEventPayload, StarMeshNetwork, StarMeshNetworkEvents, StarMeshReducer } from './StarMeshNetwork'
 import cloneDeep from 'lodash.clonedeep'
+import { pause } from './pause'
 
 const CH = 'ABCDEFGHJKLMNOPQRSTUVWXYZ'
 
@@ -10,12 +11,13 @@ const generateRoomCode = (): string => {
   return [0, 0, 0, 0].map(() => CH[Math.floor(Math.random() * CH.length)]).join('')
 }
 
-enum RoomActionTypes {
+export enum RoomActionTypes {
   JOIN,
   LEAVE,
   RENAME,
   START_GAME,
-  GAME_OVER,
+  END_GAME,
+  GAME_EVENT,
 }
 
 export enum RoomEvents {
@@ -33,11 +35,11 @@ export interface PlayersDict {
   [id: string]: string
 }
 
-interface RoomState<T = unknown> {
+interface RoomState {
   players: PlayersDict
   minPlayers: number
   maxPlayers: number
-  game?: T
+  game?: GameState
   idDict?: PlayersDict
   nameDict?: PlayersDict
 }
@@ -80,6 +82,17 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   }
 
   /**
+   * given conn id return in game player id in integer
+   * @param id
+   */
+  public pi (id: string): number {
+    if (this.network.state.idDict === undefined) {
+      throw new Error('Game not started yet')
+    }
+    return Number.parseInt(this.network.state.idDict[id])
+  }
+
+  /**
    *  given name, return in game player id
    * @param name
    */
@@ -112,17 +125,30 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
         })
       }
     })
+    this.network.on(StarMeshNetworkEvents.HOST_CHANGE, ({ host }) => {
+      if (host !== undefined) {
+        this.emit(RoomEvents.SET_HOST, { data: host })
+      }
+    })
     // this.game = new Game(this)
   }
 
   public create = async (myName: string, roomCode?: string): Promise<string> => {
-    const code = roomCode ?? generateRoomCode()
+    const code = roomCode === undefined || roomCode === '' ? generateRoomCode() : roomCode
     await this.join(myName, code)
     return code
   }
 
   public join = async (myName: string, roomCode: string): Promise<void> => {
     await this.network.joinOrHost(roomCode)
+    while (true) {
+      try {
+        this.manager.conn(ConnectionManager.prefixId(roomCode))
+        break
+      } catch (e) {
+        await pause(100)
+      }
+    }
     await this.network.dispatch({
       action: RoomActionTypes.JOIN,
       payload: myName
@@ -168,7 +194,14 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
     })
   }
 
-  private readonly networkReducer: StarMeshReducer<RoomState> = (prevState, { action, payload }, id) => {
+  public endGame = async (message: string): Promise<void> => {
+    return await this.network.dispatch({
+      actions: RoomActionTypes.END_GAME,
+      payload: message
+    })
+  }
+
+  private readonly networkReducer: StarMeshReducer<RoomState> = (prevState, { action, payload }, connId) => {
     const setName = (): void => {
       if (typeof payload !== 'string') throw new Error('Invalid payload')
       if (this.started) {
@@ -176,15 +209,15 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
           throw new Error(`Room '${this.roomCode ?? ''}' has started game`)
         } else if (prevState.idDict !== undefined && prevState.nameDict !== undefined) {
           const pid = this.n(payload)
-          prevState.idDict[id] = pid
-          prevState.idDict[pid] = id
+          prevState.idDict[connId] = pid
+          prevState.idDict[pid] = connId
           prevState.nameDict[payload] = pid
         }
       }
       if (Object.values(prevState.players).includes(payload)) {
         throw new Error(`Name '${payload}' already taken`)
       }
-      prevState.players = { ...prevState.players, [id]: payload }
+      prevState.players = { ...prevState.players, [connId]: payload }
       this.emit(RoomEvents.SET_PLAYERS, {
         data: {
           ...prevState.players
@@ -218,16 +251,24 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
         const typed = payload as { idDict: PlayersDict, nameDict: PlayersDict }
         prevState.idDict = cloneDeep(typed.idDict)
         prevState.nameDict = cloneDeep(typed.nameDict)
-        prevState.game = {}
+        prevState.game = Game.initialState
         this.game?.start()
         this.emit(RoomEvents.START_GAME, { data: this.game })
         return { ...prevState }
       }
-      case RoomActionTypes.GAME_OVER: {
+      case RoomActionTypes.END_GAME: {
         prevState.idDict = undefined
         prevState.nameDict = undefined
         prevState.game = undefined
         return { ...prevState }
+      }
+      case RoomActionTypes.GAME_EVENT: {
+        if (this.started && prevState.game !== undefined) {
+          prevState.game = this.game?.reducer(prevState.game, payload as Record<string, unknown>, connId)
+          return { ...prevState }
+        } else {
+          throw new Error('Game not started')
+        }
       }
     }
     return prevState

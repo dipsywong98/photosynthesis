@@ -4,6 +4,7 @@ import { PkgType } from './PkgType'
 import { Connection } from './Connection'
 import { Observable } from './Observable'
 import cloneDeep from 'lodash.clonedeep'
+import { pause } from './pause'
 
 export enum StarMeshNetworkEvents {
   STATE_CHANGE,
@@ -142,7 +143,6 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
   }
 
   private readonly join = async (networkName: string): Promise<void> => {
-    const refreshMembersPromise = this.myConnectionManager.untilPkg(PkgType.MEMBER_CHANGE)
     this.meToHostConnection = await this.myConnectionManager.connectPrefix(networkName)
     this.meToHostConnection.on(ConnEvent.CONN_CLOSE, () => {
       this.members = this.members.filter(n => n !== this.hostId)
@@ -150,15 +150,14 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
         this.host(this.networkName).catch(this.networkErrorHandler)
       }
     })
-    const { data } = await refreshMembersPromise
-    await this.handleMemberChange(data)
+    while (this.members.length === 0) {
+      await pause(100)
+    }
   }
 
   private readonly handleMemberChange = async (data: unknown): Promise<void> => {
     if (isMemberChangePayload(data)) {
-      if (this.hostId !== data.host) {
-        this.emit(StarMeshNetworkEvents.HOST_CHANGE, { host: data.host })
-      }
+      this.emit(StarMeshNetworkEvents.HOST_CHANGE, { host: data.host })
       if (data.members.length === this.members.length && this.members.reduce((f: boolean, c) => f && data.members.includes(c), true)) {
         return
       }
@@ -203,7 +202,9 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
     const responses = await Promise.all(this.members.map(async (id) => await this.myConnectionManager.conn(id).sendPkg(PkgType.DISPATCH, action)))
     responses.forEach(({ data }) => {
       if (data !== undefined && data !== true) {
-        throw data
+        if (typeof data === 'string') {
+          throw new Error(data)
+        }
       }
     })
   }

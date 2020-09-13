@@ -21,7 +21,7 @@ function isMatcher<P extends Payload> (match: P | Matcher<P>): match is Matcher<
  * @template E `typeof MyEnum` or a general `Record` with event names as keys paired with unique values
  * @template P type of payload
  */
-export class Observable<E extends Record<any, string | number> = never, P extends Payload = never> {
+export class Observable<E extends Record<string, string | number> = never, P extends Payload = never> {
   private _onEventListeners: { [k in E[keyof E]]?: Record<string, Listener<P>> } = {}
   private _onceEventListeners: { [k in E[keyof E]]?: Record<string, Listener<P>> } = {}
 
@@ -87,7 +87,7 @@ export class Observable<E extends Record<any, string | number> = never, P extend
     })
   }
 
-  public async until (event: E[keyof E], timeout = TIMEOUT_DURATION): Promise<P> {
+  public async until (event: E[keyof E], timeout = TIMEOUT_DURATION, _message?: unknown): Promise<P> {
     return await new Promise((resolve, reject) => {
       const cb = window.setTimeout(() => {
         reject(new Error(event.toString() + ' timeout'))
@@ -99,7 +99,7 @@ export class Observable<E extends Record<any, string | number> = never, P extend
     })
   }
 
-  public async untilMatch (event: E[keyof E], value: P | Matcher<P>, timeout = TIMEOUT_DURATION): Promise<P> {
+  public async untilMatch (event: E[keyof E], value: P | Matcher<P>, timeout = TIMEOUT_DURATION, _message?: unknown): Promise<P> {
     return await new Promise((resolve, reject) => {
       const cb = window.setTimeout(() => {
         reject(new Error(`${event} ${value.toString()} timeout`))

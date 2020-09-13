@@ -160,7 +160,7 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   }
 
   public async untilPkg (pkgType: PkgType, timeout?: number): Promise<ConnectionListenerPayload> {
-    return await super.untilMatch(ConnEvent.CONN_PKG, ({ type }: ConnectionListenerPayload) => type === pkgType, timeout)
+    return await super.untilMatch(ConnEvent.CONN_PKG, ({ type }: ConnectionListenerPayload) => type === pkgType, timeout, pkgType)
       .then(({ data, ...rest }: ConnectionListenerPayload) => {
         return { ...rest, data: data, type: pkgType }
       })

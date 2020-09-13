@@ -52,7 +52,7 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
                 <Box
                   key={y}
                   sx={{ width: '40px', height: '40px', border: '1px solid black' }}
-                  onClick={() => game?.send(GameEvent.CLICK, [x, y])}>
+                  onClick={() => game?.click(x, y)}>
                   {b}
                 </Box>
               ))

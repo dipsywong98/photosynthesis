@@ -31,6 +31,7 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
   }, [room, setState])
   const startGame = (): void => {
     room?.startGame().catch((e: Error) => {
+      console.log(e)
       alert(e.message)
     })
   }

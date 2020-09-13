@@ -77,7 +77,7 @@ describe('StarMeshNetwork', () => {
     await expect(net1.dispatch({
       action: 'random',
       payload: 123
-    })).rejects.toEqual('invalid action')
+    })).rejects.toThrowError('invalid action')
     done()
   })
 

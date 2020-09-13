@@ -107,13 +107,13 @@ describe('Room', () => {
     const room1 = new Room(manager1)
     const room2 = new Room(manager2)
     await room1.create('peter', 'my-room')
-    await expect(room2.join('peter', 'my-room')).rejects.toEqual('Name \'peter\' already taken')
+    await expect(room2.join('peter', 'my-room')).rejects.toThrowError('Name \'peter\' already taken')
     expect(room1.players).toEqual({
       1: 'peter'
     })
     expect(room2.players).toEqual({})
     await room2.join('daniel', 'my-room')
-    await expect(room2.rename('peter')).rejects.toEqual('Name \'peter\' already taken')
+    await expect(room2.rename('peter')).rejects.toThrowError('Name \'peter\' already taken')
     expect(room1.players).toEqual({
       1: 'peter',
       2: 'daniel'
@@ -132,7 +132,7 @@ describe('Room', () => {
     await room[1].joinOrCreate('p1', 'my-room')
     await room[2].joinOrCreate('p2', 'my-room')
     await room[3].joinOrCreate('p3', 'my-room')
-    await expect(room[4].joinOrCreate('p4', 'my-room')).rejects.toEqual('Room \'my-room\' is already full')
+    await expect(room[4].joinOrCreate('p4', 'my-room')).rejects.toThrowError('Room \'my-room\' is already full')
     done()
   })
 
@@ -163,7 +163,7 @@ describe('Room', () => {
     const manager1 = await ConnectionManager.startAs('1')
     const room1 = new Room(manager1)
     await room1.create('peter', 'my-room')
-    await expect(room1.startGame()).rejects.toEqual('Not enough players, required 2')
+    await expect(room1.startGame()).rejects.toThrowError('Not enough players, required 2')
     done()
   })
 
@@ -177,7 +177,7 @@ describe('Room', () => {
     await room1.create('peter', 'my-room')
     await room2.join('daniel', 'my-room')
     await room1.startGame()
-    await expect(room3.join('dipsy', 'my-room')).rejects.toEqual("Room 'my-room' has started game")
+    await expect(room3.join('dipsy', 'my-room')).rejects.toThrowError("Room 'my-room' has started game")
     done()
   })
 
