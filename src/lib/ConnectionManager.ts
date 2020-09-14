@@ -5,7 +5,6 @@ import { Connection } from './Connection'
 import { PkgType } from './PkgType'
 import { ConnectionTimeoutError } from './errors/ConnectionTimeoutError'
 import { PeerFactory } from './PeerFactory'
-import { pause } from './pause'
 
 export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionListenerPayload> {
   public id: string
@@ -69,21 +68,18 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
       const id2 = this.once(ConnEvent.PEER_ERROR, ({ error }: ConnectionListenerPayload) => {
         reject(error)
       })
+      const conn = this.peer.connect(id)
       const openHandler = (): void => {
         const connection: Connection = this.enrichConn(new Connection(conn, this))
         this.off(ConnEvent.CONN_ERROR, id2)
         resolve(connection)
         clearTimeout(id1)
       }
-      const conn = this.peer.connect(id)
       conn.on('open', () => {
         openHandler()
       })
-
       if (conn.open) {
-        pause(1).then(() => {
-          openHandler()
-        }).catch(console.log)
+        openHandler()
       }
     })
   }
