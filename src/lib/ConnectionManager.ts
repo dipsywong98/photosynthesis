@@ -5,6 +5,7 @@ import { Connection } from './Connection'
 import { PkgType } from './PkgType'
 import { ConnectionTimeoutError } from './errors/ConnectionTimeoutError'
 import { PeerFactory } from './PeerFactory'
+import { pause } from './pause'
 
 export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionListenerPayload> {
   public id: string
@@ -80,7 +81,9 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
       })
 
       if (conn.open) {
-        openHandler()
+        pause(1).then(() => {
+          openHandler()
+        }).catch(console.log)
       }
     })
   }

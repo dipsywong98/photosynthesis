@@ -102,7 +102,6 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
           prevState.turn = 1 - prevState.turn
           if (x === 0 && y === 0) {
             prevState.gameOver = connId
-            console.log('emit game over')
             this.room.endGame(connId).catch(this.errorHandler)
             this.emit(GameEvent.GAME_OVER, { data: connId })
           }

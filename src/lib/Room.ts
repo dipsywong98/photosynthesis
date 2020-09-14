@@ -197,7 +197,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
 
   public endGame = async (message: string): Promise<void> => {
     return await this.network.dispatch({
-      actions: RoomActionTypes.END_GAME,
+      action: RoomActionTypes.END_GAME,
       payload: message
     })
   }
@@ -267,6 +267,9 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
       }
       case RoomActionTypes.GAME_EVENT: {
         if (this.started && prevState.game !== undefined) {
+          if (prevState.game.gameOver !== undefined) {
+            throw new Error('Game over')
+          }
           prevState.game = this.game?.reducer(prevState.game, payload as Record<string, unknown>, connId)
           return { ...prevState }
         } else {

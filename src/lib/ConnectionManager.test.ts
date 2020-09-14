@@ -40,7 +40,7 @@ describe('Connection Manager', () => {
     await manager1.connectPrefix('2')
     expect(manager1.connections.length).toEqual(1)
     manager2.close()
-    await pause(1)
+    await pause(10)
     expect(manager1.connections.length).toEqual(0)
     done()
   })
