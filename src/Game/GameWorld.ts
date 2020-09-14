@@ -45,14 +45,14 @@ export default class GameWorld {
     this.world = new ECSYThreeWorld()
   }
 
-  public stop (): void {
+  public dispose (): void {
     this.resetGUI()
     this.world.stop()
     disposeObj3D(this.sceneEntity?.getComponent(Object3DComponent)?.value)
     this.sunOrientationRad = 0
   }
 
-  public start (): void {
+  public init (): void {
     const {
       camera,
       sceneEntity
@@ -68,8 +68,8 @@ export default class GameWorld {
   }
 
   public resetWorld (): void {
-    this.stop()
-    this.start()
+    this.dispose()
+    this.init()
   }
 
   private resetGUI (): void {

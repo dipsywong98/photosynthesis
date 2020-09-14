@@ -71,7 +71,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   }
 
   public stop (): void {
-    this.gameWorld.stop()
+    this.gameWorld.dispose()
   }
 
   public async click (x: number, y: number): Promise<void> {
