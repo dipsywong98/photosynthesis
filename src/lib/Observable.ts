@@ -51,6 +51,8 @@ export class Observable<E extends Record<string, string | number> = never, P ext
       } else if (equals(match, value) as unknown as boolean) {
         listener(value)
       } else if (
+        typeof match === 'object' &&
+        match !== null &&
         '_' in match &&
         Object.keys(match._)
           .reduce(
@@ -95,6 +97,8 @@ export class Observable<E extends Record<string, string | number> = never, P ext
       } else if (equals(match, value) as unknown as boolean) {
         listener(value, preventClear)
       } else if (
+        typeof match === 'object' &&
+        match !== null &&
         '_' in match &&
         Object.keys(match._)
           .reduce(

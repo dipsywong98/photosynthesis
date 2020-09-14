@@ -4,6 +4,7 @@ import { ConnectionManager } from './ConnectionManager'
 import { pause } from './pause'
 
 prepareFakePeerSystem()
+jest.mock('../Game/GameWorld')
 
 describe('Room', () => {
   it('can be constructed', async (done) => {

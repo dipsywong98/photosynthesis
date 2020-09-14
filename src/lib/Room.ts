@@ -261,6 +261,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
         prevState.idDict = undefined
         prevState.nameDict = undefined
         prevState.game = undefined
+        this.game.stop()
         this.emit(RoomEvents.END_GAME, { data: payload })
         return { ...prevState }
       }

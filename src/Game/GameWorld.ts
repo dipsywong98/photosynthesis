@@ -43,15 +43,16 @@ export default class GameWorld {
     this.gui = new dat.GUI()
     this.renderer = new WebGLRenderer()
     this.world = new ECSYThreeWorld()
-    this.resetWorld()
   }
 
-  public resetWorld (): void {
+  public stop (): void {
     this.resetGUI()
     this.world.stop()
     disposeObj3D(this.sceneEntity?.getComponent(Object3DComponent)?.value)
     this.sunOrientationRad = 0
+  }
 
+  public start (): void {
     const {
       camera,
       sceneEntity
@@ -60,11 +61,15 @@ export default class GameWorld {
     })
     this.camera = camera
     this.sceneEntity = sceneEntity
-
     this.initRenderer()
     this.initECS()
     this.initScene()
     this.world.play()
+  }
+
+  public resetWorld (): void {
+    this.stop()
+    this.start()
   }
 
   private resetGUI (): void {

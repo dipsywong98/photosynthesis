@@ -29,7 +29,7 @@ export interface GameEventPayload {
 
 export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   room: Room
-  gameWorld!: GameWorld
+  gameWorld = new GameWorld()
 
   public get state (): GameState {
     if (this.room.network.state.game === undefined) {
@@ -67,7 +67,11 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   }
 
   public start (): void {
-    this.gameWorld = new GameWorld()
+    this.gameWorld.resetWorld()
+  }
+
+  public stop (): void {
+    this.gameWorld.stop()
   }
 
   public async click (x: number, y: number): Promise<void> {
