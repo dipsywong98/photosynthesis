@@ -145,9 +145,14 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
   private readonly join = async (networkName: string): Promise<void> => {
     this.meToHostConnection = await this.myConnectionManager.connectPrefix(networkName)
     this.meToHostConnection.on(ConnEvent.CONN_CLOSE, () => {
-      this.members = this.members.filter(n => n !== this.hostId)
-      if (this.networkName !== undefined && !this.myConnectionManager.isClosed() && this.members[0] === this.id) {
-        this.host(this.networkName).catch(this.networkErrorHandler)
+      if (this.members.length > 1) {
+        this.handleMemberChange({
+          host: this.members[1],
+          members: this.members.filter(n => n !== this.hostId)
+        }).catch(this.networkErrorHandler)
+        if (this.networkName !== undefined && !this.myConnectionManager.isClosed() && this.members[0] === this.id) {
+          this.host(this.networkName).catch(this.networkErrorHandler)
+        }
       }
     })
     while (this.members.length === 0) {
