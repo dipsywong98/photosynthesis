@@ -130,6 +130,7 @@ export class Observable<E extends Record<string, string | number> = never, P ext
   }
 
   public async untilMatch (event: E[keyof E], value: P | Matcher<P> | { _: Partial<P> }, timeout = TIMEOUT_DURATION, _message?: unknown): Promise<P> {
+    if (value === undefined) throw new Error('expect undefined')
     return await new Promise((resolve, reject) => {
       const cb = window.setTimeout(() => {
         reject(new Error(`${event} ${JSON.stringify(value)} timeout`))

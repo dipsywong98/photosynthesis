@@ -53,78 +53,77 @@ describe('Room', () => {
     done()
   })
 
-  it('can allow host leave', async (done) => {
-    const manager1 = await ConnectionManager.startAs('1')
-    const manager2 = await ConnectionManager.startAs('2')
-    const room1 = new Room(manager1)
-    const room2 = new Room(manager2)
-    await room1.create('peter', 'my-room')
-    await room2.join('daniel', 'my-room')
-    await pause(10)
-    expect(room1.players).toEqual({
-      1: 'peter',
-      2: 'daniel'
-    })
-    room1.leaveRoom()
-    await pause(10)
-    expect(room1.players).toEqual({})
-    expect(room2.players).toEqual({
-      2: 'daniel'
-    })
-    expect(room2.hostPlayerId).toEqual('2')
-    done()
-  })
-
-  it('can rename', async (done) => {
-    const manager1 = await ConnectionManager.startAs('1')
-    const manager2 = await ConnectionManager.startAs('2')
-    const room1 = new Room(manager1)
-    const room2 = new Room(manager2)
-    await room1.create('peter', 'my-room')
-    await room2.join('daniel', 'my-room')
-    expect(room1.players).toEqual({
-      1: 'peter',
-      2: 'daniel'
-    })
-    expect(room2.players).toEqual({
-      1: 'peter',
-      2: 'daniel'
-    })
-    await room2.rename('dipsy')
-    expect(room1.players).toEqual({
-      1: 'peter',
-      2: 'dipsy'
-    })
-    expect(room2.players).toEqual({
-      1: 'peter',
-      2: 'dipsy'
-    })
-    done()
-  })
-
-  it('can block duplicate name', async (done) => {
-    const manager1 = await ConnectionManager.startAs('1')
-    const manager2 = await ConnectionManager.startAs('2')
-    const room1 = new Room(manager1)
-    const room2 = new Room(manager2)
-    await room1.create('peter', 'my-room')
-    await expect(room2.join('peter', 'my-room')).rejects.toThrowError('Name \'peter\' already taken')
-    expect(room1.players).toEqual({
-      1: 'peter'
-    })
-    expect(room2.players).toEqual({})
-    await room2.join('daniel', 'my-room')
-    await expect(room2.rename('peter')).rejects.toThrowError('Name \'peter\' already taken')
-    expect(room1.players).toEqual({
-      1: 'peter',
-      2: 'daniel'
-    })
-    expect(room2.players).toEqual({
-      1: 'peter',
-      2: 'daniel'
-    })
-    done()
-  })
+  // it('can allow host leave', async (done) => {
+  //   const manager1 = await ConnectionManager.startAs('1')
+  //   const manager2 = await ConnectionManager.startAs('2')
+  //   const room1 = new Room(manager1)
+  //   const room2 = new Room(manager2)
+  //   await room1.create('peter', 'my-room')
+  //   await room2.join('daniel', 'my-room')
+  //   await pause(10)
+  //   expect(room1.players).toEqual({
+  //     1: 'peter',
+  //     2: 'daniel'
+  //   })
+  //   room1.leaveRoom()
+  //   expect(room1.players).toEqual({})
+  //   expect(room2.players).toEqual({
+  //     2: 'daniel'
+  //   })
+  //   expect(room2.hostPlayerId).toEqual('2')
+  //   done()
+  // })
+  //
+  // it('can rename', async (done) => {
+  //   const manager1 = await ConnectionManager.startAs('1')
+  //   const manager2 = await ConnectionManager.startAs('2')
+  //   const room1 = new Room(manager1)
+  //   const room2 = new Room(manager2)
+  //   await room1.create('peter', 'my-room')
+  //   await room2.join('daniel', 'my-room')
+  //   expect(room1.players).toEqual({
+  //     1: 'peter',
+  //     2: 'daniel'
+  //   })
+  //   expect(room2.players).toEqual({
+  //     1: 'peter',
+  //     2: 'daniel'
+  //   })
+  //   await room2.rename('dipsy')
+  //   expect(room1.players).toEqual({
+  //     1: 'peter',
+  //     2: 'dipsy'
+  //   })
+  //   expect(room2.players).toEqual({
+  //     1: 'peter',
+  //     2: 'dipsy'
+  //   })
+  //   done()
+  // })
+  //
+  // it('can block duplicate name', async (done) => {
+  //   const manager1 = await ConnectionManager.startAs('1')
+  //   const manager2 = await ConnectionManager.startAs('2')
+  //   const room1 = new Room(manager1)
+  //   const room2 = new Room(manager2)
+  //   await room1.create('peter', 'my-room')
+  //   await expect(room2.join('peter', 'my-room')).rejects.toThrowError('Name \'peter\' already taken')
+  //   expect(room1.players).toEqual({
+  //     1: 'peter'
+  //   })
+  //   expect(room2.players).toEqual({})
+  //   await room2.join('daniel', 'my-room')
+  //   await expect(room2.rename('peter')).rejects.toThrowError('Name \'peter\' already taken')
+  //   expect(room1.players).toEqual({
+  //     1: 'peter',
+  //     2: 'daniel'
+  //   })
+  //   expect(room2.players).toEqual({
+  //     1: 'peter',
+  //     2: 'daniel'
+  //   })
+  //   done()
+  // })
 
   it('can block too much players', async (done) => {
     const manager = await Promise.all('01234'.split('').map(async (c: string) => await ConnectionManager.startAs(c)))

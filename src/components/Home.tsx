@@ -26,7 +26,7 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
         setError('')
         setState(AppState.ROOM)
       })
-      .catch((e: {type: string}) => {
+      .catch((e: { type: string }) => {
         if (e.type === 'unavailable-id') {
           setError(`Room ${roomCode} already exists`)
         } else {
@@ -45,7 +45,12 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
     room.join(name, roomCode)
       .then(() => {
         setError('')
-        setState(AppState.ROOM)
+        if (room.started) {
+          setState(AppState.GAME)
+          room.game.gameWorld.init()
+        } else {
+          setState(AppState.ROOM)
+        }
       })
       .catch((e: Error) => {
         setError(e.message)

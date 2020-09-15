@@ -38,6 +38,7 @@ export default class GameWorld {
   messages: Record<string, unknown[]> = {}
 
   sunOrientationRad = 0
+  started = false
 
   constructor () {
     this.gui = new dat.GUI()
@@ -50,9 +51,14 @@ export default class GameWorld {
     this.world.stop()
     disposeObj3D(this.sceneEntity?.getComponent(Object3DComponent)?.value)
     this.sunOrientationRad = 0
+    this.started = false
+    console.log('end')
   }
 
   public init (): void {
+    if (this.started) return
+    console.log('start')
+    this.started = true
     const {
       camera,
       sceneEntity

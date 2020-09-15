@@ -41,9 +41,11 @@ export class FakeConn implements DataConnection {
         if (this.otherEnd.hostPeer !== undefined) {
           this.otherEnd.hostPeer.connections = this.otherEnd.hostPeer?.connections.filter(conn => conn !== this.otherEnd)
         }
-        this.otherEnd.trigger('close')
       }
-      this.trigger('close')
+      window.setTimeout(() => {
+        this.otherEnd?.trigger('close')
+        this.trigger('close')
+      }, 1)
     }
   }
 

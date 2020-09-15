@@ -116,6 +116,7 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
 
   private readonly host = async (networkName: string): Promise<void> => {
     const hostConnection = await ConnectionManager.startPrefix(networkName)
+    const oldHost = this.hostId
     this.hostId = this.id
     this.hostConnectionManager = hostConnection
     this.hostConnectionManager.on(ConnEvent.CONN_OPEN, ({ conn }) => {
@@ -138,7 +139,12 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
     // if there are existing members, probably the members were connected to a disconnected host
     // so update them to use the new host
     if (this.members.length > 0) {
-      await Promise.all(this.members.map(async (id: string): Promise<Connection> => await hostConnection?.connect(id)))
+      const members = this.members.filter(n => n !== oldHost)
+      await Promise.all(members.map(async (id: string): Promise<Connection> => await hostConnection?.connect(id))).catch(console.log)
+      await hostConnection.broadcastPkg(PkgType.MEMBER_CHANGE, {
+        host: this.id,
+        members
+      })
     }
   }
 
@@ -146,13 +152,14 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
     this.meToHostConnection = await this.myConnectionManager.connectPrefix(networkName)
     this.meToHostConnection.on(ConnEvent.CONN_CLOSE, () => {
       if (this.members.length > 1) {
-        this.handleMemberChange({
-          host: this.members[1],
-          members: this.members.filter(n => n !== this.hostId)
-        }).catch(this.networkErrorHandler)
-        if (this.networkName !== undefined && !this.myConnectionManager.isClosed() && this.members[0] === this.id) {
+        if (this.networkName !== undefined && !this.myConnectionManager.isClosed() && this.members.filter(n => n !== this.hostId)[0] === this.id) {
+          console.log('take host')
           this.host(this.networkName).catch(this.networkErrorHandler)
         }
+        // this.handleMemberChange({
+        //   host: this.members[1],
+        //   members: this.members.filter(n => n !== this.hostId)
+        // }).catch(this.networkErrorHandler)
       }
     })
     while (this.members.length === 0) {

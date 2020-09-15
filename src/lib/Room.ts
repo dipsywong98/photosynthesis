@@ -105,7 +105,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   }
 
   public get started (): boolean {
-    return this.network.state.game !== undefined
+    return this.network.state.game !== undefined && this.network.state.game.gameOver === undefined
   }
 
   constructor (manager?: ConnectionManager) {
@@ -260,7 +260,6 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
       case RoomActionTypes.END_GAME: {
         prevState.idDict = undefined
         prevState.nameDict = undefined
-        prevState.game = undefined
         this.game.stop()
         this.emit(RoomEvents.END_GAME, { data: payload })
         return { ...prevState }

@@ -31,10 +31,11 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   room: Room
   gameWorld = new GameWorld()
 
-  public get state (): GameState {
-    if (this.room.network.state.game === undefined) {
-      throw new Error('Cannot get state before started')
-    }
+  public get started (): boolean {
+    return this.room.started
+  }
+
+  public get state (): GameState | undefined {
     return this.room.network.state.game
   }
 

@@ -159,6 +159,7 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   }
 
   public async untilPkg (pkgType: PkgType, timeout?: number): Promise<ConnectionListenerPayload> {
+    if (pkgType === undefined) throw new Error('trying to subscribe undefined pkgType')
     return await super.untilMatch(ConnEvent.CONN_PKG, { _: { type: pkgType } }, timeout, pkgType)
       .then(({ data, ...rest }: ConnectionListenerPayload) => {
         return { ...rest, data: data, type: pkgType }

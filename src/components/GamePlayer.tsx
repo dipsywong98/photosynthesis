@@ -5,14 +5,14 @@ import { Box, Divider, Flex } from '@theme-ui/components'
 import Button from './common/Button'
 import { AppState } from './App'
 import GameRenderer from './GameRenderer'
+import { useRoom } from '../lib/RoomContext'
 
 const propTypes = {
   setState: PropTypes.func.isRequired
 }
 
 export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({ setState }) => {
-  const [game] = useGame()
-  const gameState = game?.state
+  const [game, gameState] = useGame()
   if (game === null || gameState === null || gameState === undefined) return <Box/>
   const gameOver = gameState?.gameOver !== undefined
   console.log(gameOver, gameState.board)

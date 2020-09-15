@@ -47,6 +47,9 @@ export class FakePeer implements Peer {
 
   destroy (): void {
     this.destroyed = true
+    this.connections.forEach(conn => {
+      conn.close()
+    })
     const { [this.id]: t, ...ap } = FakePeer.allPeers
     FakePeer.allPeers = ap
   }
