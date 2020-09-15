@@ -77,6 +77,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
    */
   public p (id: string | number): string {
     if (this.network.state.idDict === undefined) {
+      console.trace('Game not started yet')
       throw new Error('Game not started yet')
     }
     return this.network.state.idDict[id]
@@ -88,6 +89,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
    */
   public pi (id: string): number {
     if (this.network.state.idDict === undefined) {
+      console.trace('Game not started yet')
       throw new Error('Game not started yet')
     }
     return Number.parseInt(this.network.state.idDict[id])
@@ -99,6 +101,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
    */
   public n (name: string): string {
     if (this.network.state.nameDict === undefined) {
+      console.trace('Game not started yet')
       throw new Error('Game not started yet')
     }
     return this.network.state.nameDict[name]
@@ -260,7 +263,10 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
       case RoomActionTypes.END_GAME: {
         prevState.idDict = undefined
         prevState.nameDict = undefined
-        this.game.stop()
+        if (prevState.game !== undefined) {
+          prevState.game.gameOver = payload as string
+        }
+        this.game.stop(payload)
         this.emit(RoomEvents.END_GAME, { data: payload })
         return { ...prevState }
       }

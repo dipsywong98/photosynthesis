@@ -5,38 +5,32 @@ import { Box, Divider, Flex } from '@theme-ui/components'
 import Button from './common/Button'
 import { AppState } from './App'
 import GameRenderer from './GameRenderer'
-import { useRoom } from '../lib/RoomContext'
 
 const propTypes = {
   setState: PropTypes.func.isRequired
 }
 
 export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({ setState }) => {
-  const [game, gameState] = useGame()
-  if (game === null || gameState === null || gameState === undefined) return <Box/>
-  const gameOver = gameState?.gameOver !== undefined
-  console.log(gameOver, gameState.board)
+  const [game, gameState, gameOver] = useGame()
+  const click = (x: number, y: number): void => {
+    game?.click(x, y).catch(console.log)
+  }
   return (
     <Box>
-      {game !== undefined
-        ? (
-          <GameRenderer gameWorld={game.gameWorld}/>
-        )
-        : null
-      }
+      <GameRenderer gameWorld={game.gameWorld}/>
       <Box
         sx={{
           position: 'relative',
           zIndex: 1
         }}>
-        {gameState.board.map((a: Array<string | null>, x: number) => (
+        {gameState?.board?.map((a: Array<string | null>, x: number) => (
           <Flex key={x}>
             {
               a.map((b: (string | null), y) => (
                 <Box
                   key={y}
                   sx={{ width: '40px', height: '40px', border: '1px solid black' }}
-                  onClick={() => game?.click(x, y)}>
+                  onClick={() => click(x, y)}>
                   {b}
                 </Box>
               ))
@@ -44,7 +38,7 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
           </Flex>
         ))}
         {
-          gameOver && (
+          gameOver !== undefined && (
             <Box>
               <Divider/>
               <Button variant='primary' onClick={() => { setState(AppState.ROOM) }}>Next Round</Button>

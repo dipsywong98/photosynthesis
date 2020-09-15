@@ -68,11 +68,12 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   }
 
   public start (): void {
-    this.gameWorld.resetWorld()
+    // this.gameWorld.resetWorld()
   }
 
-  public stop (): void {
-    this.gameWorld.dispose()
+  public stop (payload: unknown): void {
+    this.emit(GameEvent.GAME_OVER, { data: payload })
+    // this.gameWorld.dispose()
   }
 
   public async click (x: number, y: number): Promise<void> {
@@ -102,9 +103,8 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
           prevState.board[x][y] = pid === 0 ? 'O' : 'X'
           prevState.turn = 1 - prevState.turn
           if (x === 0 && y === 0) {
-            prevState.gameOver = connId
             this.room.endGame(connId).catch(this.errorHandler)
-            this.emit(GameEvent.GAME_OVER, { data: connId })
+            // this.emit(GameEvent.GAME_OVER, { data: connId })
           }
           return { ...prevState }
         } else {

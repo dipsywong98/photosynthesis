@@ -44,6 +44,9 @@ export default class GameWorld {
     this.gui = new dat.GUI()
     this.renderer = new WebGLRenderer()
     this.world = new ECSYThreeWorld()
+    window.addEventListener('load', () => {
+      this.init()
+    })
   }
 
   public dispose (): void {

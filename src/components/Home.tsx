@@ -47,7 +47,7 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
         setError('')
         if (room.started) {
           setState(AppState.GAME)
-          room.game.gameWorld.init()
+          // room.game.gameWorld.init()
         } else {
           setState(AppState.ROOM)
         }
