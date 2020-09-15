@@ -68,7 +68,7 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
   }
 
   private readonly networkErrorHandler = (error: Error): void => {
-    console.log(this.id, error)
+    // console.log(this.id, error)
     this.emit(StarMeshNetworkEvents.NETWORK_ERROR, { error })
   }
 
@@ -153,13 +153,8 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
     this.meToHostConnection.on(ConnEvent.CONN_CLOSE, () => {
       if (this.members.length > 1) {
         if (this.networkName !== undefined && !this.myConnectionManager.isClosed() && this.members.filter(n => n !== this.hostId)[0] === this.id) {
-          console.log('take host')
           this.host(this.networkName).catch(this.networkErrorHandler)
         }
-        // this.handleMemberChange({
-        //   host: this.members[1],
-        //   members: this.members.filter(n => n !== this.hostId)
-        // }).catch(this.networkErrorHandler)
       }
     })
     while (this.members.length === 0) {
