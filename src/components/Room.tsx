@@ -10,6 +10,7 @@ import { mdiAccount, mdiCrown } from '@mdi/js'
 import { AppState } from './App'
 import { Game } from '../Game/Game'
 import { useAlert } from './common/AlertContext'
+import { Card } from './common/Card'
 
 const propTypes = {
   setState: PropTypes.func.isRequired
@@ -36,44 +37,46 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
     })
   }
   return (
-    <Flex sx={{ flexDirection: 'column' }}>
-      <Heading>{room.roomCode}</Heading>
-      <Input
-        label='My Name'
-        value={name}
-        onChange={async ({ target }: InputEvent) => {
-          await rename((target as HTMLInputElement)?.value ?? '')
-        }}
-      />
-      <Divider my={3}/>
+    <Card>
       <Flex sx={{ flexDirection: 'column' }}>
-        {
-          Object.entries(players).map(([id, name]) => (
-            id === host
-              ? <IconText key={id} path={mdiCrown}>{name}{id === room.myId && ' (me)'}</IconText>
-              : <IconText key={id} path={mdiAccount}>{name}{id === room.myId && ' (me)'}</IconText>
-          ))
-        }
+        <Heading>{room.roomCode}</Heading>
+        <Input
+          label='My Name'
+          value={name}
+          onChange={async ({ target }: InputEvent) => {
+            await rename((target as HTMLInputElement)?.value ?? '')
+          }}
+        />
+        <Divider my={3}/>
+        <Flex sx={{ flexDirection: 'column' }}>
+          {
+            Object.entries(players).map(([id, name]) => (
+              id === host
+                ? <IconText key={id} path={mdiCrown}>{name}{id === room.myId && ' (me)'}</IconText>
+                : <IconText key={id} path={mdiAccount}>{name}{id === room.myId && ' (me)'}</IconText>
+            ))
+          }
+        </Flex>
+        <Divider my={3}/>
+        <Flex>
+          <Button
+            sx={{ flex: 1 }}
+            variant='warning'
+            onClick={(): void => {
+              setState(AppState.HOME)
+            }}>
+            Back
+          </Button>
+          <Button
+            sx={{ flex: 1, visibility: (host === room.myId ? null : 'hidden') }}
+            ml={3}
+            variant='primary'
+            onClick={host === room.myId ? startGame : undefined}>
+            Start
+          </Button>
+        </Flex>
       </Flex>
-      <Divider my={3}/>
-      <Flex>
-        <Button
-          sx={{ flex: 1 }}
-          variant='warning'
-          onClick={(): void => {
-            setState(AppState.HOME)
-          }}>
-          Back
-        </Button>
-        <Button
-          sx={{ flex: 1, visibility: (host === room.myId ? null : 'hidden') }}
-          ml={3}
-          variant='primary'
-          onClick={host === room.myId ? startGame : undefined}>
-          Start
-        </Button>
-      </Flex>
-    </Flex>
+    </Card>
   )
 }
 
