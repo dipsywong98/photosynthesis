@@ -2,6 +2,7 @@
   "name": "photosynthesis",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://dipsywong98.github.io/photosynthesis",
   "dependencies": {
     "@babel/core": "7.9.0",
     "@mdi/js": "^5.5.55",

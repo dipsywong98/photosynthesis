@@ -1,4 +1,4 @@
-export const MODELS_LOCATION = '/models'
+export const MODELS_LOCATION = process.env.PUBLIC_URL + '/models'
 
 export const MODELS = {
   BLUE_TOP: 'blueTop',

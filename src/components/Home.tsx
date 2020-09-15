@@ -15,7 +15,7 @@ const propTypes = {
 export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({ setState }) => {
   const room = useRoom()
   const [name, setName] = useState('')
-  const [roomCode, setRoomCode] = useState(/^\/(.*)$/.exec(window.location.pathname)?.[1] ?? '')
+  const [roomCode, setRoomCode] = useState(/^\/(.*)$/.exec(window.location.pathname.replace(process.env.PUBLIC_URL, ''))?.[1] ?? '')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -65,7 +65,7 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
   return (
     <Card>
       <Flex sx={{ flexDirection: 'column' }}>
-        <Heading>Welcome to Whatever Game</Heading>
+        <Heading>Welcome to Photosynthesis</Heading>
         {
           error !== '' && (
             <Well variant='danger'>{error}</Well>

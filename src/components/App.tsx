@@ -24,11 +24,11 @@ const App: FunctionComponent = () => {
         room.leaveRoom()
         window.history.pushState({
           pageTitle: 'Whatever Game'
-        }, '', './')
+        }, '', process.env.PUBLIC_URL)
       } else if (newState === AppState.ROOM) {
         window.history.pushState({
           pageTitle: (room.roomCode ?? '') + ' - Whatever Game'
-        }, '', `./${room.roomCode ?? ''}`)
+        }, '', `${process.env.PUBLIC_URL}/${room.roomCode ?? ''}`)
       }
       _setState(newState)
     }
