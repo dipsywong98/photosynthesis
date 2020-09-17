@@ -160,6 +160,9 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
     while (this.members.length === 0) {
       await pause(100)
     }
+    while (!this.members.reduce((flag: boolean, member) => flag && undefined !== this.myConnectionManager.connections.find(({ id }) => id === member), true)) {
+      await pause(100)
+    }
   }
 
   private readonly handleMemberChange = async (data: unknown): Promise<void> => {

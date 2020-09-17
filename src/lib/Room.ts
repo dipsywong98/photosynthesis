@@ -3,7 +3,6 @@ import { Observable } from './Observable'
 import { Game, GameState } from '../Game/Game'
 import { StarMeshEventPayload, StarMeshNetwork, StarMeshNetworkEvents, StarMeshReducer } from './StarMeshNetwork'
 import cloneDeep from 'lodash.clonedeep'
-import { pause } from './pause'
 
 const CH = 'ABCDEFGHJKLMNOPQRSTUVWXYZ'
 
@@ -144,15 +143,8 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   }
 
   public join = async (myName: string, roomCode: string): Promise<void> => {
+    console.log(`joining ${roomCode}`)
     await this.network.joinOrHost(roomCode)
-    while (true) {
-      try {
-        this.manager.conn(ConnectionManager.prefixId(roomCode))
-        break
-      } catch (e) {
-        await pause(100)
-      }
-    }
     await this.network.dispatch({
       action: RoomActionTypes.JOIN,
       payload: myName

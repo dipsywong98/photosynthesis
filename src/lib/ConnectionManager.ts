@@ -3,7 +3,6 @@ import { Observable } from './Observable'
 import { ConnectionListener, ConnectionListenerPayload, ConnEvent, Package } from './ConnectionTypes'
 import { Connection } from './Connection'
 import { PkgType } from './PkgType'
-import { ConnectionTimeoutError } from './errors/ConnectionTimeoutError'
 import { PeerFactory } from './PeerFactory'
 
 export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionListenerPayload> {
@@ -63,7 +62,7 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
     }
     return await new Promise((resolve, reject) => {
       const id1 = setTimeout(() => {
-        reject(new ConnectionTimeoutError(id))
+        // reject(new ConnectionTimeoutError(id))
       }, timeout)
       const id2 = this.once(ConnEvent.PEER_ERROR, ({ error }: ConnectionListenerPayload) => {
         reject(error)
