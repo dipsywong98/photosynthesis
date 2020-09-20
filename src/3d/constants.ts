@@ -49,6 +49,13 @@ export const SEED_MODELS: Record<Color, ModelName> = {
 export const AMBIENT_COLOR = 0x191F48
 export const SUN_COLOR = 0xF8FFB2
 export const SKY_COLOR = 0xcaf1fc
+export const INACTIVE_COLOR = 0x333333
+export const COLOR_VALUES: { [k in Color]: number } = {
+  [Color.BLUE]: 0x1C77E9,
+  [Color.ORANGE]: 0x1C77E9,
+  [Color.YELLOW]: 0xE9D51C,
+  [Color.GREEN]: 0x53E91C
+}
 
 export const SHADE_Y: { [k in GrowthStage]: number } = [-18, -10.7, -5.63, 0]
 
@@ -57,6 +64,8 @@ export const SUN_ANGLE = 52.725
 export const TREE_TOP_Y = 10
 
 export const TILE_SIZE = 5
+
+export const INITIAL_SUN_ORIENTATION = 150 * Math.PI / 180
 
 export interface TreeGrowthProp {
   tree: {

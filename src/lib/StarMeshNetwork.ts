@@ -3,7 +3,7 @@ import { ConnectionListenerPayload, ConnEvent } from './ConnectionTypes'
 import { PkgType } from './PkgType'
 import { Connection } from './Connection'
 import { Observable } from './Observable'
-import cloneDeep from 'lodash.clonedeep'
+import { clone } from 'ramda'
 import { pause } from './pause'
 
 export enum StarMeshNetworkEvents {
@@ -61,10 +61,10 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
   constructor (myConnectionManager: ConnectionManager, initialState: T, reducer?: StarMeshReducer<T>) {
     super()
     this.reducer = reducer
-    this.initialState = cloneDeep(initialState)
+    this.initialState = clone(initialState)
     this.myConnectionManager = myConnectionManager
     this.initMyConnectionManagerListeners()
-    this.state = cloneDeep(initialState)
+    this.state = clone(initialState)
   }
 
   private readonly networkErrorHandler = (error: Error): void => {
@@ -126,7 +126,7 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
           members: [...this.members, conn.id]
         })
           .catch(this.networkErrorHandler)
-        conn.sendPkg(PkgType.SET_STATE, cloneDeep(this.state)).catch(this.networkErrorHandler)
+        conn.sendPkg(PkgType.SET_STATE, clone(this.state)).catch(this.networkErrorHandler)
       }
     })
     this.hostConnectionManager.on(ConnEvent.CONN_CLOSE, ({ conn }) => {
@@ -260,7 +260,7 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
     this.emit(StarMeshNetworkEvents.MEMBERS_CHANGE, { members: [] })
     this.meToHostConnection = undefined
     this.hostConnectionManager = undefined
-    this.state = cloneDeep(this.initialState)
+    this.state = clone(this.initialState)
     this.members = []
     this.hostId = undefined
   }

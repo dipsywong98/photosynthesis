@@ -13,7 +13,7 @@ export default class AxialCoordsSystem extends ECSYThreeSystem {
         return
       }
 
-      const [x, z] = axialCoordsComp.position.toCartesian(TILE_SIZE).toArray()
+      const [x, z] = axialCoordsComp.axial.toCartesian(TILE_SIZE).toArray()
 
       obj3d.position.set(x, 0, z)
     })

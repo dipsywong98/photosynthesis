@@ -1,4 +1,4 @@
-import { Object3D } from 'three'
+import { Mesh, Object3D } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { MODELS, MODELS_LOCATION } from './constants'
 
@@ -43,13 +43,13 @@ export const startLoad = (): void => {
       (gltf) => {
         // Process objects
         const object = new Object3D()
-        object.castShadow = true
-        object.receiveShadow = true
         object.name = name
         object.add(...gltf.scene.children)
         object.traverse(child => {
-          child.castShadow = true
-          child.receiveShadow = true
+          if (child instanceof Mesh) {
+            child.castShadow = true
+            child.receiveShadow = true
+          }
         })
         objects[name] = object
 
