@@ -3,7 +3,7 @@ import { getObject } from '../../3d/assets'
 import { Color, MODELS, SEED_MODELS, SHADE_Y, TREE_GROWTH_PROPS, TREE_MODELS, TREE_TOP_Y } from '../../3d/constants'
 import { ECSYThreeEntity, Object3DComponent } from 'ecsy-three'
 import { Object3D } from 'three'
-import SunOrientationComponent from '../components/SunOrientationComponent'
+import SunOrientationTagComponent from '../components/SunOrientationTagComponent'
 import GameWorldSystem from './GameWorldSystem'
 import AxialCoordsComponent from '../components/AxialCoordsComponent'
 import TileComponent from '../components/TileComponent'
@@ -49,7 +49,7 @@ export default class TreeSystem extends GameWorldSystem {
         const shadeEntity = this.world
           .createEntity()
           .addComponent(Object3DComponent, { value: shadeObj })
-          .addComponent(SunOrientationComponent)
+          .addComponent(SunOrientationTagComponent)
         treeComp.shadeObj = shadeObj
         treeComp.shadeEntity = shadeEntity
 

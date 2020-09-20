@@ -1,5 +1,5 @@
 import { Object3DComponent } from 'ecsy-three'
-import SunOrientationComponent from '../components/SunOrientationComponent'
+import SunOrientationTagComponent from '../components/SunOrientationTagComponent'
 import GameWorldSystem from './GameWorldSystem'
 
 export default class SunOrientationSystem extends GameWorldSystem {
@@ -16,6 +16,6 @@ export default class SunOrientationSystem extends GameWorldSystem {
 
 SunOrientationSystem.queries = {
   sunFacingObjs: {
-    components: [SunOrientationComponent, Object3DComponent]
+    components: [SunOrientationTagComponent, Object3DComponent]
   }
 }

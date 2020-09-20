@@ -8,3 +8,7 @@ const cylinderMesh = new Mesh(cylinderGeometry, cylinderMaterial)
 export const CYLINDER_OBJ = new Object3D()
 CYLINDER_OBJ.name = 'cylinder'
 CYLINDER_OBJ.add(cylinderMesh)
+
+export const basicGray = new MeshBasicMaterial({
+  color: 0xcccccc
+})

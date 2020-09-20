@@ -1,6 +1,6 @@
-import { ECSYThreeEntity, ECSYThreeWorld, initialize, Object3DComponent } from 'ecsy-three'
+import { ECSYThreeEntity, ECSYThreeWorld, initialize } from 'ecsy-three'
 import {
-  AmbientLight,
+  AmbientLight, Clock,
   DirectionalLight,
   Group,
   Mesh,
@@ -25,12 +25,13 @@ import HexCube from '../3d/Coordinates/HexCube'
 import TileComponent from './components/TileComponent'
 import AxialCoordsSystem from './systems/AxialCoordsSystem'
 import TileSystem from './systems/TileSystem'
-import SunOrientationComponent from './components/SunOrientationComponent'
+import SunOrientationTagComponent from './components/SunOrientationTagComponent'
 import SunOrientationSystem from './systems/SunOrientationSystem'
 import { createTree } from './entities/tree'
 import dat from 'dat.gui'
 import { Axial } from '../3d/Coordinates/Axial'
 import { CYLINDER_OBJ } from '../3d/extraObjects'
+import Stats from 'stats.js'
 
 export default class GameWorld {
   gui: dat.GUI
@@ -40,6 +41,7 @@ export default class GameWorld {
   sceneEntity?: ECSYThreeEntity
   camera?: PerspectiveCamera
   messages: Record<string, unknown[]> = {}
+  stats: Stats
 
   sunOrientationRad = 0
   started = false
@@ -47,19 +49,21 @@ export default class GameWorld {
   tileEntities: Map<string, ECSYThreeEntity> = new Map<string, ECSYThreeEntity>()
 
   constructor () {
+    this.stats = new Stats()
     this.gui = new dat.GUI()
     this.renderer = new WebGLRenderer()
-    this.world = new ECSYThreeWorld()
+    this.world = new ECSYThreeWorld({ entityPoolSize: 1000 })
+    document.body.appendChild(this.stats.dom)
     window.addEventListener('load', () => {
       this.init()
     })
   }
 
   public dispose (): void {
-    this.resetGUI()
+    this.destroyGUI()
     this.world.stop()
     this.tileEntities.clear()
-    disposeObj3D(this.sceneEntity?.getComponent(Object3DComponent)?.value)
+    disposeObj3D(this.sceneEntity?.getObject3D())
     this.sunOrientationRad = 0
     this.started = false
     console.log('end')
@@ -69,29 +73,36 @@ export default class GameWorld {
     if (this.started) return
     console.log('start')
     this.started = true
+
+    this.initGUI()
+
+    const clock = new Clock()
     const {
       camera,
       sceneEntity
     } = initialize(this.world, {
-      renderer: this.renderer
+      renderer: this.renderer,
+      animationLoop: () => {
+        this.stats.begin()
+        this.world.execute(clock.getDelta(), clock.elapsedTime)
+        this.stats.end()
+      }
     })
     this.camera = camera
     this.sceneEntity = sceneEntity
+
     this.initRenderer()
     this.initECS()
     this.initScene()
     this.world.play()
   }
 
-  public resetWorld (): void {
-    this.dispose()
-    this.init()
-  }
-
-  private resetGUI (): void {
+  private destroyGUI (): void {
     this.gui.destroy()
     this.gui = new dat.GUI()
+  }
 
+  private initGUI (): void {
     const sunControl = this.gui.add(this, 'sunOrientationRad', 0, 2 * Math.PI)
     sunControl.name('Sun orientation')
     sunControl.step(0.01)
@@ -104,7 +115,7 @@ export default class GameWorld {
     this.world.registerComponent(TweenMaterialComponent)
     this.world.registerComponent(AxialCoordsComponent)
     this.world.registerComponent(TileComponent)
-    this.world.registerComponent(SunOrientationComponent)
+    this.world.registerComponent(SunOrientationTagComponent)
 
     this.world.registerSystem(AxialCoordsSystem)
     this.world.registerSystem(TileSystem)
@@ -122,7 +133,7 @@ export default class GameWorld {
 
   private initScene (): void {
     if (this.camera !== undefined && this.sceneEntity !== undefined) {
-      this.camera.position.set(0, 0, 150)
+      this.camera.position.set(0, 0, 95)
       this.camera.fov = 40
 
       this.sceneEntity.getObject3D()?.remove(this.camera)
@@ -160,7 +171,7 @@ export default class GameWorld {
     sun.shadow.camera.bottom = 50
     sun.shadow.camera.left = -100
     sun.shadow.camera.right = 100
-    sun.shadow.mapSize.set(2 ** 11, 2 ** 10)
+    // sun.shadow.mapSize.set(2 ** 12, 2 ** 11)
     const sunContainer = new Group()
     sunContainer.name = 'sun'
     sunContainer.add(sun)
@@ -198,7 +209,7 @@ export default class GameWorld {
     this.world
       .createEntity()
       .addObject3DComponent(sunContainer, this.sceneEntity)
-      .addComponent(SunOrientationComponent)
+      .addComponent(SunOrientationTagComponent)
 
     this.generateGrid()
 
@@ -217,11 +228,11 @@ export default class GameWorld {
       const axial = hexCube.toAxial()
       const tileContainer = new Group()
       tileContainer.name = 'tileContainer-' + axial.toString()
-      console.log(tileContainer.name)
       const tileEntity = this.world
         .createEntity()
         .addObject3DComponent(tileContainer, boardEntity)
         .addComponent(AxialCoordsComponent, { axial })
+        .addComponent(TileComponent)
       this.tileEntities.set(axial.toString(), tileEntity)
     })
 
@@ -239,7 +250,10 @@ export default class GameWorld {
             const material = originalMaterial.clone()
             mesh.material = material
             mesh.material.name = 'tileRing-' + axialComp.axial.toString()
-            entity.addComponent(TileComponent, { material })
+            const tileComp = entity.getMutableComponent(TileComponent)
+            if (tileComp !== undefined) {
+              tileComp.material = material
+            }
           } else {
             console.error('Cannot find standard material inside ring object')
           }

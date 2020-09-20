@@ -8,7 +8,7 @@ export default class TileSystem extends ECSYThreeSystem {
     this.queries.tiles.results.forEach(entity => {
       const tileComp = entity.getComponent(TileComponent)
 
-      if (tileComp === undefined) {
+      if (tileComp === undefined || tileComp.material === undefined) {
         return
       }
 
