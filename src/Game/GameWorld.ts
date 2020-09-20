@@ -139,21 +139,21 @@ export default class GameWorld {
     sun.castShadow = true
     sun.shadow.camera.visible = true
     sun.shadow.bias = -0.001
-    sun.shadow.radius = 8
+    sun.shadow.radius = 2
     sun.shadow.camera.near = 50
     sun.shadow.camera.far = 300
     sun.shadow.camera.top = -100
     sun.shadow.camera.bottom = 50
     sun.shadow.camera.left = -100
     sun.shadow.camera.right = 100
-    sun.shadow.mapSize.set(2 ** 12, 2 ** 11)
+    sun.shadow.mapSize.set(2 ** 11, 2 ** 10)
     const sunContainer = new Group()
     sunContainer.name = 'sun'
     sunContainer.add(sun)
 
     const sky = new DirectionalLight(0xFFFFFF, 0.2)
     sky.name = 'sky'
-    // sky.position.y = 100
+    sky.position.y = 100
     // sky.castShadow = true
     // sky.shadow.bias = -0.001
     // sky.shadow.radius = 128
