@@ -19,6 +19,7 @@ module.exports = {
   ],
   testEnvironment: 'jest-environment-jsdom-fourteen',
   transform: {
+    '^.+peerjs\\.min\\.js$': '<rootDir>/config/jest/t.js',
     '^.+\\.(js|jsx|ts|tsx)$': '<rootDir>/node_modules/babel-jest',
     '^.+\\.css$': '<rootDir>/config/jest/cssTransform.js',
     '^(?!.*\\.(js|jsx|ts|tsx|css|json)$)': '<rootDir>/config/jest/fileTransform.js'

@@ -120,6 +120,25 @@ describe('Observable', () => {
     expect(calledTimes).toEqual(1)
     done()
   })
+  it('can subscribe until partial match', async (done) => {
+    const observable = new Observable<typeof TestEvent, { k?: string, extra?: string }>()
+    let calledTimes = 0
+    const p = observable.untilMatch(TestEvent.SOME_EVENT, {
+      _: { k: 'foo' }
+    }).then(value => {
+      calledTimes++
+      expect(value.k).toEqual('foo')
+      observable.emit(TestEvent.SOME_EVENT, { k: 'bar' })
+    }).catch(() => {
+      throw new Error('fail')
+    })
+    observable.emit(TestEvent.SOME_EVENT, { extra: 'bar' })
+    expect(calledTimes).toEqual(0)
+    observable.emit(TestEvent.SOME_EVENT, { k: 'foo', extra: 'bar' })
+    await p
+    expect(calledTimes).toEqual(1)
+    done()
+  })
   // it('can subscribe * event', () => {
   //   const observable = new Observable<typeof TestEvent, string>()
   //   const cb = jest.fn()
@@ -139,6 +158,30 @@ describe('Observable', () => {
     observable.emit(TestEvent.SOME_EVENT, 'foo')
     expect(cb).toBeCalledTimes(1)
     observable.emit(TestEvent.SOME_EVENT, 'foo')
+    expect(cb).toBeCalledTimes(2)
+  })
+  it('can subscribe on match object event', () => {
+    const observable = new Observable<typeof TestEvent, { nested?: string }>()
+    const cb = jest.fn()
+    observable.onMatch(TestEvent.SOME_EVENT, cb, { nested: 'foo' })
+    expect(cb).toBeCalledTimes(0)
+    observable.emit(TestEvent.SOME_EVENT, {})
+    expect(cb).toBeCalledTimes(0)
+    observable.emit(TestEvent.SOME_EVENT, { nested: 'foo' })
+    expect(cb).toBeCalledTimes(1)
+    observable.emit(TestEvent.SOME_EVENT, { nested: 'bar' })
+    expect(cb).toBeCalledTimes(1)
+  })
+  it('can subscribe on partial match object event', () => {
+    const observable = new Observable<typeof TestEvent, { nested?: string, another?: string }>()
+    const cb = jest.fn()
+    observable.onMatch(TestEvent.SOME_EVENT, cb, { _: { nested: 'foo' } })
+    expect(cb).toBeCalledTimes(0)
+    observable.emit(TestEvent.SOME_EVENT, {})
+    expect(cb).toBeCalledTimes(0)
+    observable.emit(TestEvent.SOME_EVENT, { nested: 'foo' })
+    expect(cb).toBeCalledTimes(1)
+    observable.emit(TestEvent.SOME_EVENT, { nested: 'foo', another: 'wut' })
     expect(cb).toBeCalledTimes(2)
   })
   it('can subscribe on match function event', () => {

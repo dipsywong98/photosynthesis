@@ -58,7 +58,7 @@ export class Connection extends Observable<typeof ConnEvent, ConnectionListenerP
 
   public close (): void {
     this.conn?.close()
-    this.emit(ConnEvent.CONN_CLOSE, {})
+    this.emit(ConnEvent.CONN_CLOSE, { conn: this })
   }
 
   private readonly dataHandler = (conn?: DataConnection) => ([pid, data]: PayloadData) => {
@@ -85,7 +85,7 @@ export class Connection extends Observable<typeof ConnEvent, ConnectionListenerP
         }
       }
     } else {
-      if (typeof data === 'object' && data._t !== undefined) {
+      if (typeof data === 'object' && data !== null && data._t !== undefined) {
         this.emit(ConnEvent.CONN_ACK, { conn: this, data: data.data, type: data._t, pid })
       } else {
         this.emit(ConnEvent.CONN_ACK, { conn: this, data, pid })

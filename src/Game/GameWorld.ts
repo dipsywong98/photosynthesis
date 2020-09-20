@@ -42,6 +42,7 @@ export default class GameWorld {
   messages: Record<string, unknown[]> = {}
 
   sunOrientationRad = 0
+  started = false
 
   tileEntities: Map<string, ECSYThreeEntity> = new Map<string, ECSYThreeEntity>()
 
@@ -49,16 +50,25 @@ export default class GameWorld {
     this.gui = new dat.GUI()
     this.renderer = new WebGLRenderer()
     this.world = new ECSYThreeWorld()
-    this.resetWorld()
+    window.addEventListener('load', () => {
+      this.init()
+    })
   }
 
-  public resetWorld (): void {
+  public dispose (): void {
     this.resetGUI()
     this.world.stop()
     this.tileEntities.clear()
     disposeObj3D(this.sceneEntity?.getComponent(Object3DComponent)?.value)
     this.sunOrientationRad = 0
+    this.started = false
+    console.log('end')
+  }
 
+  public init (): void {
+    if (this.started) return
+    console.log('start')
+    this.started = true
     const {
       camera,
       sceneEntity
@@ -67,11 +77,15 @@ export default class GameWorld {
     })
     this.camera = camera
     this.sceneEntity = sceneEntity
-
     this.initRenderer()
     this.initECS()
     this.initScene()
     this.world.play()
+  }
+
+  public resetWorld (): void {
+    this.dispose()
+    this.init()
   }
 
   private resetGUI (): void {

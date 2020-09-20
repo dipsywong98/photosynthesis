@@ -3,41 +3,45 @@ import { ConnectionListenerPayload, ConnEvent } from './ConnectionTypes'
 import { PkgType } from './PkgType'
 import { Connection } from './Connection'
 import { Observable } from './Observable'
+import cloneDeep from 'lodash.clonedeep'
+import { pause } from './pause'
 
 export enum StarMeshNetworkEvents {
   STATE_CHANGE,
   MEMBERS_CHANGE,
   MEMBERS_JOIN,
   MEMBERS_LEFT,
-  NETWORK_ERROR
+  NETWORK_ERROR,
+  HOST_CHANGE
 }
 
 export interface StarMeshEventPayload<T> {
   state?: T
   members?: string[]
   error?: Error
+  host?: string
 }
 
 export type StarMeshAction = Record<string, unknown>
 
-export type StarMeshReducer = <T>(prevState: T, action: StarMeshAction) => T
+export type StarMeshReducer<T, U = never> = (prevState: T, action: U | StarMeshAction, connId: string) => T
 
 interface MemberChangePayload {
   members: string[]
-  host: string
+  host?: string
 }
 
-const idMemberChangePayload = (data: unknown): data is MemberChangePayload => {
+const isMemberChangePayload = (data: unknown): data is MemberChangePayload => {
   if (typeof data === 'object' && data !== null) {
     if ('members' in data && 'host' in data) {
       const d = data as { members: unknown, host: unknown }
-      return typeof d.host === 'string' && Array.isArray(d.members) && d.members.reduce((p: boolean, c) => p && typeof c === 'string', true)
+      return Array.isArray(d.members) && d.members.reduce((p: boolean, c) => p && typeof c === 'string', true)
     }
   }
   return false
 }
 
-export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents, StarMeshEventPayload<T>> {
+export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typeof StarMeshNetworkEvents, StarMeshEventPayload<T>> {
   hostConnectionManager?: ConnectionManager
   myConnectionManager: ConnectionManager
   meToHostConnection?: Connection
@@ -46,23 +50,25 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
   state: T
   networkName?: string
 
-  reducer?: StarMeshReducer
+  reducer?: StarMeshReducer<T>
   hostId?: string
+  initialState: T
 
   public get id (): string {
     return this.myConnectionManager.id
   }
 
-  constructor (myConnectionManager: ConnectionManager, initialState: T, reducer?: StarMeshReducer) {
+  constructor (myConnectionManager: ConnectionManager, initialState: T, reducer?: StarMeshReducer<T>) {
     super()
     this.reducer = reducer
+    this.initialState = cloneDeep(initialState)
     this.myConnectionManager = myConnectionManager
     this.initMyConnectionManagerListeners()
-    this.state = initialState
+    this.state = cloneDeep(initialState)
   }
 
   private readonly networkErrorHandler = (error: Error): void => {
-    console.log(this.id, error)
+    // console.log(this.id, error)
     this.emit(StarMeshNetworkEvents.NETWORK_ERROR, { error })
   }
 
@@ -110,6 +116,7 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
 
   private readonly host = async (networkName: string): Promise<void> => {
     const hostConnection = await ConnectionManager.startPrefix(networkName)
+    const oldHost = this.hostId
     this.hostId = this.id
     this.hostConnectionManager = hostConnection
     this.hostConnectionManager.on(ConnEvent.CONN_OPEN, ({ conn }) => {
@@ -119,7 +126,7 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
           members: [...this.members, conn.id]
         })
           .catch(this.networkErrorHandler)
-        conn.sendPkg(PkgType.SET_STATE, this.state).catch(this.networkErrorHandler)
+        conn.sendPkg(PkgType.SET_STATE, cloneDeep(this.state)).catch(this.networkErrorHandler)
       }
     })
     this.hostConnectionManager.on(ConnEvent.CONN_CLOSE, ({ conn }) => {
@@ -132,25 +139,35 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
     // if there are existing members, probably the members were connected to a disconnected host
     // so update them to use the new host
     if (this.members.length > 0) {
-      await Promise.all(this.members.map(async (id: string): Promise<Connection> => await hostConnection?.connect(id)))
+      const members = this.members.filter(n => n !== oldHost)
+      await Promise.all(members.map(async (id: string): Promise<Connection> => await hostConnection?.connect(id))).catch(console.log)
+      await hostConnection.broadcastPkg(PkgType.MEMBER_CHANGE, {
+        host: this.id,
+        members
+      })
     }
   }
 
   private readonly join = async (networkName: string): Promise<void> => {
-    const refreshMembersPromise = this.myConnectionManager.untilPkg(PkgType.MEMBER_CHANGE)
     this.meToHostConnection = await this.myConnectionManager.connectPrefix(networkName)
     this.meToHostConnection.on(ConnEvent.CONN_CLOSE, () => {
-      this.members = this.members.filter(n => n !== this.hostId)
-      if (!this.myConnectionManager.isClosed() && this.members[0] === this.id) {
-        this.host(networkName).catch(this.networkErrorHandler)
+      if (this.members.length > 1) {
+        if (this.networkName !== undefined && !this.myConnectionManager.isClosed() && this.members.filter(n => n !== this.hostId)[0] === this.id) {
+          this.host(this.networkName).catch(this.networkErrorHandler)
+        }
       }
     })
-    const { data } = await refreshMembersPromise
-    await this.handleMemberChange(data)
+    while (this.members.length === 0) {
+      await pause(100)
+    }
+    while (!this.members.reduce((flag: boolean, member) => flag && undefined !== this.myConnectionManager.connections.find(({ id }) => id === member), true)) {
+      await pause(100)
+    }
   }
 
   private readonly handleMemberChange = async (data: unknown): Promise<void> => {
-    if (idMemberChangePayload(data)) {
+    if (isMemberChangePayload(data)) {
+      this.emit(StarMeshNetworkEvents.HOST_CHANGE, { host: data.host })
       if (data.members.length === this.members.length && this.members.reduce((f: boolean, c) => f && data.members.includes(c), true)) {
         return
       }
@@ -160,14 +177,19 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
       this.members = [...newList]
       // connect to new member
       const memberJoining = newList.filter(n => !oldList.includes(n))
-      await Promise.all(memberJoining.map(async n => {
-        return await this.myConnectionManager.connect(n)
-      }))
-      // disconnect leave member
       const memberLeaving = oldList.filter(n => !newList.includes(n))
-      memberLeaving.forEach(n => {
-        this.myConnectionManager.disconnect(n)
-      })
+      try {
+        await Promise.all(memberJoining.map(async n => {
+          return await this.myConnectionManager.connect(n)
+        }))
+        // disconnect leave member
+        memberLeaving.forEach(n => {
+          this.myConnectionManager.disconnect(n)
+        })
+      } catch (e) {
+        this.emit(StarMeshNetworkEvents.NETWORK_ERROR, e)
+        console.log(e)
+      }
       if (memberJoining.length > 0 || memberLeaving.length > 0) {
         this.emit(StarMeshNetworkEvents.MEMBERS_CHANGE, { members: this.members })
       }
@@ -182,26 +204,41 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
     }
   }
 
-  public setReducer = (reducer: StarMeshReducer): void => {
+  public setReducer = (reducer: StarMeshReducer<T>): void => {
     this.reducer = reducer
   }
 
   public dispatch = async (action: StarMeshAction): Promise<void> => {
-    const responses = await this.myConnectionManager.broadcastPkg(PkgType.DISPATCH, action)
+    const responses = await Promise.all(this.members.map(async (id) => await this.myConnectionManager.conn(id).sendPkg(PkgType.DISPATCH, action)))
     responses.forEach(({ data }) => {
       if (data !== undefined && data !== true) {
-        throw data
+        if (typeof data === 'string') {
+          throw new Error(data)
+        }
       }
     })
   }
 
-  private readonly dispatchHandler = ({ data, ack }: ConnectionListenerPayload): void => {
+  public dispatchLocal = async (action: StarMeshAction): Promise<void> => {
+    if (this.reducer === undefined) {
+      this.emit(StarMeshNetworkEvents.NETWORK_ERROR, { error: new Error('no reducer defined') })
+      throw new Error('no reducer defined')
+    }
+    const newState = this.reducer(this.state, action, this.id)
+    this.setState(newState)
+    return await Promise.resolve()
+  }
+
+  private readonly dispatchHandler = ({ conn, data, ack }: ConnectionListenerPayload): void => {
     if (this.reducer === undefined) {
       this.emit(StarMeshNetworkEvents.NETWORK_ERROR, { error: new Error('no reducer defined') })
       ack?.('no reducer defined')
+    } else if (conn === undefined) {
+      this.emit(StarMeshNetworkEvents.NETWORK_ERROR, { error: new Error('no conn') })
+      ack?.('no conn')
     } else {
       try {
-        const stateStaging = this.reducer(this.state, data as StarMeshAction)
+        const stateStaging = this.reducer(this.state, data as StarMeshAction, conn.id)
         this.setState(stateStaging)
         ack?.(true)
       } catch (e: unknown) {
@@ -211,7 +248,20 @@ export class StarMeshNetwork<T> extends Observable<typeof StarMeshNetworkEvents,
   }
 
   private readonly setState = (newState: T): void => {
-    this.emit(StarMeshNetworkEvents.STATE_CHANGE, { state: newState })
     this.state = newState
+    this.emit(StarMeshNetworkEvents.STATE_CHANGE, { state: newState })
+  }
+
+  public leave = (): void => {
+    this.networkName = undefined
+    this.hostConnectionManager?.destroy()
+    this.meToHostConnection?.close()
+    this.emit(StarMeshNetworkEvents.MEMBERS_LEFT, { members: this.members })
+    this.emit(StarMeshNetworkEvents.MEMBERS_CHANGE, { members: [] })
+    this.meToHostConnection = undefined
+    this.hostConnectionManager = undefined
+    this.state = cloneDeep(this.initialState)
+    this.members = []
+    this.hostId = undefined
   }
 }

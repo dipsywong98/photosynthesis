@@ -3,7 +3,6 @@ import { Observable } from './Observable'
 import { ConnectionListener, ConnectionListenerPayload, ConnEvent, Package } from './ConnectionTypes'
 import { Connection } from './Connection'
 import { PkgType } from './PkgType'
-import { ConnectionTimeoutError } from './errors/ConnectionTimeoutError'
 import { PeerFactory } from './PeerFactory'
 
 export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionListenerPayload> {
@@ -13,7 +12,7 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   protected closed = false
 
   public isClosed (): boolean {
-    return this.closed
+    return this.closed || this.peer.disconnected
   }
 
   public log = (..._params: unknown[]): void => {
@@ -63,22 +62,21 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
     }
     return await new Promise((resolve, reject) => {
       const id1 = setTimeout(() => {
-        reject(new ConnectionTimeoutError(id))
+        // reject(new ConnectionTimeoutError(id))
       }, timeout)
       const id2 = this.once(ConnEvent.PEER_ERROR, ({ error }: ConnectionListenerPayload) => {
         reject(error)
       })
+      const conn = this.peer.connect(id)
       const openHandler = (): void => {
         const connection: Connection = this.enrichConn(new Connection(conn, this))
         this.off(ConnEvent.CONN_ERROR, id2)
         resolve(connection)
         clearTimeout(id1)
       }
-      const conn = this.peer.connect(id)
       conn.on('open', () => {
         openHandler()
       })
-
       if (conn.open) {
         openHandler()
       }
@@ -150,17 +148,18 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
   public onPkg (pkgType: PkgType, listener: ConnectionListener): string {
     return super.onMatch(ConnEvent.CONN_PKG, ({ data, ...rest }: ConnectionListenerPayload) => {
       listener({ ...rest, data: data, type: pkgType })
-    }, ({ type }: ConnectionListenerPayload) => type === pkgType)
+    }, { _: { type: pkgType } })
   }
 
   public oncePkg (pkgType: PkgType, listener: ConnectionListener): string {
     return super.onceMatch(ConnEvent.CONN_PKG, ({ data, ...rest }: ConnectionListenerPayload) => {
       listener({ ...rest, data: data, type: pkgType })
-    }, ({ type }: ConnectionListenerPayload) => type === pkgType)
+    }, { _: { type: pkgType } })
   }
 
   public async untilPkg (pkgType: PkgType, timeout?: number): Promise<ConnectionListenerPayload> {
-    return await super.untilMatch(ConnEvent.CONN_PKG, ({ type }: ConnectionListenerPayload) => type === pkgType, timeout)
+    if (pkgType === undefined) throw new Error('trying to subscribe undefined pkgType')
+    return await super.untilMatch(ConnEvent.CONN_PKG, { _: { type: pkgType } }, timeout, pkgType)
       .then(({ data, ...rest }: ConnectionListenerPayload) => {
         return { ...rest, data: data, type: pkgType }
       })

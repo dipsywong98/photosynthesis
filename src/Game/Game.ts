@@ -1,8 +1,7 @@
-import { Room } from '../lib/Room'
-import { PkgType } from '../lib/PkgType'
+import { Room, RoomActionTypes } from '../lib/Room'
 import { Observable } from '../lib/Observable'
-import { ConnectionListenerPayload } from '../lib/ConnectionTypes'
 import GameWorld from './GameWorld'
+import { StarMeshAction, StarMeshNetworkEvents, StarMeshReducer } from '../lib/StarMeshNetwork'
 
 export enum GameEvent {
   UPDATE_GAME_STATE,
@@ -12,11 +11,16 @@ export enum GameEvent {
   GAME_INIT
 }
 
+export enum GameActions {
+  CLICK
+}
+
 export type Coords = [number, number]
 
 export interface GameState {
-  turn: string
+  turn: number
   board: Array<Array<string | null>>
+  gameOver?: string
 }
 
 export interface GameEventPayload {
@@ -25,130 +29,89 @@ export interface GameEventPayload {
 
 export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   room: Room
-  state: GameState
-  gameWorld: GameWorld = new GameWorld()
+  gameWorld = new GameWorld()
+
+  public get started (): boolean {
+    return this.room.started
+  }
+
+  public get state (): GameState | undefined {
+    return this.room.network.state.game
+  }
+
+  public static get initialState (): GameState {
+    return {
+      turn: 0,
+      board:
+        [
+          [null, null, null],
+          [null, null, null],
+          [null, null, null]
+        ]
+    }
+  }
+
+  public get me (): string {
+    return this.room.p(this.room.myId)
+  }
+
+  public get mi (): number {
+    return Number.parseInt(this.me)
+  }
 
   constructor (room: Room) {
     super()
     this.room = room
-    this.state = this.initGame()
-    if (this.room.hostConnectionManager !== undefined) {
-      this.initAsHost()
-      this.emit(GameEvent.GAME_INIT, { data: undefined })
-    }
-    if (this.room.myConnectionManager !== undefined) {
-      this.initAsPlayer()
-    }
-    // this.startGame()
+    this.room.network.on(StarMeshNetworkEvents.STATE_CHANGE, ({ state }) => {
+      this.emit(GameEvent.UPDATE_GAME_STATE, { data: state?.game })
+    })
   }
 
-  public initGame (): GameState {
-    console.log('init game')
-    if (this.room.hostPlayerId === undefined) {
-      throw new Error('unknown host player')
-    }
-    this.state = {
-      turn: this.room.hostPlayerId,
-      board: [
-        [null, null, null],
-        [null, null, null],
-        [null, null, null]
-      ]
-    }
-    return this.state
+  public start (): void {
+    // this.gameWorld.resetWorld()
   }
 
-  public hostBroadcast = async (event: GameEvent, data: unknown): Promise<unknown> => {
-    console.log('host broadcast', event, data)
-    if (this.room.hostConnectionManager === undefined) {
-      throw new Error('i am not host')
-    } else {
-      return await this.room.hostConnectionManager.broadcastPkg(PkgType.GAME_EVENT, [event, data])
-    }
+  public stop (payload: unknown): void {
+    this.emit(GameEvent.GAME_OVER, { data: payload })
+    // this.gameWorld.dispose()
   }
 
-  public hostSend = async (id: string, event: GameEvent, data: unknown): Promise<unknown> => {
-    if (this.room.hostConnectionManager === undefined) {
-      throw new Error('i am not host')
-    } else {
-      return await this.room.hostConnectionManager.conn(id).sendPkg(PkgType.GAME_EVENT, [event, data])
-    }
+  public async click (x: number, y: number): Promise<void> {
+    return await this.dispatch({
+      action: GameActions.CLICK,
+      payload: [x, y]
+    }).catch(this.errorHandler)
   }
 
-  public initAsHost (): void {
-    if (this.room.hostConnectionManager !== undefined) {
-      this.room.hostConnectionManager.onPkg(PkgType.GAME_EVENT, ({ conn, data, ack }) => {
-        const [event, payload] = data as [GameEvent, unknown]
-        if (conn !== undefined) {
-          const prevState = this.state
-          const accepted = this.processEvent(event, payload, conn.id)
-          ack?.(accepted)
-          // call update game state only if process event change the reference of state
-          if (accepted && prevState !== this.state) {
-            this.hostBroadcast(GameEvent.UPDATE_GAME_STATE, this.state)
-              .then(() => console.log('update state'))
-              .catch(console.error)
-          }
-        } else {
-          ack?.(false)
-        }
-      })
-    }
+  public dispatch = async (action: StarMeshAction): Promise<void> => {
+    await this.room.network.dispatch({
+      action: RoomActionTypes.GAME_EVENT,
+      payload: action
+    })
   }
 
-  public processEvent (event: GameEvent, data: unknown, id: string): boolean {
-    switch (event) {
-      case GameEvent.CLICK: {
-        const [x, y] = data as Coords
-        console.log('host', this.state)
-        if (this.state.board[x][y] === null && this.state.turn === id) {
-          this.state.board[x][y] = id === this.room.hostPlayerId ? 'O' : 'X'
-          this.state.turn = this.nextPlayerId(this.state.turn)
-          this.state = { ...this.state }
+  public errorHandler = (e: Error): void => {
+    console.log(e)
+  }
+
+  public reducer: StarMeshReducer<GameState> = (prevState, { action, payload }, connId) => {
+    const pid = this.room.pi(connId)
+    switch (action) {
+      case GameActions.CLICK: {
+        const [x, y] = payload as Coords
+        if (prevState.board[x][y] === null && prevState.turn === pid) {
+          prevState.board[x][y] = pid === 0 ? 'O' : 'X'
+          prevState.turn = 1 - prevState.turn
           if (x === 0 && y === 0) {
-            this.hostBroadcast(GameEvent.GAME_OVER, this.room.hostPlayerId).then(console.log).catch(console.error)
+            this.room.endGame(connId).catch(this.errorHandler)
+            // this.emit(GameEvent.GAME_OVER, { data: connId })
           }
-          return true
+          return { ...prevState }
         } else {
-          return false
+          throw new Error('invalid move')
         }
       }
-      case GameEvent.REQUEST_GAME_STATE:
-        this.hostSend(id, GameEvent.UPDATE_GAME_STATE, this.state).then(console.log).catch(console.error)
-        return true
-      default:
-        return true
     }
-  }
-
-  public initAsPlayer (): void {
-    if (this.room.myConnectionManager !== undefined) {
-      this.room.myConnectionManager.onPkg(PkgType.GAME_EVENT, ({ data }) => {
-        const [event, payload] = data as [GameEvent, unknown]
-        console.log('i receive', data)
-        if (event === GameEvent.UPDATE_GAME_STATE) {
-          this.state = { ...this.state, ...payload as GameState }
-        }
-        this.emit(event, { data: payload })
-      })
-      this.send(GameEvent.REQUEST_GAME_STATE, undefined).then(console.log).catch(console.error)
-    }
-  }
-
-  public async send (event: GameEvent, data: unknown): Promise<ConnectionListenerPayload> {
-    return await this.room.sendToHost(PkgType.GAME_EVENT, [event, data])
-  }
-
-  public indexOfPlayerId (id: string): number {
-    return this.room.playerIds.indexOf(id)
-  }
-
-  public nextPlayerId (id: string): string {
-    const index = this.indexOfPlayerId(id)
-    if (index === -1) {
-      return id
-    } else {
-      return this.room.playerIds[(index + 1) % this.room.playerIds.length]
-    }
+    return prevState
   }
 }

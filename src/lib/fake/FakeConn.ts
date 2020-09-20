@@ -26,7 +26,7 @@ export class FakeConn implements DataConnection {
     throw new Error('not implemented')
   }
 
-  stringify (data: Record<string, unknown> | number | string | unknown[]): string {
+  stringify (_data: Record<string, unknown> | number | string | unknown[]): string {
     throw new Error('not implemented')
   }
 
@@ -41,9 +41,11 @@ export class FakeConn implements DataConnection {
         if (this.otherEnd.hostPeer !== undefined) {
           this.otherEnd.hostPeer.connections = this.otherEnd.hostPeer?.connections.filter(conn => conn !== this.otherEnd)
         }
-        this.otherEnd.trigger('close')
       }
-      this.trigger('close')
+      window.setTimeout(() => {
+        this.otherEnd?.trigger('close')
+        this.trigger('close')
+      }, 1)
     }
   }
 
@@ -53,12 +55,12 @@ export class FakeConn implements DataConnection {
 
   public callbacks: Record<string | 'data' | 'open' | 'close' | 'error', Array<(d?: unknown) => void>> = {}
 
-  on (event: string, cb: () => void): void
-  on (event: 'data', cb: (data: unknown) => void): void
-  on (event: 'open', cb: () => void): void
-  on (event: 'close', cb: () => void): void
-  on (event: 'error', cb: (err: unknown) => void): void
-  on (event: string | 'data' | 'open' | 'close' | 'error', cb: (() => void) | ((data: unknown) => void)): void {
+  public on (event: string, cb: () => void): void
+  public on (event: 'data', cb: (data: unknown) => void): void
+  public on (event: 'open', cb: () => void): void
+  public on (event: 'close', cb: () => void): void
+  public on (event: 'error', cb: (err: unknown) => void): void
+  public on (event: string | 'data' | 'open' | 'close' | 'error', cb: (() => void) | ((data: unknown) => void)): void {
     if (!(event in this.callbacks)) {
       this.callbacks[event] = []
     }

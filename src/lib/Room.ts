@@ -1,10 +1,8 @@
 import { ConnectionManager } from './ConnectionManager'
-import { ConnectionListenerPayload, ConnEvent } from './ConnectionTypes'
-import { PkgType } from './PkgType'
-import { Connection } from './Connection'
 import { Observable } from './Observable'
-import { pause } from './pause'
-import { Game, GameEvent } from '../Game/Game'
+import { Game, GameState } from '../Game/Game'
+import { StarMeshEventPayload, StarMeshNetwork, StarMeshNetworkEvents, StarMeshReducer } from './StarMeshNetwork'
+import cloneDeep from 'lodash.clonedeep'
 
 const CH = 'ABCDEFGHJKLMNOPQRSTUVWXYZ'
 
@@ -12,10 +10,21 @@ const generateRoomCode = (): string => {
   return [0, 0, 0, 0].map(() => CH[Math.floor(Math.random() * CH.length)]).join('')
 }
 
+export enum RoomActionTypes {
+  JOIN,
+  LEAVE,
+  RENAME,
+  START_GAME,
+  END_GAME,
+  GAME_EVENT,
+}
+
 export enum RoomEvents {
   SET_PLAYERS,
   SET_HOST,
   START_GAME,
+  ERROR,
+  END_GAME,
 }
 
 export interface RoomEventPayload {
@@ -26,237 +35,245 @@ export interface PlayersDict {
   [id: string]: string
 }
 
-type JoinEventAckPayload = [PlayersDict, string]
-const isJoinEventAckPayload = (payload: unknown): payload is JoinEventAckPayload => {
-  return Array.isArray(payload) && payload.length === 2 && typeof payload[0] === 'object' && typeof payload[1] === 'string'
+interface RoomState {
+  players: PlayersDict
+  minPlayers: number
+  maxPlayers: number
+  game?: GameState
+  idDict?: PlayersDict
+  nameDict?: PlayersDict
 }
 
 export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
-  myConnectionManager: ConnectionManager
-  hostConnectionManager?: ConnectionManager // defined only if i am the host
-  meToHostConnection?: Connection
-  players: PlayersDict = {}
-  hostPlayerId?: string
-  roomCode?: string
-  game?: Game
-  minPlayers = 2
-  maxPlayers = 4
+  network: StarMeshNetwork<RoomState>
+  manager: ConnectionManager
+  game: Game
+
+  public get hostPlayerId (): string | undefined {
+    return this.network.hostId
+  }
+
+  public get roomCode (): string | undefined {
+    return this.network.networkName
+  }
+
+  public get myId (): string {
+    return this.network.id
+  }
+
+  public get players (): PlayersDict {
+    return this.network.state.players
+  }
 
   public get playerIds (): string[] {
     return Object.keys(this.players)
   }
 
-  constructor () {
+  /**
+   * given peerjs id return in game player id or
+   * given in game player id return peerjs id
+   * @param id
+   */
+  public p (id: string | number): string {
+    if (this.network.state.idDict === undefined) {
+      console.trace('Game not started yet')
+      throw new Error('Game not started yet')
+    }
+    return this.network.state.idDict[id]
+  }
+
+  /**
+   * given conn id return in game player id in integer
+   * @param id
+   */
+  public pi (id: string): number {
+    if (this.network.state.idDict === undefined) {
+      console.trace('Game not started yet')
+      throw new Error('Game not started yet')
+    }
+    return Number.parseInt(this.network.state.idDict[id])
+  }
+
+  /**
+   *  given name, return in game player id
+   * @param name
+   */
+  public n (name: string): string {
+    if (this.network.state.nameDict === undefined) {
+      console.trace('Game not started yet')
+      throw new Error('Game not started yet')
+    }
+    return this.network.state.nameDict[name]
+  }
+
+  public get started (): boolean {
+    return this.network.state.game !== undefined && this.network.state.game.gameOver === undefined
+  }
+
+  constructor (manager?: ConnectionManager) {
     super()
-    this.myConnectionManager = new ConnectionManager()
-    this.setUpMyConnectionListener(this.myConnectionManager)
-  }
-
-  public sendToHost = async (pkgType: PkgType, data: unknown): Promise<ConnectionListenerPayload> => {
-    if (this.meToHostConnection === undefined) {
-      throw new Error('not connected to host')
-    }
-    return await this.myConnectionManager.sendPkg(this.meToHostConnection.id, pkgType, data)
-  }
-
-  public broadcast = async (pkgType: PkgType, data: unknown): Promise<ConnectionListenerPayload[]> => {
-    return await Promise.all(Object.keys(this.players).map(async (id: string) => await this.myConnectionManager.conn(id).sendPkg(pkgType, data)))
-  }
-
-  public get myId (): string {
-    return this.myConnectionManager.id
-  }
-
-  /**
-   * Methods related to hosting a room
-   */
-
-  /**
-   * create a room to host and join, room name will be random 4 capital letters
-   * @param myName
-   * @param code
-   */
-  public create = async (myName: string, code?: string): Promise<string> => {
-    if (code !== undefined && code !== '') {
-      await this.host(code)
-      await this.join(myName, code)
-      return code
-    } else {
-      while (true) {
-        const roomCode = generateRoomCode()
-        try {
-          await this.host(roomCode)
-        } catch (e) {
-          await pause(100)
-          continue
-        }
-        await this.join(myName, roomCode)
-        return roomCode
-      }
-    }
-  }
-
-  /**
-   * host a room with given room code
-   * create an extra connection manager as a beacon for other peers to join,
-   * and notify other roommates that a new peer is joining
-   * @param roomCode
-   */
-  public host = async (roomCode: string): Promise<void> => {
-    this.hostConnectionManager = await ConnectionManager.startPrefix(roomCode)
-    await this.setUpHostConnectionManagerListeners(this.hostConnectionManager)
-    this.hostPlayerId = this.myConnectionManager.id
-    this.emit(RoomEvents.SET_HOST, { data: this.hostPlayerId })
-  }
-
-  private readonly setUpHostConnectionManagerListeners = async (hostConnection: ConnectionManager): Promise<void> => {
-    hostConnection.onPkg(PkgType.JOIN, ({ conn, data, ack }) => {
-      if (conn !== undefined) {
-        if (this.playerIds.length < this.maxPlayers) {
-          this.players[conn.id] = data as string
-          ack?.([this.players, this.myConnectionManager.id]) // return the players list back to the new joiner, and notify the host's player id
-          hostConnection?.broadcastPkg(PkgType.NEW_JOIN, [data, conn.id]) // notify other users on the new joiner
-            .catch(console.error)
-        } else {
-          ack?.(`Room '${this.roomCode ?? ''}' is full`)
-        }
-      } else {
-        // this is not quite possible
-        throw new Error('missing conn')
+    this.manager = manager ?? new ConnectionManager()
+    this.network = new StarMeshNetwork<RoomState>(this.manager, {
+      maxPlayers: 4,
+      minPlayers: 2,
+      players: {}
+    }, this.networkReducer)
+    this.network.on(StarMeshNetworkEvents.MEMBERS_LEFT, ({ members }) => {
+      if (members !== undefined) {
+        members.forEach(id => {
+          this.network.dispatchLocal({
+            action: RoomActionTypes.LEAVE,
+            payload: id
+          }).catch(this.errorHandler)
+        })
       }
     })
-    hostConnection.on(ConnEvent.CONN_CLOSE, ({ conn }) => {
-      if (conn !== undefined) {
-        this.removePlayer(conn.id)
+    this.network.on(StarMeshNetworkEvents.HOST_CHANGE, ({ host }) => {
+      if (host !== undefined) {
+        this.emit(RoomEvents.SET_HOST, { data: host })
       }
     })
-    // if there are existing players, probably the players were connected to a disconnected host
-    // so update them to use the new host
-    if (Object.keys(this.players).length > 0) {
-      await Promise.all(Object.keys(this.players).map(async (id: string): Promise<Connection> => await hostConnection?.connect(id)))
-      await hostConnection.broadcastPkg(PkgType.CHANGE_HOST, this.myConnectionManager.id)
-    }
+    this.game = new Game(this)
   }
 
-  /**
-   * Methods related to being a room member
-   */
-
-  /**
-   * join a room
-   * @param myName
-   * @param roomCode
-   */
-  public join = async (myName: string, roomCode: string): Promise<Connection[]> => {
-    this.meToHostConnection = await this.myConnectionManager.connectPrefix(roomCode) // connect ot the room beacon
-      .catch(() => {
-        throw new Error(`Room '${roomCode}' does not exist`)
-      })
-    const { data } = await this.sendToHost(PkgType.JOIN, myName)
-    if (!isJoinEventAckPayload(data)) {
-      this.meToHostConnection.close()
-      if (typeof data === 'string') {
-        throw new Error(data)
-      } else {
-        throw new Error('room join error')
-      }
-    }
-    const [players, hostId] = data
-    this.players = players
-    this.hostPlayerId = hostId
-    this.emit(RoomEvents.SET_PLAYERS, { data: { ...this.players } })
-    this.emit(RoomEvents.SET_HOST, { data: hostId })
-    this.roomCode = roomCode
-    return await Promise.all(Object.keys(players).map(async (id): Promise<Connection> => await this.myConnectionManager.connect(id))) // connect to rest of the players to form mesh
+  public create = async (myName: string, roomCode?: string): Promise<string> => {
+    const code = roomCode === undefined || roomCode === '' ? generateRoomCode() : roomCode
+    await this.join(myName, code)
+    return code
   }
 
-  private readonly setUpMyConnectionListener = (myConnection: ConnectionManager): void => {
-    // triggered when other enter the room
-    myConnection.onPkg(PkgType.NEW_JOIN, ({ data }) => {
-      const [name, id] = data as [string, string]
-      myConnection.connect(id)
-        .catch(console.error)
-      this.players[id] = name
-      this.emit(RoomEvents.SET_PLAYERS, { data: { ...this.players } })
-    })
-    myConnection.on(ConnEvent.CONN_CLOSE, ({ conn }) => {
-      if (conn !== undefined) {
-        if (conn.id in this.players) {
-          this.removePlayer(conn.id)
-        } else if (this.hostPlayerId !== undefined && conn.id === this.meToHostConnection?.id) {
-          this.handleHostClosed(myConnection)
-        }
-        this.emit(RoomEvents.SET_PLAYERS, { data: { ...this.players } })
-      }
-    })
-    myConnection.onPkg(PkgType.RENAME, ({ data }) => {
-      const [name, id] = data as [string, string]
-      this.players[id] = name
-      this.emit(RoomEvents.SET_PLAYERS, { data: { ...this.players } })
-    })
-    myConnection.onPkg(PkgType.START_GAME, () => {
-      const game = new Game(this)
-      game.on(GameEvent.GAME_OVER, () => {
-        this.game = undefined
-      })
-      this.emit(RoomEvents.START_GAME, { data: game })
+  public join = async (myName: string, roomCode: string): Promise<void> => {
+    console.log(`joining ${roomCode}`)
+    await this.network.joinOrHost(roomCode)
+    await this.network.dispatch({
+      action: RoomActionTypes.JOIN,
+      payload: myName
+    }).catch(e => {
+      this.leaveRoom()
+      throw e
     })
   }
 
-  private readonly handleHostClosed = (myConnection: ConnectionManager): void => {
-    if (this.myConnectionManager.isClosed()) {
-      return
-    }
-    if (this.hostPlayerId !== undefined) {
-      this.removePlayer(this.hostPlayerId)
-    }
-    if (this.meToHostConnection !== undefined) {
-      myConnection.untilPkg(PkgType.CHANGE_HOST).then(async ({ data }) => {
-        this.emit(RoomEvents.SET_HOST, { data })
-        this.meToHostConnection = await myConnection.connect(data as string)
-      })
-        .catch(console.error)
-      if (Object.keys(this.players)[0] === myConnection.id && this.roomCode !== undefined) {
-        this.host(this.roomCode)
-          .catch(console.error)
-      }
-    }
+  public joinOrCreate = this.join
+
+  private readonly errorHandler = ({ error }: StarMeshEventPayload<RoomState>): void => {
+    console.log(error)
+    this.emit(RoomEvents.ERROR, { data: error })
   }
 
-  public rename = async (name: string): Promise<ConnectionListenerPayload[]> => {
-    if (!Object.values(this.players).includes(name)) {
-      return await this.broadcast(PkgType.RENAME, [this.myId, name])
-    } else {
-      throw new Error(`Name '${name}' is taken`)
-    }
+  public rename = async (name: string): Promise<void> => {
+    return await this.network.dispatch({
+      action: RoomActionTypes.RENAME,
+      payload: name
+    })
   }
 
   public leaveRoom = (): void => {
-    this.myConnectionManager.close()
-    this.myConnectionManager = new ConnectionManager()
-    if (this.hostConnectionManager !== undefined) {
-      this.hostConnectionManager?.close()
-    }
-    this.setUpMyConnectionListener(this.myConnectionManager)
-    this.hostConnectionManager = undefined
-    this.meToHostConnection?.close()
-    this.meToHostConnection = undefined
-    this.players = {}
-    this.hostPlayerId = undefined
-    this.roomCode = undefined
+    this.network.leave()
     this.emit(RoomEvents.SET_HOST, { data: undefined })
-    this.emit(RoomEvents.SET_PLAYERS, { data: {} })
   }
 
-  public startGame = async (): Promise<ConnectionListenerPayload[]> => {
-    if (this.minPlayers > this.playerIds.length) {
-      throw new Error(`Not enough players, need ${this.minPlayers} but got ${this.playerIds.length}`)
+  public startGame = async (): Promise<void> => {
+    const idDict: PlayersDict = {}
+    const nameDict: PlayersDict = {}
+    Object.entries(this.players).forEach(([id, name], k) => {
+      idDict[id] = k.toString()
+      idDict[k] = id
+      nameDict[name] = k.toString()
+    })
+    return await this.network.dispatch({
+      action: RoomActionTypes.START_GAME,
+      payload: {
+        idDict,
+        nameDict
+      }
+    })
+  }
+
+  public endGame = async (message: string): Promise<void> => {
+    return await this.network.dispatch({
+      action: RoomActionTypes.END_GAME,
+      payload: message
+    })
+  }
+
+  private readonly networkReducer: StarMeshReducer<RoomState> = (prevState, { action, payload }, connId) => {
+    const setName = (): void => {
+      if (typeof payload !== 'string') throw new Error('Invalid payload')
+      if (this.started) {
+        if (this.n(payload) === undefined) {
+          throw new Error(`Room '${this.roomCode ?? ''}' has started game`)
+        } else if (prevState.idDict !== undefined && prevState.nameDict !== undefined) {
+          const pid = this.n(payload)
+          prevState.idDict[connId] = pid
+          prevState.idDict[pid] = connId
+          prevState.nameDict[payload] = pid
+        }
+      }
+      if (Object.values(prevState.players).includes(payload)) {
+        throw new Error(`Name '${payload}' already taken`)
+      }
+      prevState.players = { ...prevState.players, [connId]: payload }
+      this.emit(RoomEvents.SET_PLAYERS, {
+        data: {
+          ...prevState.players
+        }
+      })
     }
-    return await this.broadcast(PkgType.START_GAME, undefined)
-  }
-
-  private removePlayer (playerId: string): void {
-    const { [playerId]: s, ...rest } = this.players
-    this.players = rest
+    switch (action) {
+      case RoomActionTypes.JOIN:
+        if (Object.keys(prevState.players).length + 1 > prevState.maxPlayers) {
+          throw new Error(`Room '${this.roomCode ?? ''}' is already full`)
+        }
+        setName()
+        return { ...prevState }
+      case RoomActionTypes.RENAME:
+        setName()
+        return { ...prevState }
+      case RoomActionTypes.LEAVE: {
+        const { [payload as string]: u, ...players } = this.players
+        prevState.players = players
+        this.emit(RoomEvents.SET_PLAYERS, {
+          data: {
+            ...prevState.players
+          }
+        })
+        return { ...prevState }
+      }
+      case RoomActionTypes.START_GAME: {
+        if (this.playerIds.length < this.network.state.minPlayers) {
+          throw new Error('Not enough players, required 2')
+        }
+        const typed = payload as { idDict: PlayersDict, nameDict: PlayersDict }
+        prevState.idDict = cloneDeep(typed.idDict)
+        prevState.nameDict = cloneDeep(typed.nameDict)
+        prevState.game = Game.initialState
+        this.game?.start()
+        this.emit(RoomEvents.START_GAME, { data: this.game })
+        return { ...prevState }
+      }
+      case RoomActionTypes.END_GAME: {
+        prevState.idDict = undefined
+        prevState.nameDict = undefined
+        if (prevState.game !== undefined) {
+          prevState.game.gameOver = payload as string
+        }
+        this.game.stop(payload)
+        this.emit(RoomEvents.END_GAME, { data: payload })
+        return { ...prevState }
+      }
+      case RoomActionTypes.GAME_EVENT: {
+        if (this.started && prevState.game !== undefined) {
+          if (prevState.game.gameOver !== undefined) {
+            throw new Error('Game over')
+          }
+          prevState.game = this.game?.reducer(prevState.game, payload as Record<string, unknown>, connId)
+          return { ...prevState }
+        } else {
+          throw new Error('Game not started')
+        }
+      }
+    }
+    return prevState
   }
 }
