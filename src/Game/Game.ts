@@ -2,6 +2,8 @@ import { Room, RoomActionTypes } from '../lib/Room'
 import { Observable } from '../lib/Observable'
 import GameWorld from './GameWorld'
 import { StarMeshAction, StarMeshNetworkEvents, StarMeshReducer } from '../lib/StarMeshNetwork'
+import { GameState } from './types/GameState'
+import { getInitialState } from './getInitialState'
 
 export enum GameEvent {
   UPDATE_GAME_STATE,
@@ -16,12 +18,6 @@ export enum GameActions {
 }
 
 export type Coords = [number, number]
-
-export interface GameState {
-  turn: number
-  board: Array<Array<string | null>>
-  gameOver?: string
-}
 
 export interface GameEventPayload {
   data: unknown
@@ -39,16 +35,8 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     return this.room.network.state.game
   }
 
-  public static get initialState (): GameState {
-    return {
-      turn: 0,
-      board:
-        [
-          [null, null, null],
-          [null, null, null],
-          [null, null, null]
-        ]
-    }
+  public static initialState (players: number): GameState {
+    return getInitialState(players)
   }
 
   public get me (): string {
@@ -95,21 +83,10 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   }
 
   public reducer: StarMeshReducer<GameState> = (prevState, { action, payload }, connId) => {
-    const pid = this.room.pi(connId)
+    // const pid = this.room.pi(connId)
     switch (action) {
       case GameActions.CLICK: {
-        const [x, y] = payload as Coords
-        if (prevState.board[x][y] === null && prevState.turn === pid) {
-          prevState.board[x][y] = pid === 0 ? 'O' : 'X'
-          prevState.turn = 1 - prevState.turn
-          if (x === 0 && y === 0) {
-            this.room.endGame(connId).catch(this.errorHandler)
-            // this.emit(GameEvent.GAME_OVER, { data: connId })
-          }
-          return { ...prevState }
-        } else {
-          throw new Error('invalid move')
-        }
+        // const [x, y] = payload as Coords
       }
     }
     return prevState

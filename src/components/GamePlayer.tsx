@@ -1,7 +1,7 @@
 import React, { FunctionComponent } from 'react'
 import PropTypes from 'prop-types'
 import { useGame } from '../Game/GameContext'
-import { Box, Divider, Flex } from '@theme-ui/components'
+import { Box, Divider } from '@theme-ui/components'
 import Button from './common/Button'
 import { AppState } from './App'
 import GameRenderer from './GameRenderer'
@@ -25,20 +25,6 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
           zIndex: 1
         }}>
         <Card>
-          {gameState?.board?.map((a: Array<string | null>, x: number) => (
-            <Flex key={x}>
-              {
-                a.map((b: (string | null), y) => (
-                  <Box
-                    key={y}
-                    sx={{ width: '40px', height: '40px', border: '1px solid black' }}
-                    onClick={() => click(x, y)}>
-                    {b}
-                  </Box>
-                ))
-              }
-            </Flex>
-          ))}
           {
             gameOver !== undefined && (
               <Box>

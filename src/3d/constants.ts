@@ -110,3 +110,19 @@ export const TREE_GROWTH_PROPS: { [k in GrowthStage]: TreeGrowthProp } = {
     }
   }
 }
+
+export const costs = Object.freeze({
+  seed: 1,
+  growth: {
+    [GrowthStage.SEED]: 1,
+    [GrowthStage.SHORT]: 2,
+    [GrowthStage.MID]: 3,
+    [GrowthStage.TALL]: 4
+  },
+  playerBoard: {
+    [GrowthStage.SEED]: [1, 1, 2, 2],
+    [GrowthStage.SHORT]: [2, 2, 3, 3],
+    [GrowthStage.MID]: [3, 3, 4],
+    [GrowthStage.TALL]: [4, 5]
+  }
+})

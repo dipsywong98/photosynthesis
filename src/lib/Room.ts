@@ -1,8 +1,9 @@
 import { ConnectionManager } from './ConnectionManager'
 import { Observable } from './Observable'
-import { Game, GameState } from '../Game/Game'
+import { Game } from '../Game/Game'
 import { StarMeshEventPayload, StarMeshNetwork, StarMeshNetworkEvents, StarMeshReducer } from './StarMeshNetwork'
 import { clone } from 'ramda'
+import { GameState } from '../Game/types/GameState'
 
 const CH = 'ABCDEFGHJKLMNOPQRSTUVWXYZ'
 
@@ -245,9 +246,9 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
           throw new Error('Not enough players, required 2')
         }
         const typed = payload as { idDict: PlayersDict, nameDict: PlayersDict }
+        prevState.game = Game.initialState(this.playerIds.length)
         prevState.idDict = clone(typed.idDict)
         prevState.nameDict = clone(typed.nameDict)
-        prevState.game = Game.initialState
         this.game?.start()
         this.emit(RoomEvents.START_GAME, { data: this.game })
         return { ...prevState }
