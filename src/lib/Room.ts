@@ -107,6 +107,22 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
     return this.network.state.nameDict[name]
   }
 
+  /**
+   * Given game player id, return name
+   * @param id
+   */
+  public whoami (id: string): string {
+    if (this.network.state.nameDict === undefined) {
+      console.trace('Game not started yet')
+      throw new Error('Game not started yet')
+    }
+    const find = Object.entries(this.network.state.nameDict).find(([_name, _id]) => id === _id)
+    if (find === undefined) {
+      throw new Error(`No player with id ${id}`)
+    }
+    return find[0]
+  }
+
   public get started (): boolean {
     return this.network.state.game !== undefined && this.network.state.game.gameOver === undefined
   }

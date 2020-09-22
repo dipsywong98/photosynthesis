@@ -29,6 +29,10 @@ export enum GrowthStage {
   TALL
 }
 
+export const isTree = (stage: GrowthStage|undefined): stage is (GrowthStage.SHORT | GrowthStage.MID | GrowthStage.TALL) => {
+  return stage !== undefined && [GrowthStage.SHORT, GrowthStage.MID, GrowthStage.TALL].includes(stage)
+}
+
 export type ModelName = typeof MODELS[keyof typeof MODELS]
 
 export const TREE_MODELS: Record<Color, ModelName> = {
