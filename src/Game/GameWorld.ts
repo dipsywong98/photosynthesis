@@ -1,6 +1,7 @@
 import { ECSYThreeEntity, ECSYThreeWorld, initialize } from 'ecsy-three'
 import {
-  AmbientLight, Clock,
+  AmbientLight,
+  Clock,
   DirectionalLight,
   Group,
   Mesh,
@@ -32,6 +33,7 @@ import dat from 'dat.gui'
 import { Axial } from '../3d/Coordinates/Axial'
 import { CYLINDER_OBJ } from '../3d/extraObjects'
 import Stats from 'stats.js'
+import { GameWorldMessages } from './GameWorldMessages'
 
 export default class GameWorld {
   gui: dat.GUI
@@ -49,6 +51,7 @@ export default class GameWorld {
   tileEntities: Map<string, ECSYThreeEntity> = new Map<string, ECSYThreeEntity>()
 
   constructor () {
+    // @ ts-ignore typescript-eslint/no-unsafe-assignment typescript-eslint/no-unsafe-call
     this.stats = new Stats()
     this.gui = new dat.GUI()
     this.renderer = new WebGLRenderer()
@@ -269,7 +272,7 @@ export default class GameWorld {
    * @param target Recipient
    * @param message Message to recipient
    */
-  public send (target: string, message: unknown): void {
+  public send (target: GameWorldMessages, message: unknown): void {
     const queue = this.messages[target] ?? []
 
     if (this.messages[target] === undefined) {
@@ -277,5 +280,11 @@ export default class GameWorld {
     }
 
     queue.push(message)
+  }
+
+  public setTile (axial: Axial, color: Color | undefined, growthStage: GrowthStage | undefined): void {
+    if (color !== undefined && growthStage !== undefined) {
+      createTree(this, { color, growthStage, axial })
+    }
   }
 }

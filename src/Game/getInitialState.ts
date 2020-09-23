@@ -25,13 +25,12 @@ const getInitialPlayerInfo = (color: Color): PlayerInfo => clone({
 
 const getInitialBoard = (): TileMap => {
   const map: TileMap = {}
-  for (let i = 0; i < 4; i++) {
-    new HexCube(0, 0, 0).range(i).forEach(hexCube => {
-      map[hexCube.toAxial().toString()] = {
-        leaves: 4 - i
-      }
-    })
-  }
+  new HexCube(0, 0, 0).range(3).forEach(hexCube => {
+    const i = hexCube.tileDistance(HexCube.origin)
+    map[hexCube.toAxial().toString()] = {
+      leaves: 4 - i as 1 | 2 | 3 | 4
+    }
+  })
   return map
 }
 

@@ -45,10 +45,20 @@ interface RoomState {
   nameDict?: PlayersDict
 }
 
+const initialState = Object.freeze({
+  maxPlayers: 4,
+  minPlayers: 1,
+  players: {}
+})
+
 export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   network: StarMeshNetwork<RoomState>
   manager: ConnectionManager
   game: Game
+
+  public get state (): RoomState {
+    return this.network.state
+  }
 
   public get hostPlayerId (): string | undefined {
     return this.network.hostId
@@ -63,7 +73,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   }
 
   public get players (): PlayersDict {
-    return this.network.state.players
+    return this.state.players
   }
 
   public get playerIds (): string[] {
@@ -76,11 +86,11 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
    * @param id
    */
   public p (id: string | number): string {
-    if (this.network.state.idDict === undefined) {
+    if (this.state.idDict === undefined) {
       console.trace('Game not started yet')
       throw new Error('Game not started yet')
     }
-    return this.network.state.idDict[id]
+    return this.state.idDict[id]
   }
 
   /**
@@ -88,11 +98,11 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
    * @param id
    */
   public pi (id: string): number {
-    if (this.network.state.idDict === undefined) {
+    if (this.state.idDict === undefined) {
       console.trace('Game not started yet')
       throw new Error('Game not started yet')
     }
-    return Number.parseInt(this.network.state.idDict[id])
+    return Number.parseInt(this.state.idDict[id])
   }
 
   /**
@@ -100,11 +110,11 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
    * @param name
    */
   public n (name: string): string {
-    if (this.network.state.nameDict === undefined) {
+    if (this.state.nameDict === undefined) {
       console.trace('Game not started yet')
       throw new Error('Game not started yet')
     }
-    return this.network.state.nameDict[name]
+    return this.state.nameDict[name]
   }
 
   /**
@@ -112,29 +122,25 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
    * @param id
    */
   public whoami (id: string): string {
-    if (this.network.state.nameDict === undefined) {
+    if (this.state.idDict === undefined) {
       console.trace('Game not started yet')
       throw new Error('Game not started yet')
     }
-    const find = Object.entries(this.network.state.nameDict).find(([_name, _id]) => id === _id)
-    if (find === undefined) {
-      throw new Error(`No player with id ${id}`)
+    const idDictElement = this.state.idDict[id]
+    if (idDictElement === undefined) {
+      throw new Error(`Id ${id} not in game`)
     }
-    return find[0]
+    return this.state.players[idDictElement]
   }
 
   public get started (): boolean {
-    return this.network.state.game !== undefined && this.network.state.game.gameOver === undefined
+    return this.state.game !== undefined && this.state.game.gameOver === undefined
   }
 
   constructor (manager?: ConnectionManager) {
     super()
     this.manager = manager ?? new ConnectionManager()
-    this.network = new StarMeshNetwork<RoomState>(this.manager, {
-      maxPlayers: 4,
-      minPlayers: 2,
-      players: {}
-    }, this.networkReducer)
+    this.network = new StarMeshNetwork<RoomState>(this.manager, clone(initialState), this.networkReducer)
     this.network.on(StarMeshNetworkEvents.MEMBERS_LEFT, ({ members }) => {
       if (members !== undefined) {
         members.forEach(id => {
@@ -160,6 +166,9 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   }
 
   public join = async (myName: string, roomCode: string): Promise<void> => {
+    if (roomCode === '') {
+      throw new Error('Room name is required')
+    }
     console.log(`joining ${roomCode}`)
     await this.network.joinOrHost(roomCode)
     await this.network.dispatch({
@@ -258,7 +267,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
         return { ...prevState }
       }
       case RoomActionTypes.START_GAME: {
-        if (this.playerIds.length < this.network.state.minPlayers) {
+        if (this.playerIds.length < this.state.minPlayers) {
           throw new Error('Not enough players, required 2')
         }
         const typed = payload as { idDict: PlayersDict, nameDict: PlayersDict }
@@ -284,7 +293,12 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
           if (prevState.game.gameOver !== undefined) {
             throw new Error('Game over')
           }
-          prevState.game = this.game?.reducer(prevState.game, payload as Record<string, unknown>, connId)
+          try {
+            prevState.game = this.game?.reducer(prevState.game, payload as Record<string, unknown>, connId)
+          } catch (e) {
+            console.trace(e)
+            throw e
+          }
           return { ...prevState }
         } else {
           throw new Error('Game not started')
