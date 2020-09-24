@@ -36,7 +36,7 @@ export interface PlayersDict {
   [id: string]: string
 }
 
-interface RoomState {
+export interface RoomState {
   players: PlayersDict
   minPlayers: number
   maxPlayers: number
@@ -135,6 +135,14 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
 
   public get started (): boolean {
     return this.state.game !== undefined && this.state.game.gameOver === undefined
+  }
+
+  public static getName (roomState: RoomState, id: number): string {
+    if (roomState.idDict !== undefined && roomState.players !== undefined) {
+      return roomState.players[roomState.idDict[id]]
+    } else {
+      return ''
+    }
   }
 
   constructor (manager?: ConnectionManager) {

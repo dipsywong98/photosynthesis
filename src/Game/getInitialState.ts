@@ -48,7 +48,8 @@ export const getInitialState = (players: number): GameState => {
       3: [19, 18, 18, 17, 17],
       4: [22, 21, 20]
     },
-    playerInfo: []
+    playerInfo: [],
+    photosynthesisHints: []
   }
   for (let id = 0; id < players; id++) {
     state.playerInfo[id] = getInitialPlayerInfo(id)

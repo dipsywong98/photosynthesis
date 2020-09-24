@@ -83,6 +83,12 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     }).catch(this.errorHandler)
   }
 
+  public assertAxialInBoard (gameState: GameState, axial: Axial): void {
+    if (!(axial.toString() in gameState.board)) {
+      throw new Error(`${axial.toString()} is not in game board`)
+    }
+  }
+
   public async endTurn (): Promise<void> {
     return await this.dispatch({
       action: GameActions.END_TURN,
@@ -96,7 +102,8 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     if (gameState.turn === this.nPlayers) {
       if (gameState.preparingRound > 0) {
         gameState.preparingRound--
-      } else if (gameState.preparingRound === 0) {
+      }
+      if (gameState.preparingRound === 0) {
         gameState.rayDirection++
         if (gameState.rayDirection === 6) {
           gameState.rayDirection = 0
@@ -163,6 +170,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   }
 
   public growTreeHandler (gameState: GameState, playerId: number, axial: Axial): GameState {
+    this.assertAxialInBoard(gameState, axial)
     if (gameState.dirtyTiles.includes(axial.toString())) {
       throw new Error('Cannot act on same tile twice')
     }
@@ -214,6 +222,8 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   }
 
   public plantSeedHandler (gameState: GameState, playerId: number, source: Axial, target: Axial): GameState {
+    this.assertAxialInBoard(gameState, source)
+    this.assertAxialInBoard(gameState, target)
     if (gameState.preparingRound > 0) {
       throw new Error('Cannot plant seed at preparing round')
     }

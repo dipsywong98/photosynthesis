@@ -10,5 +10,6 @@ export interface GameState {
   gameOver?: string
   board: TileMap
   playerInfo: PlayerInfo[]
-  scoreTokens: { 1: number[], 2: number[], 3: number[], 4: number[] }
+  scoreTokens: Record<number, number[]>
+  photosynthesisHints: []
 }
