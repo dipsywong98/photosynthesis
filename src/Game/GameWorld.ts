@@ -215,11 +215,6 @@ export default class GameWorld {
       .addComponent(SunOrientationTagComponent)
 
     this.generateGrid()
-
-    // createTree(this, { color: Color.YELLOW, growthStage: GrowthStage.MID, axial: new Axial(0, 1) })
-    Axial.neighbors.forEach((axial, k) => {
-      createTree(this, { color: k % 4, growthStage: k >= 4 ? GrowthStage.MID : GrowthStage.SHORT, axial })
-    })
   }
 
   private generateGrid (): void {

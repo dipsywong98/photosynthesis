@@ -253,6 +253,9 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
           ...prevState.players
         }
       })
+      if (prevState.game !== undefined) {
+        this.game.rejoin(prevState.game)
+      }
     }
     switch (action) {
       case RoomActionTypes.JOIN:
@@ -282,7 +285,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
         prevState.game = Game.initialState(this.playerIds.length)
         prevState.idDict = clone(typed.idDict)
         prevState.nameDict = clone(typed.nameDict)
-        this.game?.start()
+        this.game?.start(prevState.game)
         this.emit(RoomEvents.START_GAME, { data: this.game })
         return { ...prevState }
       }

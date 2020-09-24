@@ -67,8 +67,17 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     })
   }
 
-  public start (): void {
-    // this.gameWorld.resetWorld()
+  public start (gameState: GameState): void {
+    //
+  }
+
+  public rejoin (gameState: GameState): void {
+    Object.entries(gameState.board).forEach(([axialString, tileInfo]) => {
+      if (tileInfo.color !== undefined && tileInfo.stage !== undefined) {
+        this.setTile(gameState, tileInfo.color, Axial.fromString(axialString), tileInfo.stage)
+      }
+    })
+    this.setRayDirection(gameState, gameState.rayDirection)
   }
 
   public stop (payload: unknown): void {
