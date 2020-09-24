@@ -216,7 +216,10 @@ export default class GameWorld {
 
     this.generateGrid()
 
-    createTree(this, { color: Color.YELLOW, growthStage: GrowthStage.MID, axial: new Axial(0, 1) })
+    // createTree(this, { color: Color.YELLOW, growthStage: GrowthStage.MID, axial: new Axial(0, 1) })
+    Axial.neighbors.forEach((axial, k) => {
+      createTree(this, { color: k % 4, growthStage: k >= 4 ? GrowthStage.MID : GrowthStage.SHORT, axial })
+    })
   }
 
   private generateGrid (): void {
@@ -286,5 +289,9 @@ export default class GameWorld {
     if (color !== undefined && growthStage !== undefined) {
       createTree(this, { color, growthStage, axial })
     }
+  }
+
+  public setRayDirection (directionType: number): void {
+    this.sunOrientationRad = 4.69 + directionType * Math.PI / 3
   }
 }

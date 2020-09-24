@@ -8,7 +8,6 @@ import { Axial } from '../3d/Coordinates/Axial'
 import { Color, costs, GrowthStage, isTree } from '../3d/constants'
 import { TileInfo } from './types/TileInfo'
 import { clone } from 'ramda'
-import { GameWorldMessages } from './GameWorldMessages'
 
 export enum GameEvent {
   UPDATE_GAME_STATE,
@@ -86,7 +85,8 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
 
   public async endTurn (): Promise<void> {
     return await this.dispatch({
-      actions: GameActions.END_TURN
+      action: GameActions.END_TURN,
+      payload: []
     })
   }
 
@@ -94,9 +94,9 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     gameState.turn++
     gameState.dirtyTiles = []
     if (gameState.turn === this.nPlayers) {
-      if (gameState.preparingRound && gameState.playerInfo[0].availableArea[GrowthStage.SHORT] === 2) {
-        gameState.preparingRound = false
-      } else if (!gameState.preparingRound) {
+      if (gameState.preparingRound > 0) {
+        gameState.preparingRound--
+      } else if (gameState.preparingRound === 0) {
         gameState.rayDirection++
         if (gameState.rayDirection === 6) {
           gameState.rayDirection = 0
@@ -104,15 +104,15 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         }
         gameState = this.setRayDirection(gameState, gameState.rayDirection)
       }
+      gameState.turn = 0
       if (gameState.revolutionLeft <= -1) {
         return this.endGameCalculation(gameState)
       }
-      if (!gameState.preparingRound) {
+      if (gameState.preparingRound === 0) {
         gameState = this.photosynthesis(gameState)
       }
-      gameState.turn = 0
     }
-    return { ...gameState }
+    return gameState
   }
 
   public photosynthesis (gameState: GameState): GameState {
@@ -151,7 +151,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         winningsPlayerIds.push(id.toString())
       }
     })
-    gameState.gameOver = `Player ${winningsPlayerIds.map(i => this.room.whoami(i)).join(', ')} win`
+    gameState.gameOver = `Player '${winningsPlayerIds.map(i => this.room.whoami(i)).join(', ')}' win`
     return { ...gameState }
   }
 
@@ -166,7 +166,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     if (gameState.dirtyTiles.includes(axial.toString())) {
       throw new Error('Cannot act on same tile twice')
     }
-    if (gameState.preparingRound) {
+    if (gameState.preparingRound > 0) {
       if (gameState.board[axial.toString()].stage !== undefined) {
         throw new Error('Already occupied')
       }
@@ -214,7 +214,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   }
 
   public plantSeedHandler (gameState: GameState, playerId: number, source: Axial, target: Axial): GameState {
-    if (gameState.preparingRound) {
+    if (gameState.preparingRound > 0) {
       throw new Error('Cannot plant seed at preparing round')
     }
     if (gameState.playerInfo[playerId].availableArea[GrowthStage.SEED] <= 0) {
@@ -247,7 +247,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   }
 
   public purchaseHandler (gameState: GameState, playerId: number, stage: GrowthStage): GameState {
-    if (gameState.preparingRound) {
+    if (gameState.preparingRound > 0) {
       throw new Error('Cannot purchase at preparing round')
     }
     let purchaseIndex: number
@@ -353,7 +353,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
 
   private setRayDirection (gameState: GameState, rayDirection: number): GameState {
     gameState.rayDirection = rayDirection
-    this.gameWorld.send(GameWorldMessages.RAY_DIRECTION, rayDirection)
+    this.gameWorld.setRayDirection(rayDirection)
     return gameState
   }
 }

@@ -2,7 +2,7 @@ import { TileMap } from './TileMap'
 import { PlayerInfo } from './PlayerInfo'
 
 export interface GameState {
-  preparingRound: boolean
+  preparingRound: number
   dirtyTiles: string[]
   turn: number
   rayDirection: number

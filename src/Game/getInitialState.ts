@@ -36,10 +36,10 @@ const getInitialBoard = (): TileMap => {
 
 export const getInitialState = (players: number): GameState => {
   const state: GameState = {
-    preparingRound: true,
+    preparingRound: 2,
     dirtyTiles: [],
     turn: 0,
-    rayDirection: 0,
+    rayDirection: -1,
     revolutionLeft: 3,
     board: getInitialBoard(),
     scoreTokens: {

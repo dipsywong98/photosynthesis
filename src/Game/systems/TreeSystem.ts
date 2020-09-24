@@ -13,7 +13,7 @@ export default class TreeSystem extends GameWorldSystem {
     this.queries.trees.added?.forEach((entity) => {
       // Added
       const treeComp = entity.getMutableComponent(TreeComponent)
-      const axialComp = entity.getComponent(AxialCoordsComponent)
+      const axialComp = entity.getComponent<AxialCoordsComponent>(AxialCoordsComponent)
       const obj3d = entity.getObject3D()
       if (treeComp === undefined || obj3d === undefined || axialComp === undefined) {
         return

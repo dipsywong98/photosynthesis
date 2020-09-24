@@ -106,6 +106,7 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
               <Box>
                 <Divider/>
                 <Button variant='primary' onClick={() => { setState(AppState.ROOM) }}>Next Round</Button>
+                {gameOver}
               </Box>
             )
           }
