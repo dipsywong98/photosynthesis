@@ -19,7 +19,7 @@ import { disposeObj3D } from '../3d/helpers'
 import TreeComponent from './components/TreeComponent'
 import TweenBaseComponent from './components/TweenComponent'
 import AxialCoordsComponent from './components/AxialCoordsComponent'
-import { AMBIENT_COLOR, Color, GrowthStage, MODELS, SKY_COLOR, SUN_ANGLE, SUN_COLOR } from '../3d/constants'
+import { AMBIENT_COLOR, INITIAL_SUN_ORIENTATION, MODELS, SKY_COLOR, SUN_ANGLE, SUN_COLOR } from '../3d/constants'
 import { getObject } from '../3d/assets'
 import TileComponent from './components/TileComponent'
 import AxialCoordsSystem from './systems/AxialCoordsSystem'
@@ -31,6 +31,8 @@ import dat from 'dat.gui'
 import { Axial } from '../3d/Coordinates/Axial'
 import { CYLINDER_OBJ } from '../3d/extraObjects'
 import Stats from 'stats.js'
+import { GameWorldMessages } from './GameWorldMessages'
+import { TileInfo } from './types/TileInfo'
 import TouchSystem from './systems/TouchSystem'
 import { RendererComposerSystem } from './systems/RendererComposerSystem'
 import RendererComposerComponent from './components/RendererComposerComponent'
@@ -237,22 +239,6 @@ export default class GameWorld {
       .addObject3DComponent(game, this.sceneEntity)
 
     this.generateGrid()
-
-    const tree = createTree(this, { color: Color.YELLOW, growthStage: GrowthStage.SEED, axial: new Axial(0, 1) })
-
-    if (tree !== undefined) {
-      setInterval(() => {
-        const treeComp = tree.getMutableComponent(TreeComponent)
-        if (treeComp !== undefined) {
-          const prevState = treeComp.growthStage
-          let nextState
-          do {
-            nextState = Math.floor(Math.random() * 4)
-          } while (prevState === nextState)
-          treeComp.growthStage = nextState
-        }
-      }, 5000)
-    }
   }
 
   private generateGrid (): void {
@@ -309,7 +295,7 @@ export default class GameWorld {
    * @param target Recipient
    * @param message Message to recipient
    */
-  public send (target: string, message: unknown): void {
+  public send (target: GameWorldMessages, message: unknown): void {
     const queue = this.messages[target] ?? []
 
     if (this.messages[target] === undefined) {
@@ -317,5 +303,25 @@ export default class GameWorld {
     }
 
     queue.push(message)
+  }
+
+  /**
+   * Set the display at the tile, may
+   * remove it if color or growStage is undefined
+   * create a new tree if that location dont have tree
+   * grow the tree if that location have tree
+   * @param axial
+   * @param color
+   * @param growthStage
+   */
+  public setTile (axial: Axial, { color, growthStage }: Partial<TileInfo> = {}): void {
+    // TODO: implement the description
+    if (color !== undefined && growthStage !== undefined) {
+      createTree(this, { color, growthStage, axial })
+    }
+  }
+
+  public setRayDirection (directionType: number): void {
+    this.sunOrientationRad = INITIAL_SUN_ORIENTATION + directionType * Math.PI / 3
   }
 }

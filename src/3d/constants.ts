@@ -68,7 +68,7 @@ export const TREE_TOP_Y = 10
 
 export const TILE_SIZE = 5
 
-export const INITIAL_SUN_ORIENTATION = 150 * Math.PI / 180
+export const INITIAL_SUN_ORIENTATION = 1.50 * Math.PI
 
 export const GROUND_SHADE_HIDDEN_ROTATION = -0.8
 
@@ -113,6 +113,22 @@ export const TREE_GROWTH_PROPS: { [k in GrowthStage]: TreeGrowthProp } = {
 }
 
 // Animations
-
 export const TREE_GROWTH_DURATION = 1.5
 export const GROUND_SHADE_DURATION = TREE_GROWTH_DURATION / 3 * 2
+
+// Gameplay
+export const ACTION_COSTS = Object.freeze({
+  SEED: 1,
+  GROW: {
+    [GrowthStage.SEED]: 1,
+    [GrowthStage.SHORT]: 2,
+    [GrowthStage.MID]: 3,
+    [GrowthStage.TALL]: 4
+  },
+  PURCHASE: {
+    [GrowthStage.SEED]: [1, 1, 2, 2],
+    [GrowthStage.SHORT]: [2, 2, 3, 3],
+    [GrowthStage.MID]: [3, 3, 4],
+    [GrowthStage.TALL]: [4, 5]
+  }
+})

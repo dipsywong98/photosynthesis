@@ -88,7 +88,7 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
         <Flex mt={3}>
           <Button sx={{ flex: 1 }} disabled={loading || name === ''} variant='warning' onClick={createRoom}>New
             Room</Button>
-          <Button sx={{ flex: 1 }} disabled={loading || name === ''} ml={3} variant='primary' onClick={joinRoom}>Join
+          <Button sx={{ flex: 1 }} disabled={loading || name === '' || roomCode === ''} ml={3} variant='primary' onClick={joinRoom}>Join
             Room</Button>
         </Flex>
         <Text>{message}</Text>

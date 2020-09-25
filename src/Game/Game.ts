@@ -2,6 +2,13 @@ import { Room, RoomActionTypes } from '../lib/Room'
 import { Observable } from '../lib/Observable'
 import GameWorld from './GameWorld'
 import { StarMeshAction, StarMeshNetworkEvents, StarMeshReducer } from '../lib/StarMeshNetwork'
+import { GameState } from './types/GameState'
+import { getInitialState } from './getInitialState'
+import { Axial } from '../3d/Coordinates/Axial'
+import { ACTION_COSTS, GrowthStage } from '../3d/constants'
+import { TileInfo } from './types/TileInfo'
+import { clone } from 'ramda'
+import { isTreeGrowthStage } from './isTreeGrowthStage'
 
 export enum GameEvent {
   UPDATE_GAME_STATE,
@@ -12,16 +19,14 @@ export enum GameEvent {
 }
 
 export enum GameActions {
-  CLICK
+  CLICK,
+  GROW_TREE,
+  END_TURN,
+  PLANT_SEED,
+  PURCHASE,
 }
 
 export type Coords = [number, number]
-
-export interface GameState {
-  turn: number
-  board: Array<Array<string | null>>
-  gameOver?: string
-}
 
 export interface GameEventPayload {
   data: unknown
@@ -39,16 +44,8 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     return this.room.network.state.game
   }
 
-  public static get initialState (): GameState {
-    return {
-      turn: 0,
-      board:
-        [
-          [null, null, null],
-          [null, null, null],
-          [null, null, null]
-        ]
-    }
+  public static initialState (players: number): GameState {
+    return getInitialState(players)
   }
 
   public get me (): string {
@@ -59,6 +56,10 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     return Number.parseInt(this.me)
   }
 
+  public get nPlayers (): number {
+    return this.room.playerIds.length
+  }
+
   constructor (room: Room) {
     super()
     this.room = room
@@ -67,8 +68,17 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     })
   }
 
-  public start (): void {
-    // this.gameWorld.resetWorld()
+  public start (gameState: GameState): void {
+    //
+  }
+
+  public rejoin (gameState: GameState): void {
+    Object.entries(gameState.board).forEach(([axialString, tileInfo]) => {
+      if (tileInfo.color !== undefined && tileInfo.growthStage !== undefined) {
+        this.setTile(gameState, Axial.fromString(axialString), tileInfo)
+      }
+    })
+    this.setRayDirection(gameState, gameState.rayDirection)
   }
 
   public stop (payload: unknown): void {
@@ -83,7 +93,203 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     }).catch(this.errorHandler)
   }
 
+  public async endTurn (): Promise<void> {
+    return await this.dispatch({
+      action: GameActions.END_TURN,
+      payload: []
+    })
+  }
+
+  public endTurnHandler (gameState: GameState, _playerId: number): GameState {
+    gameState.turn++
+    gameState.dirtyTiles = []
+    if (gameState.turn === this.nPlayers) {
+      if (gameState.preparingRound > 0) {
+        gameState.preparingRound--
+      }
+      if (gameState.preparingRound === 0) {
+        gameState.rayDirection++
+        if (gameState.rayDirection === 6) {
+          gameState.rayDirection = 0
+          gameState.revolutionLeft--
+        }
+        gameState = this.setRayDirection(gameState, gameState.rayDirection)
+      }
+      gameState.turn = 0
+      if (gameState.revolutionLeft <= -1) {
+        return this.endGameCalculation(gameState)
+      }
+      if (gameState.preparingRound === 0) {
+        gameState = this.photosynthesis(gameState)
+      }
+    }
+    return gameState
+  }
+
+  public photosynthesis (gameState: GameState): GameState {
+    const shadows: { [axial: string]: GrowthStage } = {}
+    const direction: number = gameState.rayDirection
+    Object.entries(gameState.board).forEach(([axialString, tile]) => {
+      if (isTreeGrowthStage(tile.growthStage)) {
+        let axial = Axial.fromString(axialString)
+        for (let distance = 0; distance < tile.growthStage; distance++) {
+          axial = axial.add(Axial.neighbors[direction])
+          shadows[axial.toString()] = Math.max(shadows[axial.toString()] ?? 0, tile.growthStage)
+        }
+      }
+    })
+    Object.entries(gameState.board).forEach(([axialString, tile]) => {
+      if (isTreeGrowthStage(tile.growthStage)) {
+        if (tile.color !== undefined && tile.growthStage > (shadows[axialString] ?? 0)) {
+          gameState.playerInfo[tile.color].lightPoint += tile.growthStage as number
+          gameState.playerInfo[tile.color].lightPoint = Math.min(gameState.playerInfo[tile.color].lightPoint, 20)
+        }
+      }
+    })
+    return gameState
+  }
+
+  public endGameCalculation (gameState: GameState): GameState {
+    let winningsPlayerIds: string[] = []
+    let winningScore = 0
+    gameState.playerInfo.forEach((info, id) => {
+      info.score += Math.floor(info.lightPoint / 3)
+      info.lightPoint = 0
+      if (info.score > winningScore) {
+        winningScore = info.score
+        winningsPlayerIds = [id.toString()]
+      } else if (info.score === winningScore) {
+        winningsPlayerIds.push(id.toString())
+      }
+    })
+    gameState.gameOver = `Player '${winningsPlayerIds.map(i => this.room.whoami(i)).join(', ')}' win`
+    return { ...gameState }
+  }
+
+  public async growTree (axial: Axial): Promise<void> {
+    return await this.dispatch({
+      action: GameActions.GROW_TREE,
+      payload: axial.toString()
+    })
+  }
+
+  public growTreeHandler (gameState: GameState, playerId: number, axial: Axial): GameState {
+    if (!(axial.toString() in gameState.board)) {
+      throw new Error(`${axial.toString()} is not in game board`)
+    }
+    if (gameState.dirtyTiles.includes(axial.toString())) {
+      throw new Error('Cannot act on same tile twice')
+    }
+    if (gameState.preparingRound > 0) {
+      if (gameState.board[axial.toString()].growthStage !== undefined) {
+        throw new Error('Already occupied')
+      }
+      if (gameState.board[axial.toString()].leaves !== 1) {
+        throw new Error('First round can only grow tree on tile with 1 leaf')
+      }
+      --gameState.playerInfo[playerId].availableArea[GrowthStage.SHORT]
+      gameState = this.setTile(gameState, axial, { color: playerId, growthStage: GrowthStage.SHORT })
+      gameState = this.endTurnHandler(gameState, playerId)
+    } else {
+      if (gameState.board[axial.toString()].color !== playerId) {
+        throw new Error('You can only grow trees that belong to you')
+      }
+
+      const existingStage = gameState.board[axial.toString()].growthStage
+      if (existingStage === undefined) {
+        throw new Error('Please use growSeed method to plant a seed')
+      }
+
+      if (gameState.playerInfo[playerId].lightPoint < ACTION_COSTS.GROW[existingStage]) {
+        throw new Error(`Not enough light point, needed ${ACTION_COSTS.GROW[existingStage]}, but only have ${gameState.playerInfo[playerId].lightPoint}`)
+      }
+      if (existingStage !== GrowthStage.TALL && gameState.playerInfo[playerId].availableArea[existingStage + 1 as GrowthStage] <= 0) {
+        throw new Error(`Not enough ${GrowthStage[existingStage + 1]}, you need to buy it with light points before growing`)
+      }
+      gameState.playerInfo[playerId].lightPoint -= ACTION_COSTS.GROW[existingStage]
+      if (existingStage === GrowthStage.TALL) {
+        gameState = this.resetTile(gameState, axial)
+        gameState = this.returnTree(gameState, playerId, GrowthStage.TALL)
+        gameState = this.obtainToken(gameState, playerId, axial)
+      } else {
+        gameState.playerInfo[playerId].availableArea[existingStage + 1 as GrowthStage]--
+        gameState = this.setTile(gameState, axial, { color: playerId, growthStage: existingStage + 1 })
+        gameState = this.returnTree(gameState, playerId, existingStage)
+      }
+      gameState.dirtyTiles.push(axial.toString())
+    }
+    return gameState
+  }
+
+  public async plantSeed (source: Axial, target: Axial): Promise<void> {
+    return await this.dispatch({
+      action: GameActions.PLANT_SEED,
+      payload: [source.toString(), target.toString()]
+    })
+  }
+
+  public plantSeedHandler (gameState: GameState, playerId: number, source: Axial, target: Axial): GameState {
+    if (!(source.toString() in gameState.board)) {
+      throw new Error(`${source.toString()} is not in game board`)
+    }
+    if (!(target.toString() in gameState.board)) {
+      throw new Error(`${target.toString()} is not in game board`)
+    }
+    if (gameState.preparingRound > 0) {
+      throw new Error('Cannot plant seed at preparing round')
+    }
+    if (gameState.playerInfo[playerId].availableArea[GrowthStage.SEED] <= 0) {
+      throw new Error('Not enough available seed, you need to use light point to purchase more')
+    }
+    if (gameState.dirtyTiles.includes(source.toString()) || gameState.dirtyTiles.includes(target.toString())) {
+      throw new Error('Cannot act on same tile twice')
+    }
+    const tileInfo: TileInfo = gameState.board[source.toString()]
+    if (!isTreeGrowthStage(tileInfo.growthStage)) {
+      throw new Error('Source tile needed to be a tree')
+    }
+    if (tileInfo.color !== playerId) {
+      throw new Error('Cannot use other\'s tree as source')
+    }
+    if (source.tileDistance(target) > tileInfo.growthStage) {
+      throw new Error('Seed is too far from tree')
+    }
+    gameState.dirtyTiles.push(source.toString(), target.toString())
+    gameState.playerInfo[playerId].availableArea[GrowthStage.SEED]--
+    gameState = this.setTile(gameState, target, { color: playerId, growthStage: GrowthStage.SEED })
+    return gameState
+  }
+
+  public async purchase (stage: GrowthStage): Promise<void> {
+    return await this.dispatch({
+      action: GameActions.PURCHASE,
+      payload: stage
+    })
+  }
+
+  public purchaseHandler (gameState: GameState, playerId: number, stage: GrowthStage): GameState {
+    if (gameState.preparingRound > 0) {
+      throw new Error('Cannot purchase at preparing round')
+    }
+    let purchaseIndex: number
+    for (purchaseIndex = 0; purchaseIndex < gameState.playerInfo[playerId].playerBoard[stage].length; purchaseIndex++) {
+      if (gameState.playerInfo[playerId].playerBoard[stage][purchaseIndex]) {
+        break
+      }
+    }
+    if (gameState.playerInfo[playerId].lightPoint < ACTION_COSTS.PURCHASE[stage][purchaseIndex]) {
+      throw new Error(`Not enough light point to purchase ${GrowthStage[stage]}, ${ACTION_COSTS.PURCHASE[stage][purchaseIndex].toString()} needed but only have ${gameState.playerInfo[playerId].lightPoint}`)
+    }
+    gameState.playerInfo[playerId].lightPoint -= ACTION_COSTS.PURCHASE[stage][purchaseIndex]
+    gameState.playerInfo[playerId].playerBoard[stage][purchaseIndex] = false
+    gameState.playerInfo[playerId].availableArea[stage]++
+    return gameState
+  }
+
   public dispatch = async (action: StarMeshAction): Promise<void> => {
+    if (this.mi !== this.state?.turn) {
+      throw new Error('not your turn')
+    }
     await this.room.network.dispatch({
       action: RoomActionTypes.GAME_EVENT,
       payload: action
@@ -95,23 +301,80 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   }
 
   public reducer: StarMeshReducer<GameState> = (prevState, { action, payload }, connId) => {
-    const pid = this.room.pi(connId)
+    const playerId = this.room.pi(connId)
+    if (prevState.turn !== playerId) {
+      throw new Error('not your turn')
+    }
+    const gameState = clone(prevState)
     switch (action) {
-      case GameActions.CLICK: {
-        const [x, y] = payload as Coords
-        if (prevState.board[x][y] === null && prevState.turn === pid) {
-          prevState.board[x][y] = pid === 0 ? 'O' : 'X'
-          prevState.turn = 1 - prevState.turn
-          if (x === 0 && y === 0) {
-            this.room.endGame(connId).catch(this.errorHandler)
-            // this.emit(GameEvent.GAME_OVER, { data: connId })
-          }
-          return { ...prevState }
-        } else {
-          throw new Error('invalid move')
+      case GameActions.END_TURN: {
+        return this.endTurnHandler(gameState, playerId)
+      }
+      case GameActions.GROW_TREE: {
+        if (typeof payload !== 'string') {
+          throw new Error('invalid payload')
         }
+        const axial = Axial.fromString(payload)
+        return this.growTreeHandler(gameState, playerId, axial)
+      }
+      case GameActions.PLANT_SEED: {
+        if (!(Array.isArray(payload) && payload.length === 2 && typeof payload[0] === 'string' && typeof payload[1] === 'string')) {
+          throw new Error('invalid payload')
+        }
+        const source = Axial.fromString(payload[0])
+        const target = Axial.fromString(payload[1])
+        return this.plantSeedHandler(gameState, playerId, source, target)
+      }
+      case GameActions.PURCHASE: {
+        if (typeof payload !== 'number') {
+          throw new Error('invalid payload')
+        }
+        const stage = payload as GrowthStage
+        return this.purchaseHandler(gameState, playerId, stage)
       }
     }
     return prevState
+  }
+
+  private setTile (gameState: GameState, axial: Axial, tileInfo: Partial<TileInfo>): GameState {
+    gameState.board[axial.toString()].growthStage = tileInfo.growthStage
+    gameState.board[axial.toString()].color = tileInfo.color
+    this.gameWorld.setTile(axial, tileInfo)
+    return gameState
+  }
+
+  private resetTile (gameState: GameState, axial: Axial): GameState {
+    gameState.board[axial.toString()].color = undefined
+    gameState.board[axial.toString()].growthStage = undefined
+    this.gameWorld.setTile(axial)
+    return gameState
+  }
+
+  private returnTree (gameState: GameState, playerId: number, stage: GrowthStage): GameState {
+    for (let i = 0; i < gameState.playerInfo[playerId].playerBoard[stage].length; i++) {
+      if (!gameState.playerInfo[playerId].playerBoard[stage][i]) {
+        gameState.playerInfo[playerId].playerBoard[stage][i] = true
+        break
+      }
+    }
+    return gameState
+  }
+
+  private obtainToken (gameState: GameState, playerId: number, axial: Axial): GameState {
+    for (let leaves = gameState.board[axial.toString()].leaves; leaves >= 1; leaves--) {
+      const scoreToken = gameState.scoreTokens[leaves]
+      const amount = scoreToken.shift()
+      if (amount !== undefined) {
+        gameState.playerInfo[playerId].score += amount
+        break
+      }
+    }
+    return gameState
+  }
+
+  private setRayDirection (gameState: GameState, rayDirection: number): GameState {
+    gameState.rayDirection = rayDirection
+    this.gameWorld.setRayDirection(rayDirection)
+    return gameState
   }
 }
