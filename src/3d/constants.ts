@@ -1,3 +1,5 @@
+import { Vector3 } from 'three'
+
 export const MODELS_LOCATION = process.env.PUBLIC_URL + '/models'
 
 export const MODELS = {
@@ -7,6 +9,7 @@ export const MODELS = {
   GREEN_TOP: 'greenTop',
   TRUNK: 'trunk',
   SHADE: 'shade',
+  GROUND_SHADE: 'groundShade',
   ACORN: 'acorn',
   PINE_CONE: 'pineCone',
   MAPLE_SEED: 'mapleSeed',
@@ -52,7 +55,7 @@ export const SKY_COLOR = 0xcaf1fc
 export const INACTIVE_COLOR = 0x333333
 export const COLOR_VALUES: { [k in Color]: number } = {
   [Color.BLUE]: 0x1C77E9,
-  [Color.ORANGE]: 0x1C77E9,
+  [Color.ORANGE]: 0xD9311A,
   [Color.YELLOW]: 0xE9D51C,
   [Color.GREEN]: 0x53E91C
 }
@@ -67,46 +70,49 @@ export const TILE_SIZE = 5
 
 export const INITIAL_SUN_ORIENTATION = 150 * Math.PI / 180
 
+export const GROUND_SHADE_HIDDEN_ROTATION = -0.8
+
 export interface TreeGrowthProp {
-  tree: {
-    scale: [number, number, number]
-  }
-  seed: {
-    scale: [number, number, number]
-  }
+  tree: { scale: Vector3 }
+  seed: { scale: Vector3 }
 }
 
 export const TREE_GROWTH_PROPS: { [k in GrowthStage]: TreeGrowthProp } = {
   [GrowthStage.SEED]: {
     tree: {
-      scale: [0, 0, 0]
+      scale: new Vector3(0, 0, 0)
     },
     seed: {
-      scale: [1, 1, 1]
+      scale: new Vector3(1, 1, 1)
     }
   },
   [GrowthStage.SHORT]: {
     tree: {
-      scale: [0.333, 0.333, 0.333]
+      scale: new Vector3(0.333, 0.333, 0.333)
     },
     seed: {
-      scale: [0, 0, 0]
+      scale: new Vector3(0, 0, 0)
     }
   },
   [GrowthStage.MID]: {
     tree: {
-      scale: [0.666, 0.666, 0.666]
+      scale: new Vector3(0.666, 0.666, 0.666)
     },
     seed: {
-      scale: [0, 0, 0]
+      scale: new Vector3(0, 0, 0)
     }
   },
   [GrowthStage.TALL]: {
     tree: {
-      scale: [1, 1, 1]
+      scale: new Vector3(1, 1, 1)
     },
     seed: {
-      scale: [0, 0, 0]
+      scale: new Vector3(0, 0, 0)
     }
   }
 }
+
+// Animations
+
+export const TREE_GROWTH_DURATION = 1.5
+export const GROUND_SHADE_DURATION = TREE_GROWTH_DURATION / 3 * 2

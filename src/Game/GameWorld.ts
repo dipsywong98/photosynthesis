@@ -1,6 +1,7 @@
-import { ECSYThreeEntity, ECSYThreeWorld, initialize } from 'ecsy-three'
+import { ECSYThreeEntity, ECSYThreeObject3D, ECSYThreeWorld, initialize, WebGLRendererSystem } from 'ecsy-three'
 import {
-  AmbientLight, Clock,
+  AmbientLight,
+  Clock,
   DirectionalLight,
   Group,
   Mesh,
@@ -8,6 +9,7 @@ import {
   Object3D,
   PerspectiveCamera,
   sRGBEncoding,
+  Vector2,
   VSMShadowMap,
   WebGLRenderer
 } from 'three'
@@ -15,13 +17,10 @@ import TreeSystem from './systems/TreeSystem'
 import TweenSystem from './systems/TweenSystem'
 import { disposeObj3D } from '../3d/helpers'
 import TreeComponent from './components/TreeComponent'
-import TweenBaseComponent from './components/TweenBaseComponent'
-import TweenObject3DComponent from './components/TweenObject3DComponent'
-import TweenMaterialComponent from './components/TweenMaterialComponent'
+import TweenBaseComponent from './components/TweenComponent'
 import AxialCoordsComponent from './components/AxialCoordsComponent'
 import { AMBIENT_COLOR, Color, GrowthStage, MODELS, SKY_COLOR, SUN_ANGLE, SUN_COLOR } from '../3d/constants'
 import { getObject } from '../3d/assets'
-import HexCube from '../3d/Coordinates/HexCube'
 import TileComponent from './components/TileComponent'
 import AxialCoordsSystem from './systems/AxialCoordsSystem'
 import TileSystem from './systems/TileSystem'
@@ -32,26 +31,40 @@ import dat from 'dat.gui'
 import { Axial } from '../3d/Coordinates/Axial'
 import { CYLINDER_OBJ } from '../3d/extraObjects'
 import Stats from 'stats.js'
+import TouchSystem from './systems/TouchSystem'
+import { RendererComposerSystem } from './systems/RendererComposerSystem'
+import RendererComposerComponent from './components/RendererComposerComponent'
+import SelectableTagComponent from './components/SelectableTagComponent'
+import SelectionSystem from './systems/SelectionSystem'
 
 export default class GameWorld {
   gui: dat.GUI
+  stats: Stats
 
   renderer: WebGLRenderer
   world: ECSYThreeWorld
-  sceneEntity?: ECSYThreeEntity
-  camera?: PerspectiveCamera
+  sceneEntity!: ECSYThreeEntity
+  camera!: PerspectiveCamera
   messages: Record<string, unknown[]> = {}
-  stats: Stats
+  cameraTiltObj!: Object3D
+  cameraRotationObj!: Object3D
 
   sunOrientationRad = 0
-  started = false
+  hasStarted = false
 
+  gameEntity!: ECSYThreeEntity
   tileEntities: Map<string, ECSYThreeEntity> = new Map<string, ECSYThreeEntity>()
+
+  // ray casting selections
+  mouseScreenPosition = new Vector2()
+  hasMouseMoved = false
+  activeObject?: Object3D & ECSYThreeObject3D
+  hoverObject?: Object3D & ECSYThreeObject3D
 
   constructor () {
     this.stats = new Stats()
     this.gui = new dat.GUI()
-    this.renderer = new WebGLRenderer()
+    this.renderer = new WebGLRenderer({ antialias: true })
     this.world = new ECSYThreeWorld({ entityPoolSize: 1000 })
     document.body.appendChild(this.stats.dom)
     window.addEventListener('load', () => {
@@ -65,14 +78,14 @@ export default class GameWorld {
     this.tileEntities.clear()
     disposeObj3D(this.sceneEntity?.getObject3D())
     this.sunOrientationRad = 0
-    this.started = false
+    this.hasStarted = false
     console.log('end')
   }
 
   public init (): void {
-    if (this.started) return
+    if (this.hasStarted) return
     console.log('start')
-    this.started = true
+    this.hasStarted = true
 
     this.initGUI()
 
@@ -111,17 +124,22 @@ export default class GameWorld {
   private initECS (): void {
     this.world.registerComponent(TreeComponent)
     this.world.registerComponent(TweenBaseComponent)
-    this.world.registerComponent(TweenObject3DComponent)
-    this.world.registerComponent(TweenMaterialComponent)
     this.world.registerComponent(AxialCoordsComponent)
     this.world.registerComponent(TileComponent)
     this.world.registerComponent(SunOrientationTagComponent)
+    this.world.registerComponent(RendererComposerComponent)
+    this.world.registerComponent(SelectableTagComponent)
+
+    this.world.unregisterSystem(WebGLRendererSystem)
+    this.world.registerSystem(RendererComposerSystem, { priority: 999, gameWorld: this })
 
     this.world.registerSystem(AxialCoordsSystem)
     this.world.registerSystem(TileSystem)
     this.world.registerSystem(TreeSystem, { gameWorld: this })
     this.world.registerSystem(TweenSystem)
     this.world.registerSystem(SunOrientationSystem, { gameWorld: this })
+    this.world.registerSystem(SelectionSystem, { gameWorld: this })
+    this.world.registerSystem(TouchSystem, { gameWorld: this })
   }
 
   private initRenderer (): void {
@@ -132,31 +150,31 @@ export default class GameWorld {
   }
 
   private initScene (): void {
-    if (this.camera !== undefined && this.sceneEntity !== undefined) {
-      this.camera.position.set(0, 0, 95)
-      this.camera.fov = 40
+    this.camera.position.set(0, 0, 95)
+    this.camera.fov = 40
 
-      this.sceneEntity.getObject3D()?.remove(this.camera)
+    this.sceneEntity.getObject3D()?.remove(this.camera)
 
-      const cameraTiltObj = new Object3D()
-      cameraTiltObj.name = 'cameraTilt'
-      cameraTiltObj.rotation.x = -0.4
-      cameraTiltObj.add(this.camera)
+    const cameraTiltObj = new Object3D()
+    cameraTiltObj.name = 'cameraTilt'
+    cameraTiltObj.rotation.x = -0.4
+    cameraTiltObj.add(this.camera)
+    this.cameraTiltObj = cameraTiltObj
 
-      const cameraPivotObj = new Object3D()
-      cameraPivotObj.name = 'cameraPivot'
-      cameraPivotObj.add(cameraTiltObj)
+    const cameraRotationObj = new Object3D()
+    cameraRotationObj.name = 'cameraRotation'
+    cameraRotationObj.add(cameraTiltObj)
+    this.cameraRotationObj = cameraRotationObj
 
-      const cameraFolder = this.gui.addFolder('Camera')
+    const cameraFolder = this.gui.addFolder('Camera')
 
-      cameraFolder.add(this.camera.position, 'z', 20, 300, 1).name('zoom')
-      cameraFolder.add(cameraTiltObj.rotation, 'x', -Math.PI / 2, 0, 0.01).name('tilt')
-      cameraFolder.add(cameraPivotObj.rotation, 'y', 0, Math.PI * 2, 0.01).name('rotation')
-      cameraFolder.open()
+    cameraFolder.add(this.camera.position, 'z', 20, 300, 1).name('zoom')
+    cameraFolder.add(cameraTiltObj.rotation, 'x', -Math.PI / 2, 0, 0.01).name('tilt')
+    cameraFolder.add(cameraRotationObj.rotation, 'y', 0, Math.PI * 2, 0.01).name('rotation')
+    cameraFolder.open()
 
-      this.world.createEntity()
-        .addObject3DComponent(cameraPivotObj, this.sceneEntity)
-    }
+    this.world.createEntity()
+      .addObject3DComponent(cameraRotationObj, this.sceneEntity)
 
     const ambientLight = new AmbientLight(AMBIENT_COLOR, 0.5)
     const sun = new DirectionalLight(SUN_COLOR, 1.2)
@@ -171,7 +189,7 @@ export default class GameWorld {
     sun.shadow.camera.bottom = 50
     sun.shadow.camera.left = -100
     sun.shadow.camera.right = 100
-    // sun.shadow.mapSize.set(2 ** 12, 2 ** 11)
+    sun.shadow.mapSize.set(2 ** 9, 2 ** 9)
     const sunContainer = new Group()
     sunContainer.name = 'sun'
     sunContainer.add(sun)
@@ -211,9 +229,30 @@ export default class GameWorld {
       .addObject3DComponent(sunContainer, this.sceneEntity)
       .addComponent(SunOrientationTagComponent)
 
+    const game = new Group()
+    game.name = 'Game'
+
+    this.gameEntity = this.world
+      .createEntity()
+      .addObject3DComponent(game, this.sceneEntity)
+
     this.generateGrid()
 
-    createTree(this, { color: Color.YELLOW, growthStage: GrowthStage.MID, axial: new Axial(0, 1) })
+    const tree = createTree(this, { color: Color.YELLOW, growthStage: GrowthStage.SEED, axial: new Axial(0, 1) })
+
+    if (tree !== undefined) {
+      setInterval(() => {
+        const treeComp = tree.getMutableComponent(TreeComponent)
+        if (treeComp !== undefined) {
+          const prevState = treeComp.growthStage
+          let nextState
+          do {
+            nextState = Math.floor(Math.random() * 4)
+          } while (prevState === nextState)
+          treeComp.growthStage = nextState
+        }
+      }, 5000)
+    }
   }
 
   private generateGrid (): void {
@@ -222,10 +261,9 @@ export default class GameWorld {
 
     const boardEntity = this.world
       .createEntity()
-      .addObject3DComponent(boardObj, this.sceneEntity)
+      .addObject3DComponent(boardObj, this.gameEntity)
 
-    new HexCube(0, 0, 0).range(3).forEach(hexCube => {
-      const axial = hexCube.toAxial()
+    Axial.origin.range(3).forEach(axial => {
       const tileContainer = new Group()
       tileContainer.name = 'tileContainer-' + axial.toString()
       const tileEntity = this.world
@@ -233,6 +271,7 @@ export default class GameWorld {
         .addObject3DComponent(tileContainer, boardEntity)
         .addComponent(AxialCoordsComponent, { axial })
         .addComponent(TileComponent)
+        .addComponent(SelectableTagComponent)
       this.tileEntities.set(axial.toString(), tileEntity)
     })
 
@@ -242,6 +281,7 @@ export default class GameWorld {
           const ringContainerObj = new Object3D()
           ringContainerObj.name = 'ringContainer'
           const ringClone = ring.clone()
+          ringClone.position.y -= 0.3
           const mesh = ringClone.children.find((o): o is Mesh => o instanceof Mesh)
           // Assuming material exists and is a MeshStandardMaterial
           const originalMaterial = mesh?.material

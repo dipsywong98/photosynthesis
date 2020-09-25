@@ -45,16 +45,16 @@ const App: FunctionComponent = () => {
       }}>
       <NavBar setState={setState} state={state}/>
       <Flex sx={{ flex: 1, ml: `-${state * 100}%`, ...transition(0.3, ['margin-left'], 'linear') }}>
-        <Flex sx={{ minWidth: '100vw', justifyContent: 'center', alignItems: 'center' }}>
-          <Home setState={setState}/>
-        </Flex>
-        <Flex sx={{ minWidth: '100vw', justifyContent: 'center', alignItems: 'center' }}>
-          <Room setState={setState}/>
-        </Flex>
-        <Flex sx={{ minWidth: '100vw', justifyContent: 'center', alignItems: 'center' }}>
+        <Flex sx={{ width: '100vw', height: '100vh', justifyContent: 'center', alignItems: 'center', position: 'absolute' }}>
           <GameContextProvider>
             <GamePlayer setState={setState}/>
           </GameContextProvider>
+        </Flex>
+        <Flex sx={{ width: '100vw', height: '100vh', justifyContent: 'center', alignItems: 'center', position: 'absolute' }}>
+          <Room setState={setState}/>
+        </Flex>
+        <Flex sx={{ width: '100vw', height: '100vh', justifyContent: 'center', alignItems: 'center', position: 'absolute' }}>
+          <Home setState={setState}/>
         </Flex>
       </Flex>
     </Flex>

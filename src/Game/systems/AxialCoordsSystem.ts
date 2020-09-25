@@ -5,17 +5,22 @@ import { TILE_SIZE } from '../../3d/constants'
 export default class AxialCoordsSystem extends ECSYThreeSystem {
   execute (delta: number, time: number): void {
     this.queries.axialPositions.results.forEach(entity => {
-      const axialCoordsComp = entity.getComponent(AxialCoordsComponent)
-      const obj3dComp = entity.getComponent(Object3DComponent)
-      const obj3d = obj3dComp?.value
+      const axial = entity.getComponent(AxialCoordsComponent)?.axial
+      const obj3d = entity.getObject3D()
 
-      if (axialCoordsComp === undefined || obj3d === undefined) {
+      if (axial === undefined || obj3d === undefined) {
         return
       }
 
-      const [x, z] = axialCoordsComp.axial.toCartesian(TILE_SIZE).toArray()
+      const prevQ = (obj3d.userData.q) as number | undefined
+      const prevR = (obj3d.userData.r) as number | undefined
 
-      obj3d.position.set(x, 0, z)
+      if (prevQ !== axial.q && prevR !== axial.r) {
+        const [x, z] = axial.toCartesian(TILE_SIZE).toArray()
+        obj3d.userData.q = axial.q
+        obj3d.userData.r = axial.r
+        obj3d.position.set(x, 0, z)
+      }
     })
   }
 }
