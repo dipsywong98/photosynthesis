@@ -1,7 +1,7 @@
 import { Color, GrowthStage } from '../../3d/constants'
 
 export interface TileInfo {
-  stage?: GrowthStage
+  growthStage?: GrowthStage
   color?: Color
   leaves: number
 }

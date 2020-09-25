@@ -29,10 +29,6 @@ export enum GrowthStage {
   TALL
 }
 
-export const isTree = (stage: GrowthStage|undefined): stage is (GrowthStage.SHORT | GrowthStage.MID | GrowthStage.TALL) => {
-  return stage !== undefined && [GrowthStage.SHORT, GrowthStage.MID, GrowthStage.TALL].includes(stage)
-}
-
 export type ModelName = typeof MODELS[keyof typeof MODELS]
 
 export const TREE_MODELS: Record<Color, ModelName> = {
@@ -69,7 +65,7 @@ export const TREE_TOP_Y = 10
 
 export const TILE_SIZE = 5
 
-export const INITIAL_SUN_ORIENTATION = 150 * Math.PI / 180
+export const INITIAL_SUN_ORIENTATION = 1.50 * Math.PI
 
 export interface TreeGrowthProp {
   tree: {
@@ -115,15 +111,15 @@ export const TREE_GROWTH_PROPS: { [k in GrowthStage]: TreeGrowthProp } = {
   }
 }
 
-export const costs = Object.freeze({
-  seed: 1,
-  growth: {
+export const ACTION_COSTS = Object.freeze({
+  SEED: 1,
+  GROW: {
     [GrowthStage.SEED]: 1,
     [GrowthStage.SHORT]: 2,
     [GrowthStage.MID]: 3,
     [GrowthStage.TALL]: 4
   },
-  playerBoard: {
+  PURCHASE: {
     [GrowthStage.SEED]: [1, 1, 2, 2],
     [GrowthStage.SHORT]: [2, 2, 3, 3],
     [GrowthStage.MID]: [3, 3, 4],

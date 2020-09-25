@@ -20,7 +20,7 @@ import TweenBaseComponent from './components/TweenBaseComponent'
 import TweenObject3DComponent from './components/TweenObject3DComponent'
 import TweenMaterialComponent from './components/TweenMaterialComponent'
 import AxialCoordsComponent from './components/AxialCoordsComponent'
-import { AMBIENT_COLOR, Color, GrowthStage, MODELS, SKY_COLOR, SUN_ANGLE, SUN_COLOR } from '../3d/constants'
+import { AMBIENT_COLOR, INITIAL_SUN_ORIENTATION, MODELS, SKY_COLOR, SUN_ANGLE, SUN_COLOR } from '../3d/constants'
 import { getObject } from '../3d/assets'
 import HexCube from '../3d/Coordinates/HexCube'
 import TileComponent from './components/TileComponent'
@@ -34,6 +34,7 @@ import { Axial } from '../3d/Coordinates/Axial'
 import { CYLINDER_OBJ } from '../3d/extraObjects'
 import Stats from 'stats.js'
 import { GameWorldMessages } from './GameWorldMessages'
+import { TileInfo } from './types/TileInfo'
 
 export default class GameWorld {
   gui: dat.GUI
@@ -51,7 +52,6 @@ export default class GameWorld {
   tileEntities: Map<string, ECSYThreeEntity> = new Map<string, ECSYThreeEntity>()
 
   constructor () {
-    // @ ts-ignore typescript-eslint/no-unsafe-assignment typescript-eslint/no-unsafe-call
     this.stats = new Stats()
     this.gui = new dat.GUI()
     this.renderer = new WebGLRenderer()
@@ -280,13 +280,23 @@ export default class GameWorld {
     queue.push(message)
   }
 
-  public setTile (axial: Axial, color: Color | undefined, growthStage: GrowthStage | undefined): void {
+  /**
+   * Set the display at the tile, may
+   * remove it if color or growStage is undefined
+   * create a new tree if that location dont have tree
+   * grow the tree if that location have tree
+   * @param axial
+   * @param color
+   * @param growthStage
+   */
+  public setTile (axial: Axial, { color, growthStage }: Partial<TileInfo> = {}): void {
+    // TODO: implement the description
     if (color !== undefined && growthStage !== undefined) {
       createTree(this, { color, growthStage, axial })
     }
   }
 
   public setRayDirection (directionType: number): void {
-    this.sunOrientationRad = 4.69 + directionType * Math.PI / 3
+    this.sunOrientationRad = INITIAL_SUN_ORIENTATION + directionType * Math.PI / 3
   }
 }

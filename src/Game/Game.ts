@@ -5,9 +5,10 @@ import { StarMeshAction, StarMeshNetworkEvents, StarMeshReducer } from '../lib/S
 import { GameState } from './types/GameState'
 import { getInitialState } from './getInitialState'
 import { Axial } from '../3d/Coordinates/Axial'
-import { Color, costs, GrowthStage, isTree } from '../3d/constants'
+import { ACTION_COSTS, GrowthStage } from '../3d/constants'
 import { TileInfo } from './types/TileInfo'
 import { clone } from 'ramda'
+import { isTreeGrowthStage } from './isTreeGrowthStage'
 
 export enum GameEvent {
   UPDATE_GAME_STATE,
@@ -73,8 +74,8 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
 
   public rejoin (gameState: GameState): void {
     Object.entries(gameState.board).forEach(([axialString, tileInfo]) => {
-      if (tileInfo.color !== undefined && tileInfo.stage !== undefined) {
-        this.setTile(gameState, tileInfo.color, Axial.fromString(axialString), tileInfo.stage)
+      if (tileInfo.color !== undefined && tileInfo.growthStage !== undefined) {
+        this.setTile(gameState, Axial.fromString(axialString), tileInfo)
       }
     })
     this.setRayDirection(gameState, gameState.rayDirection)
@@ -90,12 +91,6 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
       action: GameActions.CLICK,
       payload: [x, y]
     }).catch(this.errorHandler)
-  }
-
-  public assertAxialInBoard (gameState: GameState, axial: Axial): void {
-    if (!(axial.toString() in gameState.board)) {
-      throw new Error(`${axial.toString()} is not in game board`)
-    }
   }
 
   public async endTurn (): Promise<void> {
@@ -135,18 +130,18 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     const shadows: { [axial: string]: GrowthStage } = {}
     const direction: number = gameState.rayDirection
     Object.entries(gameState.board).forEach(([axialString, tile]) => {
-      if (isTree(tile.stage)) {
+      if (isTreeGrowthStage(tile.growthStage)) {
         let axial = Axial.fromString(axialString)
-        for (let distance = 0; distance < tile.stage; distance++) {
+        for (let distance = 0; distance < tile.growthStage; distance++) {
           axial = axial.add(Axial.neighbors[direction])
-          shadows[axial.toString()] = Math.max(shadows[axial.toString()] ?? 0, tile.stage)
+          shadows[axial.toString()] = Math.max(shadows[axial.toString()] ?? 0, tile.growthStage)
         }
       }
     })
     Object.entries(gameState.board).forEach(([axialString, tile]) => {
-      if (isTree(tile.stage)) {
-        if (tile.color !== undefined && tile.stage > (shadows[axialString] ?? 0)) {
-          gameState.playerInfo[tile.color].lightPoint += tile.stage
+      if (isTreeGrowthStage(tile.growthStage)) {
+        if (tile.color !== undefined && tile.growthStage > (shadows[axialString] ?? 0)) {
+          gameState.playerInfo[tile.color].lightPoint += tile.growthStage as number
           gameState.playerInfo[tile.color].lightPoint = Math.min(gameState.playerInfo[tile.color].lightPoint, 20)
         }
       }
@@ -179,43 +174,46 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   }
 
   public growTreeHandler (gameState: GameState, playerId: number, axial: Axial): GameState {
-    this.assertAxialInBoard(gameState, axial)
+    if (!(axial.toString() in gameState.board)) {
+      throw new Error(`${axial.toString()} is not in game board`)
+    }
     if (gameState.dirtyTiles.includes(axial.toString())) {
       throw new Error('Cannot act on same tile twice')
     }
     if (gameState.preparingRound > 0) {
-      if (gameState.board[axial.toString()].stage !== undefined) {
+      if (gameState.board[axial.toString()].growthStage !== undefined) {
         throw new Error('Already occupied')
       }
       if (gameState.board[axial.toString()].leaves !== 1) {
         throw new Error('First round can only grow tree on tile with 1 leaf')
       }
       --gameState.playerInfo[playerId].availableArea[GrowthStage.SHORT]
-      gameState = this.setTile(gameState, playerId, axial, GrowthStage.SHORT)
+      gameState = this.setTile(gameState, axial, { color: playerId, growthStage: GrowthStage.SHORT })
       gameState = this.endTurnHandler(gameState, playerId)
     } else {
       if (gameState.board[axial.toString()].color !== playerId) {
         throw new Error('You can only grow trees that belong to you')
       }
-      const existingStage: GrowthStage | undefined = gameState.board[axial.toString()].stage
+
+      const existingStage = gameState.board[axial.toString()].growthStage
       if (existingStage === undefined) {
         throw new Error('Please use growSeed method to plant a seed')
       }
 
-      if (gameState.playerInfo[playerId].lightPoint < costs.growth[existingStage]) {
-        throw new Error(`Not enough light point, needed ${costs.growth[existingStage]}, but only have ${gameState.playerInfo[playerId].lightPoint}`)
+      if (gameState.playerInfo[playerId].lightPoint < ACTION_COSTS.GROW[existingStage]) {
+        throw new Error(`Not enough light point, needed ${ACTION_COSTS.GROW[existingStage]}, but only have ${gameState.playerInfo[playerId].lightPoint}`)
       }
       if (existingStage !== GrowthStage.TALL && gameState.playerInfo[playerId].availableArea[existingStage + 1 as GrowthStage] <= 0) {
         throw new Error(`Not enough ${GrowthStage[existingStage + 1]}, you need to buy it with light points before growing`)
       }
-      gameState.playerInfo[playerId].lightPoint -= costs.growth[existingStage]
+      gameState.playerInfo[playerId].lightPoint -= ACTION_COSTS.GROW[existingStage]
       if (existingStage === GrowthStage.TALL) {
         gameState = this.resetTile(gameState, axial)
         gameState = this.returnTree(gameState, playerId, GrowthStage.TALL)
         gameState = this.obtainToken(gameState, playerId, axial)
       } else {
         gameState.playerInfo[playerId].availableArea[existingStage + 1 as GrowthStage]--
-        gameState = this.setTile(gameState, playerId, axial, existingStage + 1 as GrowthStage)
+        gameState = this.setTile(gameState, axial, { color: playerId, growthStage: existingStage + 1 })
         gameState = this.returnTree(gameState, playerId, existingStage)
       }
       gameState.dirtyTiles.push(axial.toString())
@@ -231,8 +229,12 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   }
 
   public plantSeedHandler (gameState: GameState, playerId: number, source: Axial, target: Axial): GameState {
-    this.assertAxialInBoard(gameState, source)
-    this.assertAxialInBoard(gameState, target)
+    if (!(source.toString() in gameState.board)) {
+      throw new Error(`${source.toString()} is not in game board`)
+    }
+    if (!(target.toString() in gameState.board)) {
+      throw new Error(`${target.toString()} is not in game board`)
+    }
     if (gameState.preparingRound > 0) {
       throw new Error('Cannot plant seed at preparing round')
     }
@@ -243,18 +245,18 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
       throw new Error('Cannot act on same tile twice')
     }
     const tileInfo: TileInfo = gameState.board[source.toString()]
-    if (!isTree(tileInfo.stage)) {
+    if (!isTreeGrowthStage(tileInfo.growthStage)) {
       throw new Error('Source tile needed to be a tree')
     }
     if (tileInfo.color !== playerId) {
       throw new Error('Cannot use other\'s tree as source')
     }
-    if (source.tileDistance(target) > tileInfo.stage) {
+    if (source.tileDistance(target) > tileInfo.growthStage) {
       throw new Error('Seed is too far from tree')
     }
     gameState.dirtyTiles.push(source.toString(), target.toString())
     gameState.playerInfo[playerId].availableArea[GrowthStage.SEED]--
-    gameState = this.setTile(gameState, playerId, target, GrowthStage.SEED)
+    gameState = this.setTile(gameState, target, { color: playerId, growthStage: GrowthStage.SEED })
     return gameState
   }
 
@@ -275,10 +277,10 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         break
       }
     }
-    if (gameState.playerInfo[playerId].lightPoint < costs.playerBoard[stage][purchaseIndex]) {
-      throw new Error(`Not enough light point to purchase ${GrowthStage[stage]}, ${costs.playerBoard[stage][purchaseIndex].toString()} needed but only have ${gameState.playerInfo[playerId].lightPoint}`)
+    if (gameState.playerInfo[playerId].lightPoint < ACTION_COSTS.PURCHASE[stage][purchaseIndex]) {
+      throw new Error(`Not enough light point to purchase ${GrowthStage[stage]}, ${ACTION_COSTS.PURCHASE[stage][purchaseIndex].toString()} needed but only have ${gameState.playerInfo[playerId].lightPoint}`)
     }
-    gameState.playerInfo[playerId].lightPoint -= costs.playerBoard[stage][purchaseIndex]
+    gameState.playerInfo[playerId].lightPoint -= ACTION_COSTS.PURCHASE[stage][purchaseIndex]
     gameState.playerInfo[playerId].playerBoard[stage][purchaseIndex] = false
     gameState.playerInfo[playerId].availableArea[stage]++
     return gameState
@@ -334,17 +336,17 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     return prevState
   }
 
-  private setTile (gameState: GameState, color: Color, axial: Axial, stage: GrowthStage): GameState {
-    gameState.board[axial.toString()].stage = stage
-    gameState.board[axial.toString()].color = color
-    this.gameWorld.setTile(axial, color, stage)
+  private setTile (gameState: GameState, axial: Axial, tileInfo: Partial<TileInfo>): GameState {
+    gameState.board[axial.toString()].growthStage = tileInfo.growthStage
+    gameState.board[axial.toString()].color = tileInfo.color
+    this.gameWorld.setTile(axial, tileInfo)
     return gameState
   }
 
   private resetTile (gameState: GameState, axial: Axial): GameState {
     gameState.board[axial.toString()].color = undefined
-    gameState.board[axial.toString()].stage = undefined
-    this.gameWorld.setTile(axial, undefined, undefined)
+    gameState.board[axial.toString()].growthStage = undefined
+    this.gameWorld.setTile(axial)
     return gameState
   }
 
