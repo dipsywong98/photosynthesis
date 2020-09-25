@@ -6,7 +6,7 @@ import TreeComponent from '../components/TreeComponent'
 export default class TileSystem extends ECSYThreeSystem {
   execute (delta: number, time: number): void {
     this.queries.tiles.results.forEach(entity => {
-      const tileComp = entity.getComponent(TileComponent)
+      const tileComp = entity.getComponent<TileComponent>(TileComponent)
 
       if (tileComp === undefined || tileComp.material === undefined) {
         return
