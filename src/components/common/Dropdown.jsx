@@ -32,7 +32,7 @@ const Dropdown = props => {
 
   useEffect(() => {
     onToggle && onToggle(isOpen)
-  }, [isOpen])
+  }, [isOpen, onToggle])
 
   return (
     <Flex

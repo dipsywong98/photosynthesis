@@ -12,8 +12,7 @@ const propTypes = {
 }
 
 export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({ setState }) => {
-  const [game, _state, gameOver] = useGame()
-  const gameState = game.state
+  const [game] = useGame()
   const room = useRoom()
   return (
     <Box

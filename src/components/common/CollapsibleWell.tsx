@@ -6,8 +6,8 @@ import Icon from './Icon'
 import { mdiChevronDown } from '@mdi/js'
 import { transition } from '../../theme/transitions'
 import Collapsible from './Collapsible'
-import { isDefined } from '../../utils/componentHelpers'
 import { baseWell } from '../../theme/wells'
+import { isDefined } from '../../utils/componentHelpers'
 
 const collapsibleWellProps = {
   defaultOpen: PropTypes.bool,
@@ -18,7 +18,9 @@ const collapsibleWellProps = {
   reverseHeader: PropTypes.bool,
   headerSx: PropTypes.object,
   hideOnly: PropTypes.bool,
-  onOpen: PropTypes.func
+  onOpen: PropTypes.func,
+  open: PropTypes.bool,
+  color: PropTypes.string
 }
 
 export interface CollapsibleWellController {
@@ -47,13 +49,13 @@ const CollapsibleWell: FunctionComponent<CollapsibleWellProps & BoxOwnProps> = f
           toggle: () => setOpen(!isOpen)
         })
       }
-    }, [])
+    }, [isOpen, setController])
 
     useEffect(() => {
       if (isOpen) {
         onOpen?.()
       }
-    }, [isOpen])
+    }, [isOpen, onOpen])
 
     return (
       <Well
@@ -101,10 +103,6 @@ const CollapsibleWell: FunctionComponent<CollapsibleWellProps & BoxOwnProps> = f
 )
 
 CollapsibleWell.propTypes = collapsibleWellProps
-
-CollapsibleWell.defaultProps = {
-  defaultOpen: false
-}
 
 CollapsibleWell.displayName = 'CollapsibleWell'
 

@@ -35,27 +35,29 @@ const Collapsible: FunctionComponent<CollapsibleProps & BoxProps> = ({ isOpen, c
   }
 
   useEffect(() => {
-    if (transitionState === 0 && isOpen) {
+    if (isOpen) {
       setVisible(true)
     }
     setTransitionState(isOpen ? BEFORE | OPEN : BEFORE & ~OPEN)
   }, [isOpen])
 
   useEffect(() => {
-    updateScrollHeight()
-    if ((transitionState & BEFORE) > 0) {
-      setTransitionState(transitionState & ~BEFORE | DURING)
-    } else if ((transitionState & DURING) > 0) {
-      setTimeout(() => {
-        if (isMounted) {
-          if (transitionState === (DURING & ~OPEN)) {
-            setVisible(false)
+    if (isMounted) {
+      updateScrollHeight()
+      if ((transitionState & BEFORE) > 0) {
+        setTransitionState(transitionState & ~BEFORE | DURING)
+      } else if ((transitionState & DURING) > 0) {
+        setTimeout(() => {
+          if (isMounted) {
+            if (transitionState === (DURING & ~OPEN)) {
+              setVisible(false)
+            }
+            setTransitionState(transitionState & ~DURING)
           }
-          setTransitionState(transitionState & ~DURING)
-        }
-      }, SLOW * 1000)
+        }, SLOW * 1000)
+      }
     }
-  }, [transitionState])
+  }, [isMounted, transitionState])
 
   useEffect(() => {
     setMounted(true)
