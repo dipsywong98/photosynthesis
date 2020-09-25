@@ -47,7 +47,7 @@ export interface RoomState {
 
 const initialState = Object.freeze({
   maxPlayers: 4,
-  minPlayers: 1,
+  minPlayers: 2,
   players: {}
 })
 
