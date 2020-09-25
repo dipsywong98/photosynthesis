@@ -34,12 +34,13 @@ describe('Game', () => {
         '3,-1': { leaves: 1, stage: 1, color: 0 },
         '2,-1': { leaves: 1, stage: 1, color: 1 },
         '2,1': { leaves: 1, stage: 1, color: 1 },
-        '1,1': { leaves: 1, stage: 2, color: 1 }
+        '1,1': { leaves: 1, stage: 2, color: 0 }
       },
-      rayDirection: 0
+      rayDirection: 3
     })
     const game = new Game(new Room())
-    expect(game.photosynthesis(gameState).playerInfo[0].lightPoint).toEqual(7)
-    expect(game.photosynthesis(gameState).playerInfo[1].lightPoint).toEqual(1)
+    const playerInfos = game.photosynthesis(gameState).playerInfo
+    expect(playerInfos[0].lightPoint).toEqual(7)
+    expect(playerInfos[1].lightPoint).toEqual(1)
   })
 })
