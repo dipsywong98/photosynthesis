@@ -8,6 +8,8 @@ import { Room } from './Room'
 import { GameContextProvider } from '../Game/GameContext'
 import { GamePlayer } from './GamePlayer'
 import { withAlertQueue } from './common/AlertContext'
+import GameRenderer from './GameRenderer'
+import { Box } from '@theme-ui/components'
 
 export enum AppState {
   HOME,
@@ -34,30 +36,23 @@ const App: FunctionComponent = () => {
     }
   }
   return (
-    <Flex
-      sx={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        flexDirection: 'column'
-      }}>
+    <Box>
       <NavBar setState={setState} state={state}/>
-      <Flex sx={{ flex: 1, ml: `-${state * 100}%`, ...transition(0.3, ['margin-left'], 'linear') }}>
-        <Flex sx={{ width: '100vw', height: '100vh', justifyContent: 'center', alignItems: 'center', position: 'absolute' }}>
-          <GameContextProvider>
+      <Box sx={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+        <GameContextProvider>
+          <GameRenderer/>
+          <Flex sx={{ width: '100vw', bottom: 0, left: `${-(state - 2) * 100}%`, position: 'absolute', ...transition(0.3, ['left'], 'linear') }}>
             <GamePlayer setState={setState}/>
-          </GameContextProvider>
-        </Flex>
-        <Flex sx={{ width: '100vw', height: '100vh', justifyContent: 'center', alignItems: 'center', position: 'absolute' }}>
-          <Room setState={setState}/>
-        </Flex>
-        <Flex sx={{ width: '100vw', height: '100vh', justifyContent: 'center', alignItems: 'center', position: 'absolute' }}>
-          <Home setState={setState}/>
-        </Flex>
-      </Flex>
-    </Flex>
+          </Flex>
+          <Flex sx={{ width: '100vw', height: '100vh', left: `${-(state - 1) * 100}%`, justifyContent: 'center', alignItems: 'center', position: 'absolute', ...transition(0.3, ['left'], 'linear') }}>
+            <Room setState={setState}/>
+          </Flex>
+          <Flex sx={{ width: '100vw', height: '100vh', left: `${-state * 100}%`, justifyContent: 'center', alignItems: 'center', position: 'absolute', ...transition(0.3, ['left'], 'linear') }}>
+            <Home setState={setState}/>
+          </Flex>
+        </GameContextProvider>
+      </Box>
+    </Box>
   )
 }
 

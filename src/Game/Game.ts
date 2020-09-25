@@ -5,7 +5,7 @@ import { StarMeshAction, StarMeshNetworkEvents, StarMeshReducer } from '../lib/S
 import { GameState } from './types/GameState'
 import { getInitialState } from './getInitialState'
 import { Axial } from '../3d/Coordinates/Axial'
-import { ACTION_COSTS, GrowthStage } from '../3d/constants'
+import { ACTION_COST_GROW, ACTION_COST_PURCHASE, GrowthStage } from '../3d/constants'
 import { TileInfo } from './types/TileInfo'
 import { clone } from 'ramda'
 import { isTreeGrowthStage } from './isTreeGrowthStage'
@@ -200,13 +200,13 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         throw new Error('Please use growSeed method to plant a seed')
       }
 
-      if (gameState.playerInfo[playerId].lightPoint < ACTION_COSTS.GROW[existingStage]) {
-        throw new Error(`Not enough light point, needed ${ACTION_COSTS.GROW[existingStage]}, but only have ${gameState.playerInfo[playerId].lightPoint}`)
+      if (gameState.playerInfo[playerId].lightPoint < ACTION_COST_GROW[existingStage]) {
+        throw new Error(`Not enough light point, needed ${ACTION_COST_GROW[existingStage]}, but only have ${gameState.playerInfo[playerId].lightPoint}`)
       }
       if (existingStage !== GrowthStage.TALL && gameState.playerInfo[playerId].availableArea[existingStage + 1 as GrowthStage] <= 0) {
         throw new Error(`Not enough ${GrowthStage[existingStage + 1]}, you need to buy it with light points before growing`)
       }
-      gameState.playerInfo[playerId].lightPoint -= ACTION_COSTS.GROW[existingStage]
+      gameState.playerInfo[playerId].lightPoint -= ACTION_COST_GROW[existingStage]
       if (existingStage === GrowthStage.TALL) {
         gameState = this.resetTile(gameState, axial)
         gameState = this.returnTree(gameState, playerId, GrowthStage.TALL)
@@ -277,10 +277,10 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         break
       }
     }
-    if (gameState.playerInfo[playerId].lightPoint < ACTION_COSTS.PURCHASE[stage][purchaseIndex]) {
-      throw new Error(`Not enough light point to purchase ${GrowthStage[stage]}, ${ACTION_COSTS.PURCHASE[stage][purchaseIndex].toString()} needed but only have ${gameState.playerInfo[playerId].lightPoint}`)
+    if (gameState.playerInfo[playerId].lightPoint < ACTION_COST_PURCHASE[stage][purchaseIndex]) {
+      throw new Error(`Not enough light point to purchase ${GrowthStage[stage]}, ${ACTION_COST_PURCHASE[stage][purchaseIndex].toString()} needed but only have ${gameState.playerInfo[playerId].lightPoint}`)
     }
-    gameState.playerInfo[playerId].lightPoint -= ACTION_COSTS.PURCHASE[stage][purchaseIndex]
+    gameState.playerInfo[playerId].lightPoint -= ACTION_COST_PURCHASE[stage][purchaseIndex]
     gameState.playerInfo[playerId].playerBoard[stage][purchaseIndex] = false
     gameState.playerInfo[playerId].availableArea[stage]++
     return gameState

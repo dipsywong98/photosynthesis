@@ -34,6 +34,9 @@ export default class TouchSystem extends GameWorldSystem {
       console.log('ran')
       this.gameWorld.activeObject = this.gameWorld.hoverObject
     })
+    this.hm.on('pinch', ({ scale }) => {
+      this.gameWorld.camera.position.z = Math.max(0.999, Math.min(this.gameWorld.camera.position.z * (scale), 4))
+    })
 
     canvas.addEventListener('touchmove', this.onMouseMove)
     canvas.addEventListener('mousemove', this.onMouseMove)

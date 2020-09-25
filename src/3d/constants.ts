@@ -117,18 +117,18 @@ export const TREE_GROWTH_DURATION = 1.5
 export const GROUND_SHADE_DURATION = TREE_GROWTH_DURATION / 3 * 2
 
 // Gameplay
-export const ACTION_COSTS = Object.freeze({
-  SEED: 1,
-  GROW: {
-    [GrowthStage.SEED]: 1,
-    [GrowthStage.SHORT]: 2,
-    [GrowthStage.MID]: 3,
-    [GrowthStage.TALL]: 4
-  },
-  PURCHASE: {
-    [GrowthStage.SEED]: [1, 1, 2, 2],
-    [GrowthStage.SHORT]: [2, 2, 3, 3],
-    [GrowthStage.MID]: [3, 3, 4],
-    [GrowthStage.TALL]: [4, 5]
-  }
-})
+export const ACTION_COST_SEED = 1
+
+export const ACTION_COST_GROW: { [k in GrowthStage]: number } = {
+  [GrowthStage.SEED]: 1,
+  [GrowthStage.SHORT]: 2,
+  [GrowthStage.MID]: 3,
+  [GrowthStage.TALL]: 4
+} as const
+
+export const ACTION_COST_PURCHASE: { [k in GrowthStage]: readonly number[] } = {
+  [GrowthStage.SEED]: [1, 1, 2, 2],
+  [GrowthStage.SHORT]: [2, 2, 3, 3],
+  [GrowthStage.MID]: [3, 3, 4],
+  [GrowthStage.TALL]: [4, 5]
+} as const

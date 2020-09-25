@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { useGame } from '../Game/GameContext'
 import { Box, Flex } from '@theme-ui/components'
 import { AppState } from './App'
-import GameRenderer from './GameRenderer'
 import { useRoom } from '../lib/RoomContext'
 import { Panel } from './Panel'
 
@@ -20,15 +19,14 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
         width: '100%',
         height: '100%'
       }}>
-      <GameRenderer gameWorld={game.gameWorld}/>
       <Flex
         sx={{
-          width: '100%',
-          height: '100%',
+          width: '100vw',
           flexDirection: 'column',
           justifyContent: 'flex-end',
-          position: 'relative',
-          zIndex: 1
+          position: 'absolute',
+          left: 0,
+          bottom: 0
         }}>
         {room.started &&
         <Panel

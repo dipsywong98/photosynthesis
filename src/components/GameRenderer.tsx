@@ -1,15 +1,12 @@
 import React, { FunctionComponent, useEffect, useRef } from 'react'
-import PropTypes, { InferProps } from 'prop-types'
 import { Box } from '@theme-ui/components'
-import GameWorld from '../Game/GameWorld'
 import { WebGLRendererSystem } from 'ecsy-three'
+import { useGame } from '../Game/GameContext'
 
-const gameRendererProps = {
-  gameWorld: PropTypes.instanceOf(GameWorld).isRequired
-}
-
-const GameRenderer: FunctionComponent<InferProps<typeof gameRendererProps>> = ({ gameWorld }) => {
+const GameRenderer: FunctionComponent = () => {
   const ref = useRef<HTMLDivElement | null>(null)
+  const [game] = useGame()
+  const gameWorld = game.gameWorld
 
   useEffect(() => {
     const divElem = ref.current
@@ -28,7 +25,7 @@ const GameRenderer: FunctionComponent<InferProps<typeof gameRendererProps>> = ({
       sx={{
         width: '100vw',
         height: '100vh',
-        position: 'fixed',
+        position: 'absolute',
         left: 0,
         top: 0,
         right: 0,
@@ -41,7 +38,5 @@ const GameRenderer: FunctionComponent<InferProps<typeof gameRendererProps>> = ({
     />
   )
 }
-
-GameRenderer.propTypes = gameRendererProps
 
 export default GameRenderer
