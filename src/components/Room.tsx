@@ -24,11 +24,20 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
   const name = players[room.myId] ?? ''
   const rename = room.rename
   useEffect(() => {
-    room.on(RoomEvents.SET_PLAYERS, ({ data }) => setPlayers(data as PlayersDict))
-    room.on(RoomEvents.SET_HOST, ({ data }) => setHost(data as string))
-    room.on(RoomEvents.START_GAME, ({ data: game }) => {
+    const id1 = room.on(RoomEvents.SET_PLAYERS, ({ data }) => setPlayers(data as PlayersDict))
+    const id2 = room.on(RoomEvents.SET_HOST, ({ data }) => setHost(data as string))
+    const id3 = room.on(RoomEvents.START_GAME, ({ data: game }) => {
       setState(AppState.GAME, game as Game)
     })
+    const id4 = room.on(RoomEvents.LEAVE_ROOM, () => {
+      setState(AppState.HOME)
+    })
+    return () => {
+      room.off(RoomEvents.SET_PLAYERS, id1)
+      room.off(RoomEvents.SET_HOST, id2)
+      room.off(RoomEvents.START_GAME, id3)
+      room.off(RoomEvents.LEAVE_ROOM, id4)
+    }
   }, [room, setState])
   const startGame = (): void => {
     room?.startGame().catch((e: Error) => {
@@ -62,9 +71,7 @@ export const Room: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
           <Button
             sx={{ flex: 1 }}
             variant='warning'
-            onClick={(): void => {
-              setState(AppState.HOME)
-            }}>
+            onClick={room.leaveRoom}>
             Back
           </Button>
           <Button
