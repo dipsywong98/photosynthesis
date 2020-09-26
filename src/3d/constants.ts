@@ -132,3 +132,6 @@ export const ACTION_COST_PURCHASE: { [k in GrowthStage]: readonly number[] } = {
   [GrowthStage.MID]: [3, 3, 4],
   [GrowthStage.TALL]: [4, 5]
 } as const
+
+export const IMAGE_SIZE = 50
+export const IMAGE_SIZE_CSS = `${IMAGE_SIZE}px`

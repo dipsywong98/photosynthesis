@@ -1,8 +1,6 @@
-import { Box, Divider, Flex } from '@theme-ui/components'
+import { Box, Divider, Flex, Grid, Heading } from '@theme-ui/components'
 import Button from './common/Button'
-import Select from './common/Select'
-import { Color, GrowthStage } from '../3d/constants'
-import Input from './common/Input'
+import { GrowthStage } from '../3d/constants'
 import CollapsibleWell from './common/CollapsibleWell'
 import React, { FunctionComponent, useMemo, useState } from 'react'
 import { GameState } from '../Game/types/GameState'
@@ -11,6 +9,16 @@ import { Axial } from '../3d/Coordinates/Axial'
 import PropTypes from 'prop-types'
 import { PlayerInfo } from '../Game/types/PlayerInfo'
 import { useAlert } from './common/AlertContext'
+import {
+  mdiArrowBottomLeft,
+  mdiArrowBottomRight,
+  mdiArrowLeft,
+  mdiArrowRight,
+  mdiArrowTopLeft,
+  mdiArrowTopRight
+} from '@mdi/js'
+import Icon from './common/Icon'
+import { TokenStack } from './TokenStack'
 
 interface props {
   mi: number // my player id
@@ -58,49 +66,49 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
   const clickToEndTurn = (): void => {
     endTurn().catch(alert)
   }
+  const id2Name = (id: number): string => Room.getName(roomState, id)
+  const directionSvgs = [
+    mdiArrowRight,
+    mdiArrowTopRight,
+    mdiArrowTopLeft,
+    mdiArrowLeft,
+    mdiArrowBottomLeft,
+    mdiArrowBottomRight
+  ]
   return (
-    <CollapsibleWell header='Board' sx={{ m: 0, backgroundColor: 'rgba(255, 255, 255, 0.6)' }} color='background.0'>
-      <Flex>
+    <CollapsibleWell
+      header='Board'
+      sx={{ m: 0, backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
+      color='background.0'
+      defaultOpen={true}>
+      {gameState !== undefined && <Flex>
         <Box>
-          <Button onClick={() => console.log(gameState)}>Log Game State</Button>
-          <Button onClick={() => console.log(roomState)}>Log Room State</Button>
-          <Select
-            label='GrowthStage'
-            value={stage}
-            choices={[GrowthStage.SEED, GrowthStage.SHORT, GrowthStage.MID, GrowthStage.TALL].map(v => [v, GrowthStage[v]])}
-            formatKey='1'
-            valueKey='0'
-            onSelect={setStage}
-          />
-          <Input
-            label='Axial'
-            onChange={({ target: { value } }: { target: { value: string } }) => setAxialString(value)}
-          />
-          <Input
-            label='Axial2'
-            onChange={({ target: { value } }: { target: { value: string } }) => setAxialString2(value)}
-          />
-          <Button onClick={clickToSeed}>Seed</Button>
-          <Button onClick={clickToGrow}>Grow</Button>
-          <Button onClick={clickToPurchase}>Purchase</Button>
-          <Button onClick={clickToEndTurn}>End Turn</Button>
+          <Heading variant='subheading'>
+            {`Current turn: ${id2Name(gameState.turn)}`}
+          </Heading>
+          <Grid columns={2}>
+            <Box>Rounds Left</Box>
+            <Box>
+              {
+                gameState.preparingRound > 0
+                  ? `${gameState.preparingRound} Preparations`
+                  : `${gameState.revolutionLeft} Revolutions`}
+            </Box>
+            <Box>Ray Direction</Box>
+            <Box><Icon path={directionSvgs[gameState.rayDirection]}/></Box>
+            <Box>Next Ray Direction</Box>
+            <Box><Icon path={directionSvgs[(gameState.rayDirection + 1) % 6]}/></Box>
+            <Box>Score Tokens</Box>
+            <Flex>
+              {
+                Object.entries(gameState.scoreTokens).map(([leaves, stack]) => (
+                  <TokenStack key={leaves} leaves={Number.parseInt(leaves)} stack={stack}/>
+                ))
+              }
+            </Flex>
+          </Grid>
         </Box>
-        {gameState !== undefined && (
-          <Box>
-            <Box>Public</Box>
-            <Box>{Room.getName(roomState, gameState.turn)} turn</Box>
-            <Box>Ray Direction {gameState.rayDirection}</Box>
-            <Box>Rotation left {gameState.revolutionLeft}</Box>
-            <Box>Tokens: {gameState.revolutionLeft}</Box>
-            <Box>Me: {mi} {Room.getName(roomState, mi)}</Box>
-            <Box>Color: {playerInfo?.color !== undefined ? Color[playerInfo?.color] : ''}</Box>
-            <Box>LightPoint: {playerInfo?.lightPoint}</Box>
-            <Box>Score: {playerInfo?.score}</Box>
-            <Box>Available: {JSON.stringify(playerInfo?.availableArea)}</Box>
-            <Box>Board: {JSON.stringify(playerInfo?.playerBoard)}</Box>
-          </Box>
-        )}
-      </Flex>
+      </Flex>}
       {
         gameOver !== undefined && (
           <Box>

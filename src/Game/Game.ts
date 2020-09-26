@@ -106,6 +106,9 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     if (gameState.turn === this.nPlayers) {
       if (gameState.preparingRound > 0) {
         gameState.preparingRound--
+        if (gameState.preparingRound === 0) {
+          gameState.rayDirection = -1
+        }
       }
       if (gameState.preparingRound === 0) {
         gameState.rayDirection++
