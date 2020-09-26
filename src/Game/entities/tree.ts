@@ -4,6 +4,7 @@ import TreeComponent from '../components/TreeComponent'
 import { Color, GrowthStage } from '../../3d/constants'
 import { Axial } from '../../3d/Coordinates/Axial'
 import AxialCoordsComponent from '../components/AxialCoordsComponent'
+import { ECSYThreeEntity } from 'ecsy-three'
 
 export interface TreeOptions {
   color: Color
@@ -11,7 +12,7 @@ export interface TreeOptions {
   axial: Axial
 }
 
-export const createTree = (gameWorld: GameWorld, { color, growthStage, axial }: TreeOptions): void => {
+export const createTree = (gameWorld: GameWorld, { color, growthStage, axial }: TreeOptions): ECSYThreeEntity | undefined => {
   const tree = new Object3D()
 
   const tileEntity = gameWorld.tileEntities.get(axial.toString())
@@ -21,9 +22,9 @@ export const createTree = (gameWorld: GameWorld, { color, growthStage, axial }: 
     return
   }
 
-  gameWorld.world
+  return gameWorld.world
     .createEntity()
-    .addObject3DComponent(tree, gameWorld.sceneEntity)
+    .addObject3DComponent(tree, gameWorld.gameEntity)
     .addComponent(TreeComponent, {
       color,
       growthStage

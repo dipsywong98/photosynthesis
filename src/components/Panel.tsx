@@ -59,7 +59,7 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
     endTurn().catch(alert)
   }
   return (
-    <CollapsibleWell header='Board' sx={{ m: 0 }} color='background.0'>
+    <CollapsibleWell header='Board' sx={{ m: 0, backgroundColor: 'rgba(255, 255, 255, 0.6)' }} color='background.0'>
       <Flex>
         <Box>
           <Button onClick={() => console.log(gameState)}>Log Game State</Button>

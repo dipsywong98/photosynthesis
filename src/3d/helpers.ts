@@ -1,5 +1,6 @@
 import { Geometry, Material, Mesh, Object3D, Texture } from 'three'
 import { BufferGeometry } from 'three/src/core/BufferGeometry'
+import { basicGray } from './extraObjects'
 
 export const disposeObj3D = (obj3d?: Object3D | null): void => {
   obj3d?.traverse((obj) => {
@@ -31,4 +32,10 @@ export const disposeObj3D = (obj3d?: Object3D | null): void => {
       }
     }
   })
+}
+
+export const swapMaterial = (child: Object3D): void => {
+  if (child instanceof Mesh) {
+    child.material = basicGray
+  }
 }

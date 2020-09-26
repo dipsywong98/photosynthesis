@@ -1,39 +1,43 @@
-import { Component, Entity, Types } from 'ecsy'
+import { Component, Types } from 'ecsy'
 import { Color, GrowthStage } from '../../3d/constants'
 import { Object3D } from 'three'
 import { disposeObj3D } from '../../3d/helpers'
+import { ECSYThreeEntity } from 'ecsy-three'
 
 export default class TreeComponent extends Component<TreeComponent> {
   readonly color!: Color
   growthStage!: GrowthStage
-  seedObj?: Object3D
-  treeObj?: Object3D
   topObj?: Object3D
   trunkObj?: Object3D
-  shadeObj?: Object3D
-  shadeEntity?: Entity
+  plant?: ECSYThreeEntity
+  seed?: ECSYThreeEntity
+  tree?: ECSYThreeEntity
+  shade?: ECSYThreeEntity
+  groundShade?: ECSYThreeEntity
 
   reset (): void {
+    this.plant?.remove()
+    this.seed?.remove()
+    this.tree?.remove()
+    this.shade?.remove()
+    this.groundShade?.remove()
+    this.plant = undefined
+    this.seed = undefined
+    this.tree = undefined
+    this.shade = undefined
     disposeObj3D(this.topObj)
     disposeObj3D(this.trunkObj)
-    disposeObj3D(this.treeObj)
-    disposeObj3D(this.seedObj)
-    this.seedObj = undefined
-    this.treeObj = undefined
     this.topObj = undefined
     this.trunkObj = undefined
-    this.shadeEntity?.remove()
-    this.shadeEntity = undefined
   }
 }
 
 TreeComponent.schema = {
   color: { type: Types.Number },
   growthStage: { type: Types.Number },
-  treeObj: { type: Types.Ref, default: undefined },
+  tree: { type: Types.Ref, default: undefined },
   topObj: { type: Types.Ref, default: undefined },
   trunkObj: { type: Types.Ref, default: undefined },
-  shadeObj: { type: Types.Ref, default: undefined },
-  shadeEntity: { type: Types.Ref, default: undefined },
-  seedObj: { type: Types.Ref, default: undefined }
+  shade: { type: Types.Ref, default: undefined },
+  seed: { type: Types.Ref, default: undefined }
 }
