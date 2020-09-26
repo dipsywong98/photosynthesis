@@ -9,6 +9,7 @@ import { GamePlayer } from './GamePlayer'
 import { withAlertQueue } from './common/AlertContext'
 import GameRenderer from './GameRenderer'
 import { Box } from '@theme-ui/components'
+import { TestPanel } from './TestPanel'
 
 export enum AppState {
   HOME,
@@ -57,6 +58,7 @@ const App: FunctionComponent = () => {
               ...transition(0.3, ['left'], 'linear')
             }}>
             <Home setState={setState}/>
+            <TestPanel/>
           </Flex>
         </GameContextProvider>
       </Box>
