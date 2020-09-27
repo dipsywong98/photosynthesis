@@ -82,8 +82,7 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
   return (
     <CollapsibleWell
       header={gameState !== undefined ? `Current turn: ${id2Name(gameState.turn)}` : 'Board'}
-      sx={{ m: 0, backgroundColor: 'rgba(255, 255, 255, 0.6)', maxHeight: '100vh' }}
-      color='background.0'
+      sx={{ m: 0, bg: 'bgPales.0', maxHeight: '100vh' }}
       defaultOpen={true}>
       {gameState !== undefined && <Flex sx={{ flexWrap: 'wrap', justifyContent: 'space-around' }}>
         <Box>

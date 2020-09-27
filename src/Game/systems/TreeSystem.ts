@@ -22,7 +22,7 @@ import jelly from '../easing/3d/jelly'
 import TweenComponent from '../components/TweenComponent'
 import TweenObjectProperties from '../types/TweenObjectProperties'
 import linear from '../easing/3d/linear'
-import SelectableTagComponent from '../components/SelectableTagComponent'
+import SelectableComponent from '../components/SelectableComponent'
 
 export default class TreeSystem extends GameWorldSystem {
   execute (delta: number, time: number): void {
@@ -51,10 +51,16 @@ export default class TreeSystem extends GameWorldSystem {
         return
       }
 
-      const linkedTileComp = this.gameWorld.tileEntities.get(axialComp.axial.toString())?.getMutableComponent(TileComponent)
-      if (linkedTileComp !== undefined) {
-        linkedTileComp.treeEntity = entity
+      const linkedTileEntity = this.gameWorld.tileEntities.get(axialComp.axial.toString())
+      if (linkedTileEntity === undefined) {
+        return
       }
+
+      const linkedTileComp = linkedTileEntity.getMutableComponent(TileComponent)
+      if (linkedTileComp === undefined) {
+        return
+      }
+      linkedTileComp.treeEntity = entity
 
       const { color } = treeComp
       obj3d.name = 'tree-' + entity.id.toString() + '-' + Color[color]
@@ -100,7 +106,7 @@ export default class TreeSystem extends GameWorldSystem {
         treeComp.plant = this.world
           .createEntity()
           .addObject3DComponent(plantContainerObj, entity)
-          .addComponent(SelectableTagComponent)
+          .addComponent(SelectableComponent, { refEntity: linkedTileEntity })
         treeComp.tree = this.world
           .createEntity()
           .addObject3DComponent(treeObj, treeComp.plant)

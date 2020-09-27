@@ -36,7 +36,7 @@ import { TileInfo } from './types/TileInfo'
 import TouchSystem from './systems/TouchSystem'
 import { RendererComposerSystem } from './systems/RendererComposerSystem'
 import RendererComposerComponent from './components/RendererComposerComponent'
-import SelectableTagComponent from './components/SelectableTagComponent'
+import SelectableComponent from './components/SelectableComponent'
 import SelectionSystem from './systems/SelectionSystem'
 
 export default class GameWorld {
@@ -130,7 +130,7 @@ export default class GameWorld {
     this.world.registerComponent(TileComponent)
     this.world.registerComponent(SunOrientationTagComponent)
     this.world.registerComponent(RendererComposerComponent)
-    this.world.registerComponent(SelectableTagComponent)
+    this.world.registerComponent(SelectableComponent)
 
     this.world.unregisterSystem(WebGLRendererSystem)
     this.world.registerSystem(RendererComposerSystem, { priority: 999, gameWorld: this })
@@ -257,7 +257,8 @@ export default class GameWorld {
         .addObject3DComponent(tileContainer, boardEntity)
         .addComponent(AxialCoordsComponent, { axial })
         .addComponent(TileComponent)
-        .addComponent(SelectableTagComponent)
+      tileEntity
+        .addComponent(SelectableComponent, { refEntity: tileEntity })
       this.tileEntities.set(axial.toString(), tileEntity)
     })
 
@@ -323,5 +324,13 @@ export default class GameWorld {
 
   public setRayDirection (directionType: number): void {
     this.sunOrientationRad = INITIAL_SUN_ORIENTATION + directionType * Math.PI / 3
+  }
+
+  public getActiveEntity (): ECSYThreeEntity | undefined {
+    return this.activeObject?.entity?.getComponent(SelectableComponent)?.refEntity
+  }
+
+  public getActiveAxial (): Axial | undefined {
+    return this.getActiveEntity()?.getComponent(AxialCoordsComponent)?.axial
   }
 }
