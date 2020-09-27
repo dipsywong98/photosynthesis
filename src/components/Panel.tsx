@@ -1,4 +1,4 @@
-import { Badge, Box, Divider, Flex, Grid, Heading } from '@theme-ui/components'
+import { Box, Divider, Flex, Grid } from '@theme-ui/components'
 import Button from './common/Button'
 import { GrowthStage } from '../3d/constants'
 import CollapsibleWell from './common/CollapsibleWell'
@@ -21,9 +21,8 @@ import Icon from './common/Icon'
 import { ScoreTokenStack } from './ScoreTokenStack'
 import ButtonGroup from './common/ButtonGroup'
 import { SunlightTag } from './SunlightTag'
-import { Image } from './common/Image'
-import treePhotoPath from '../assets/images/tree-placeholder.png'
-import { TreeTokenStack } from './TreeTokenStack'
+import { getTreeImageByColorGrowthStage, TreeTokenStack } from './TreeTokenStack'
+import { ImageStack } from './common/ImageStack'
 
 interface props {
   mi: number // my player id
@@ -82,15 +81,12 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
   ]
   return (
     <CollapsibleWell
-      header='Board'
-      sx={{ m: 0, backgroundColor: 'rgba(255, 255, 255, 0.6)', maxHeight: '100vh', overflow: 'auto' }}
+      header={gameState !== undefined ? `Current turn: ${id2Name(gameState.turn)}` : 'Board'}
+      sx={{ m: 0, backgroundColor: 'rgba(255, 255, 255, 0.6)', maxHeight: '100vh' }}
       color='background.0'
       defaultOpen={true}>
       {gameState !== undefined && <Flex sx={{ flexWrap: 'wrap', justifyContent: 'space-around' }}>
         <Box>
-          <Heading variant='subheading'>
-            {`Current turn: ${id2Name(gameState.turn)}`}
-          </Heading>
           <Grid columns={2}>
             <Box>Rounds Left</Box>
             <Box>
@@ -134,11 +130,12 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
                 <Box>Available:</Box>
                 <Flex>{Object.entries(playerInfo.availableArea).map(([growthStage, amount]) => (
                   <Box key={growthStage} sx={{ position: 'relative' }}>
-                    <Image path={treePhotoPath}>
-                    </Image>
-                    <Badge sx={{ bottom: 0, right: 0, position: 'absolute' }}>
-                      {amount}
-                    </Badge>
+                    <ImageStack
+                      key={growthStage}
+                      imgPath={getTreeImageByColorGrowthStage(playerInfo.color, Number.parseInt(growthStage))}
+                      stack={new Array(amount).fill(undefined)}
+                      badge={amount}
+                    />
                   </Box>
                 ))}
                 </Flex>

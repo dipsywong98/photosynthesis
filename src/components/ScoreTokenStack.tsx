@@ -4,7 +4,7 @@ import token1 from '../assets/images/token1.png'
 import token2 from '../assets/images/token2.png'
 import token3 from '../assets/images/token3.png'
 import token4 from '../assets/images/token4.png'
-import { Stack } from './common/Stack'
+import { ImageStack } from './common/ImageStack'
 
 const tokenImages = ['', token1, token2, token3, token4]
 
@@ -16,7 +16,7 @@ const propTypes = {
 export const ScoreTokenStack: FunctionComponent<InferProps<typeof propTypes>> = ({ stack, leaves }) => {
   const tokenImage = tokenImages[leaves]
   return (
-    <Stack stack={stack.length > 0 ? stack : ['-']} imgPath={tokenImage} badge={stack.length}/>
+    <ImageStack stack={stack} imgPath={tokenImage} badge={stack.length}/>
   )
 }
 

@@ -12,10 +12,11 @@ const propTypes = {
   badge: PropTypes.node
 }
 
-export const Stack: FunctionComponent<InferProps<typeof propTypes>> = ({ stack, imgPath, badge, onClick }) => {
+export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ stack, imgPath, badge, onClick }) => {
   const [hovering, setHovering] = useState(false)
   return (
     <Box
+      m={1}
       unselectable={'on'}
       sx={{ position: 'relative', width: IMAGE_SIZE_CSS, height: IMAGE_SIZE_CSS }}
       onClick={() => { onClick?.() }}
@@ -23,17 +24,19 @@ export const Stack: FunctionComponent<InferProps<typeof propTypes>> = ({ stack, 
       onMouseEnter={() => setHovering(true)}
       onTouchEnd={() => setHovering(false)}
       onMouseLeave={() => setHovering(false)}>
-      {stack.map((score, k) => (
+      {(stack.length > 0 ? stack : ['-']).map((content, k) => (
         <Image
           key={k}
           path={imgPath}
           sx={{
+            boxShadow: 1,
+            borderRadius: '50%',
             position: 'absolute',
-            bottom: hovering ? `${k * IMAGE_SIZE}px` : '0px',
+            bottom: hovering ? `${k * (IMAGE_SIZE + 4)}px` : '0px',
             zIndex: stack.length - k,
             ...transition(SLOW, ['bottom'])
           }}>
-          {score}
+          {content === '-' ? <Box sx={{ backgroundColor: 'muted', width: '100%', height: '100%', borderRadius: '50%' }}> - </Box> : content}
         </Image>))}
       {badge !== undefined && <Badge
         variant='circle'
@@ -46,4 +49,4 @@ export const Stack: FunctionComponent<InferProps<typeof propTypes>> = ({ stack, 
   )
 }
 
-Stack.propTypes = propTypes
+ImageStack.propTypes = propTypes
