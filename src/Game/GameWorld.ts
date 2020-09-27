@@ -268,7 +268,6 @@ export default class GameWorld {
           const ringContainerObj = new Object3D()
           ringContainerObj.name = 'ringContainer'
           const ringClone = ring.clone()
-          ringClone.position.y -= 0.3
           const mesh = ringClone.children.find((o): o is Mesh => o instanceof Mesh)
           // Assuming material exists and is a MeshStandardMaterial
           const originalMaterial = mesh?.material
