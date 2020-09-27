@@ -1,5 +1,5 @@
 import GameWorldSystem from './GameWorldSystem'
-import SelectableTagComponent from '../components/SelectableTagComponent'
+import SelectableTagComponent from '../components/SelectableComponent'
 import { ECSYThreeObject3D, Object3DComponent } from 'ecsy-three'
 import { Object3D, Raycaster } from 'three'
 
