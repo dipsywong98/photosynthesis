@@ -28,9 +28,7 @@ export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ st
     <Hammer
       onTap={(e: HammerInput) => {
         e.preventDefault()
-        if (!hovering) {
-          onClick?.()
-        }
+        onClick?.()
         setHovering(false)
       }}
       onPress={(e: HammerInput) => {

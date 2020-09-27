@@ -58,7 +58,7 @@ const App: FunctionComponent = () => {
               ...transition(0.3, ['left'], 'linear')
             }}>
             <Home setState={setState}/>
-            <TestPanel/>
+            <TestPanel setState={setState}/>
           </Flex>
         </GameContextProvider>
       </Box>
