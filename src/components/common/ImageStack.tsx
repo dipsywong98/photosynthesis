@@ -50,36 +50,42 @@ export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ st
         }}
         m={1}>
         {(stack.length > 0 ? stack : ['-']).map((content, k) => (
-          <Image
+          <Box
             key={k}
-            path={imgPath}
             sx={{
-              boxShadow: 1,
-              borderRadius: '50%',
               position: 'absolute',
               bottom: hovering ? `${k * (IMAGE_SIZE + 4)}px` : '0px',
               zIndex: stack.length - k,
+              pb: '4px',
               ...transition(SLOW, ['bottom'])
             }}>
-            {content === '-' ? <Box
+            <Image
+              path={imgPath}
               sx={{
-                backgroundColor: 'muted',
-                width: '100%',
-                height: '100%',
+                boxShadow: 1,
                 borderRadius: '50%'
               }}>
-              -
-            </Box> : <Box
-              sx={{
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                ':hover': {
-                  backgroundColor: 'highlight',
-                  cursor: (onClick !== undefined && k === 0 ? 'pointer' : undefined)
-                }
-              }}>{content}</Box>}
-          </Image>))}
+              {content === '-' ? <Box
+                sx={{
+                  backgroundColor: 'muted',
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%'
+                }}>
+                -
+              </Box> : <Box
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  ':hover': {
+                    backgroundColor: 'highlight',
+                    cursor: (onClick !== undefined && k === 0 ? 'pointer' : undefined)
+                  }
+                }}>{content}</Box>}
+            </Image>
+          </Box>
+        ))}
         {badge !== undefined && <Badge
           variant='circle'
           sx={{
