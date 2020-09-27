@@ -29,7 +29,6 @@ export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ st
     <Hammer
       onTap={(e: HammerInput) => {
         e.preventDefault()
-        onClick?.()
         setHovering(false)
       }}
       onPress={(e: HammerInput) => {
@@ -62,28 +61,9 @@ export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ st
             }}>
             <Image
               path={imgPath}
-              sx={{
-                boxShadow: 1,
-                borderRadius: '50%'
-              }}>
-              {content === '-' || shouldMute?.[k] === false ? <Box
-                sx={{
-                  backgroundColor: 'muted',
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%'
-                }}>
-                {content}
-              </Box> : <Box
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  ':hover': {
-                    backgroundColor: 'highlight',
-                    cursor: (onClick !== undefined && k === 0 ? 'pointer' : undefined)
-                  }
-                }}>{content}</Box>}
+              disabled={content === '-' || shouldMute?.[k] === false}
+              onClick={k === 0 ? onClick : undefined}>
+              {content}
             </Image>
           </Box>
         ))}
