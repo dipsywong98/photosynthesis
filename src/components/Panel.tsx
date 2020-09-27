@@ -1,4 +1,4 @@
-import { Box, Divider, Flex, Grid, Heading } from '@theme-ui/components'
+import { Badge, Box, Divider, Flex, Grid, Heading } from '@theme-ui/components'
 import Button from './common/Button'
 import { GrowthStage } from '../3d/constants'
 import CollapsibleWell from './common/CollapsibleWell'
@@ -18,7 +18,12 @@ import {
   mdiArrowTopRight
 } from '@mdi/js'
 import Icon from './common/Icon'
-import { TokenStack } from './TokenStack'
+import { ScoreTokenStack } from './ScoreTokenStack'
+import ButtonGroup from './common/ButtonGroup'
+import { SunlightTag } from './SunlightTag'
+import { Image } from './common/Image'
+import treePhotoPath from '../assets/images/tree-placeholder.png'
+import { TreeTokenStack } from './TreeTokenStack'
 
 interface props {
   mi: number // my player id
@@ -43,11 +48,11 @@ const propTypes = {
 export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plantSeed, growTree, endTurn, nextRound }) => {
   const [axialString, setAxialString] = useState('')
   const [axialString2, setAxialString2] = useState('')
-  const [stage, setStage] = useState<GrowthStage>(GrowthStage.SEED)
   const axial = useMemo(() => Axial.fromString(axialString), [axialString])
   const axial2 = useMemo(() => Axial.fromString(axialString2), [axialString2])
   const gameState: GameState | undefined = roomState.game
-  const playerInfo: PlayerInfo | undefined = gameState?.playerInfo[mi]
+  const [activePlayerId, setActivePlayerId] = useState(mi)
+  const playerInfo: PlayerInfo | undefined = gameState?.playerInfo[activePlayerId]
   const gameOver = gameState?.gameOver
   const _alert = useAlert()
   const alert = (e: string): void => {
@@ -60,7 +65,7 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
   const clickToGrow = (): void => {
     growTree(axial).catch(alert)
   }
-  const clickToPurchase = (): void => {
+  const clickToPurchase = (stage: GrowthStage): void => {
     purchase(stage).catch(alert)
   }
   const clickToEndTurn = (): void => {
@@ -78,10 +83,10 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
   return (
     <CollapsibleWell
       header='Board'
-      sx={{ m: 0, backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
+      sx={{ m: 0, backgroundColor: 'rgba(255, 255, 255, 0.6)', maxHeight: '100vh', overflow: 'auto' }}
       color='background.0'
       defaultOpen={true}>
-      {gameState !== undefined && <Flex>
+      {gameState !== undefined && <Flex sx={{ flexWrap: 'wrap', justifyContent: 'space-around' }}>
         <Box>
           <Heading variant='subheading'>
             {`Current turn: ${id2Name(gameState.turn)}`}
@@ -98,15 +103,64 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
             <Box><Icon path={directionSvgs[gameState.rayDirection]}/></Box>
             <Box>Next Ray Direction</Box>
             <Box><Icon path={directionSvgs[(gameState.rayDirection + 1) % 6]}/></Box>
-            <Box>Score Tokens</Box>
-            <Flex>
-              {
-                Object.entries(gameState.scoreTokens).map(([leaves, stack]) => (
-                  <TokenStack key={leaves} leaves={Number.parseInt(leaves)} stack={stack}/>
-                ))
-              }
-            </Flex>
           </Grid>
+          <Box>Score Tokens</Box>
+          <Flex>
+            {
+              Object.entries(gameState.scoreTokens).map(([leaves, stack]) => (
+                <ScoreTokenStack key={leaves} leaves={Number.parseInt(leaves)} stack={stack}/>
+              ))
+            }
+          </Flex>
+        </Box>
+        <Box>
+          <ButtonGroup>
+            {Object.entries(roomState.nameDict ?? {}).map(([name, id]) => (
+              <Button
+                key={id}
+                variant={id !== activePlayerId.toString() ? 'normal' : 'primary'}
+                onClick={() => setActivePlayerId(Number.parseInt(id))}>
+                {name}
+              </Button>
+            ))}
+          </ButtonGroup>
+          {playerInfo !== undefined && <Box>
+            <Grid columns={2}>
+              <SunlightTag>{playerInfo.lightPoint ?? ''}</SunlightTag>
+              <Box>Score: {playerInfo.score}</Box>
+            </Grid>
+            <Grid columns={[1, null, 2]}>
+              <Box>
+                <Box>Available:</Box>
+                <Flex>{Object.entries(playerInfo.availableArea).map(([growthStage, amount]) => (
+                  <Box key={growthStage} sx={{ position: 'relative' }}>
+                    <Image path={treePhotoPath}>
+                    </Image>
+                    <Badge sx={{ bottom: 0, right: 0, position: 'absolute' }}>
+                      {amount}
+                    </Badge>
+                  </Box>
+                ))}
+                </Flex>
+              </Box>
+              <Box>
+                <Box>Purchase:</Box>
+                <Flex>
+                  {
+                    Object.entries(playerInfo.playerBoard).map(([growStage, canBuy]) => (
+                      <TreeTokenStack
+                        key={growStage}
+                        onClick={() => clickToPurchase(Number.parseInt(growStage))}
+                        growthStage={Number.parseInt(growStage)}
+                        color={playerInfo.color}
+                        canBuy={canBuy}
+                      />
+                    ))
+                  }
+                </Flex>
+              </Box>
+            </Grid>
+          </Box>}
         </Box>
       </Flex>}
       {

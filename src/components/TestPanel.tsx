@@ -2,6 +2,7 @@ import React, { FunctionComponent } from 'react'
 import { Panel } from './Panel'
 import { getInitialState } from '../Game/getInitialState'
 import { Box } from '@theme-ui/components'
+import { GrowthStage } from '../3d/constants'
 
 const roomState = {
   maxPlayers: 4,
@@ -31,6 +32,8 @@ const roomState = {
   game: getInitialState(4)
 }
 roomState.game.scoreTokens[4] = []
+roomState.game.playerInfo[0].playerBoard[GrowthStage.SEED][1] = false
+roomState.game.preparingRound = 0
 export const TestPanel: FunctionComponent = () => {
   const mockFn = async (...params: unknown[]): Promise<void> => {
     console.log(params)
