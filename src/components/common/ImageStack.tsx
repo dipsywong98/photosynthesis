@@ -8,12 +8,13 @@ import Hammer from 'react-hammerjs'
 
 const propTypes = {
   stack: PropTypes.arrayOf(PropTypes.node).isRequired,
+  shouldMute: PropTypes.arrayOf(PropTypes.bool.isRequired),
   imgPath: PropTypes.string.isRequired,
   onClick: PropTypes.func,
   badge: PropTypes.node
 }
 
-export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ stack, imgPath, badge, onClick }) => {
+export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ stack, imgPath, badge, shouldMute, onClick }) => {
   const [hovering, setHovering] = useState(false)
   useEffect(() => {
     const listener = (): void => setHovering(false)
@@ -65,14 +66,14 @@ export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ st
                 boxShadow: 1,
                 borderRadius: '50%'
               }}>
-              {content === '-' ? <Box
+              {content === '-' || shouldMute?.[k] === false ? <Box
                 sx={{
                   backgroundColor: 'muted',
                   width: '100%',
                   height: '100%',
                   borderRadius: '50%'
                 }}>
-                -
+                {content}
               </Box> : <Box
                 sx={{
                   width: '100%',

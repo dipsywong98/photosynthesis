@@ -36,6 +36,10 @@ const roomState = {
 }
 roomState.game.scoreTokens[4] = []
 roomState.game.playerInfo[0].playerBoard[GrowthStage.SEED][1] = false
+roomState.game.playerInfo[0].playerBoard[GrowthStage.SHORT][0] = false
+roomState.game.playerInfo[0].playerBoard[GrowthStage.SHORT][1] = false
+roomState.game.playerInfo[0].playerBoard[GrowthStage.TALL][0] = false
+roomState.game.playerInfo[0].playerBoard[GrowthStage.TALL][1] = false
 roomState.game.preparingRound = 0
 globalRoom.network.state = roomState
 globalRoom.network.myConnectionManager.id = 'id1'
