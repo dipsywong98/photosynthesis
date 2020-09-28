@@ -68,6 +68,10 @@ globalRoom.network.myConnectionManager.on(ConnEvent.PEER_OPEN, () => {
     growthStage: GrowthStage.TALL,
     leaves: 3
   }
+  window.setTimeout(() => {
+    globalRoom.game.gameWorld.setTile(Axial.origin, { color: Color.BLUE, growthStage: GrowthStage.TALL })
+    globalRoom.game.gameWorld.setTile(new Axial(1, 0), { color: undefined, growthStage: undefined })
+  }, 1000)
 })
 
 const propTypes = {

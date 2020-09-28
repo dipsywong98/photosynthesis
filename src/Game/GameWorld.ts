@@ -26,7 +26,6 @@ import AxialCoordsSystem from './systems/AxialCoordsSystem'
 import TileSystem from './systems/TileSystem'
 import SunOrientationTagComponent from './components/SunOrientationTagComponent'
 import SunOrientationSystem from './systems/SunOrientationSystem'
-import { createTree } from './entities/tree'
 import dat from 'dat.gui'
 import { Axial } from '../3d/Coordinates/Axial'
 import { CYLINDER_OBJ } from '../3d/extraObjects'
@@ -38,6 +37,7 @@ import { RendererComposerSystem } from './systems/RendererComposerSystem'
 import RendererComposerComponent from './components/RendererComposerComponent'
 import SelectableComponent from './components/SelectableComponent'
 import SelectionSystem from './systems/SelectionSystem'
+import { createTree } from './entities/tree'
 
 export default class GameWorld {
   gui: dat.GUI
@@ -315,9 +315,17 @@ export default class GameWorld {
    * @param growthStage
    */
   public setTile (axial: Axial, { color, growthStage }: Partial<TileInfo> = {}): void {
-    // TODO: implement the description
-    if (color !== undefined && growthStage !== undefined) {
-      createTree(this, { color, growthStage, axial })
+    const treeComponent = this.tileEntities.get(axial.toString())?.getComponent(TileComponent)?.treeEntity?.getMutableComponent(TreeComponent)
+    if (treeComponent !== undefined) {
+      if (growthStage !== undefined) {
+        treeComponent.growthStage = growthStage
+      } else {
+        treeComponent.reset()
+      }
+    } else {
+      if (color !== undefined && growthStage !== undefined) {
+        createTree(this, { color, growthStage, axial })
+      }
     }
   }
 

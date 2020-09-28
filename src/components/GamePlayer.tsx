@@ -105,7 +105,7 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
     if (interactionState.action !== undefined) {
       switch (interactionState.action) {
         case GameActions.GROW_TREE:
-          return isPreparationRound && interactionState.axial === undefined ? `Select a ${interactionState.growthStage !== undefined ? GROWTH_STAGE_NAME[interactionState.growthStage] : 'tree'} to grow` : ''
+          return !isPreparationRound && interactionState.axial === undefined ? `Select a ${interactionState.growthStage !== undefined ? GROWTH_STAGE_NAME[interactionState.growthStage] : 'tree'} to grow` : ''
         case GameActions.PLANT_SEED:
           if (interactionState.source === undefined) {
             return 'Select a tree as seed source tree'
