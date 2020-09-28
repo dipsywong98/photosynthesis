@@ -10,6 +10,7 @@ import {
   PerspectiveCamera,
   sRGBEncoding,
   Vector2,
+  Vector3,
   VSMShadowMap,
   WebGLRenderer
 } from 'three'
@@ -17,9 +18,17 @@ import TreeSystem from './systems/TreeSystem'
 import TweenSystem from './systems/TweenSystem'
 import { disposeObj3D } from '../3d/helpers'
 import TreeComponent from './components/TreeComponent'
-import TweenBaseComponent from './components/TweenComponent'
+import TweenComponent from './components/TweenComponent'
 import AxialCoordsComponent from './components/AxialCoordsComponent'
-import { AMBIENT_COLOR, INITIAL_SUN_ORIENTATION, MODELS, SKY_COLOR, SUN_ANGLE, SUN_COLOR } from '../3d/constants'
+import {
+  AMBIENT_COLOR,
+  INITIAL_SUN_ORIENTATION,
+  MODELS,
+  SKY_COLOR,
+  SUN_ANGLE,
+  SUN_COLOR,
+  TREE_GROWTH_DURATION
+} from '../3d/constants'
 import { getObject } from '../3d/assets'
 import TileComponent from './components/TileComponent'
 import AxialCoordsSystem from './systems/AxialCoordsSystem'
@@ -38,6 +47,9 @@ import RendererComposerComponent from './components/RendererComposerComponent'
 import SelectableComponent from './components/SelectableComponent'
 import SelectionSystem from './systems/SelectionSystem'
 import { createTree } from './entities/tree'
+import TweenObjectProperties from './types/TweenObjectProperties'
+import { applyVector3 } from './easing/applyEasing'
+import jelly from './easing/3d/jelly'
 
 export default class GameWorld {
   gui: dat.GUI
@@ -118,14 +130,14 @@ export default class GameWorld {
   }
 
   private initGUI (): void {
-    const sunControl = this.gui.add(this, 'sunOrientationRad', 0, 2 * Math.PI)
-    sunControl.name('Sun orientation')
-    sunControl.step(0.01)
+    // const sunControl = this.gui.add(this, 'sunOrientationRad', 0, 2 * Math.PI)
+    // sunControl.name('Sun orientation')
+    // sunControl.step(0.01)
   }
 
   private initECS (): void {
     this.world.registerComponent(TreeComponent)
-    this.world.registerComponent(TweenBaseComponent)
+    this.world.registerComponent(TweenComponent)
     this.world.registerComponent(AxialCoordsComponent)
     this.world.registerComponent(TileComponent)
     this.world.registerComponent(SunOrientationTagComponent)
@@ -171,8 +183,8 @@ export default class GameWorld {
     const cameraFolder = this.gui.addFolder('Camera')
 
     cameraFolder.add(this.camera.position, 'z', 20, 300, 1).name('zoom')
-    cameraFolder.add(cameraTiltObj.rotation, 'x', -Math.PI / 2, 0, 0.01).name('tilt')
-    cameraFolder.add(cameraRotationObj.rotation, 'y', 0, Math.PI * 2, 0.01).name('rotation')
+    // cameraFolder.add(cameraTiltObj.rotation, 'x', -Math.PI / 2, 0, 0.01).name('tilt')
+    // cameraFolder.add(cameraRotationObj.rotation, 'y', 0, Math.PI * 2, 0.01).name('rotation')
     cameraFolder.open()
 
     this.world.createEntity()
@@ -315,12 +327,13 @@ export default class GameWorld {
    * @param growthStage
    */
   public setTile (axial: Axial, { color, growthStage }: Partial<TileInfo> = {}): void {
-    const treeComponent = this.tileEntities.get(axial.toString())?.getComponent(TileComponent)?.treeEntity?.getMutableComponent(TreeComponent)
+    const treeEntity = this.tileEntities.get(axial.toString())?.getComponent(TileComponent)?.treeEntity
+    const treeComponent = treeEntity?.getMutableComponent(TreeComponent)
     if (treeComponent !== undefined) {
       if (growthStage !== undefined) {
         treeComponent.growthStage = growthStage
-      } else {
-        treeComponent.reset()
+      } else if (treeEntity !== undefined) {
+        this.removeTree(axial)
       }
     } else {
       if (color !== undefined && growthStage !== undefined) {
@@ -339,5 +352,26 @@ export default class GameWorld {
 
   public getActiveAxial (): Axial | undefined {
     return this.getActiveEntity()?.getComponent(AxialCoordsComponent)?.axial
+  }
+
+  private removeTree (axial: Axial): void {
+    // animate tree removal
+    const linkedTileComponent = this.tileEntities.get(axial.toString())?.getMutableComponent(TileComponent)
+    const treeEntity = linkedTileComponent?.treeEntity
+    treeEntity?.getComponent<TweenComponent<TweenObjectProperties<Object3D, 'scale'>>>(TweenComponent)?.tweens?.push({
+      duration: TREE_GROWTH_DURATION,
+      from: new Vector3(1, 1, 1),
+      func: applyVector3(jelly),
+      loop: 1,
+      prop: 'scale',
+      to: new Vector3(0, 0, 0),
+      value: 0
+    })
+    setTimeout(() => {
+      treeEntity?.remove()
+      if (linkedTileComponent !== undefined) {
+        linkedTileComponent.treeEntity = undefined
+      }
+    }, TREE_GROWTH_DURATION)
   }
 }

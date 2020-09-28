@@ -1,5 +1,5 @@
 import GameWorldSystem from './GameWorldSystem'
-import SelectableTagComponent from '../components/SelectableComponent'
+import SelectableComponent from '../components/SelectableComponent'
 import { ECSYThreeObject3D, Object3DComponent } from 'ecsy-three'
 import { Object3D, Raycaster } from 'three'
 
@@ -41,7 +41,7 @@ export default class SelectionSystem extends GameWorldSystem {
         parent = currentRef?.parent ?? null
         if (parent !== null) {
           if (isECSYObject3D(parent)) {
-            willContinueSearch = parent.entity.getComponent(SelectableTagComponent) === undefined
+            willContinueSearch = parent.entity.getComponent(SelectableComponent) === undefined
           } else if (currentRef !== parent) {
             willContinueSearch = true
           }
@@ -63,6 +63,6 @@ export default class SelectionSystem extends GameWorldSystem {
 
 SelectionSystem.queries = {
   selectables: {
-    components: [SelectableTagComponent, Object3DComponent]
+    components: [SelectableComponent, Object3DComponent]
   }
 }
