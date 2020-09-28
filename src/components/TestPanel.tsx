@@ -2,10 +2,12 @@ import React, { FunctionComponent, useEffect } from 'react'
 import { Panel } from './Panel'
 import { getInitialState } from '../Game/getInitialState'
 import { Box } from '@theme-ui/components'
-import { GrowthStage } from '../3d/constants'
+import { Color, GrowthStage } from '../3d/constants'
 import { globalRoom } from '../lib/RoomContext'
 import PropTypes, { InferProps } from 'prop-types'
 import { AppState } from './App'
+import { ConnEvent } from '../lib/ConnectionTypes'
+import Axial from '../3d/Coordinates/Axial'
 
 const roomState = {
   maxPlayers: 4,
@@ -43,6 +45,19 @@ roomState.game.playerInfo[0].playerBoard[GrowthStage.TALL][1] = false
 roomState.game.preparingRound = 0
 globalRoom.network.state = roomState
 globalRoom.network.myConnectionManager.id = 'id1'
+globalRoom.network.myConnectionManager.on(ConnEvent.PEER_OPEN, () => {
+  globalRoom.network.myConnectionManager.id = 'id1'
+})
+roomState.game.board[Axial.origin.toString()] = {
+  color: Color.BLUE,
+  growthStage: GrowthStage.SHORT,
+  leaves: 4
+}
+roomState.game.board[new Axial(1, 0).toString()] = {
+  color: Color.BLUE,
+  growthStage: GrowthStage.TALL,
+  leaves: 3
+}
 
 const propTypes = {
   setState: PropTypes.func
@@ -69,6 +84,7 @@ export const TestPanel: FunctionComponent<InferProps<typeof propTypes>> = ({ set
         growTree={mockFn}
         endTurn={mockFn}
         nextRound={nextRound}
+        interactionStateReducer={mockFn}
       />
     </Box>
   )

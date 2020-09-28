@@ -1,14 +1,13 @@
 import { Box, Divider, Flex, Grid } from '@theme-ui/components'
 import Button from './common/Button'
-import { GrowthStage } from '../3d/constants'
+import { ACTION_COST_GROW, ACTION_COST_SEED, GrowthStage } from '../3d/constants'
 import CollapsibleWell from './common/CollapsibleWell'
-import React, { FunctionComponent, useMemo, useState } from 'react'
+import React, { FunctionComponent, useState } from 'react'
 import { GameState } from '../Game/types/GameState'
 import { Room, RoomState } from '../lib/Room'
 import { Axial } from '../3d/Coordinates/Axial'
 import PropTypes from 'prop-types'
 import { PlayerInfo } from '../Game/types/PlayerInfo'
-import { useAlert } from './common/AlertContext'
 import {
   mdiArrowBottomLeft,
   mdiArrowBottomRight,
@@ -23,6 +22,8 @@ import ButtonGroup from './common/ButtonGroup'
 import { SunlightTag } from './SunlightTag'
 import { getTreeImageByColorGrowthStage, TreeTokenStack } from './TreeTokenStack'
 import { ImageStack } from './common/ImageStack'
+import { InteractionState } from './GamePlayer'
+import { GameActions } from '../Game/Game'
 
 interface props {
   mi: number // my player id
@@ -32,6 +33,7 @@ interface props {
   growTree: (source: Axial) => Promise<void>
   endTurn: () => Promise<void>
   nextRound: () => void
+  interactionStateReducer: (patch: Partial<InteractionState>) => void
 }
 
 const propTypes = {
@@ -41,34 +43,27 @@ const propTypes = {
   plantSeed: PropTypes.func.isRequired,
   growTree: PropTypes.func.isRequired,
   endTurn: PropTypes.func.isRequired,
-  nextRound: PropTypes.func.isRequired
+  nextRound: PropTypes.func.isRequired,
+  interactionStateReducer: PropTypes.func.isRequired
 }
 
-export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plantSeed, growTree, endTurn, nextRound }) => {
-  const [axialString, setAxialString] = useState('')
-  const [axialString2, setAxialString2] = useState('')
-  const axial = useMemo(() => Axial.fromString(axialString), [axialString])
-  const axial2 = useMemo(() => Axial.fromString(axialString2), [axialString2])
+export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plantSeed, growTree, endTurn, nextRound, interactionStateReducer }) => {
   const gameState: GameState | undefined = roomState.game
   const [activePlayerId, setActivePlayerId] = useState(mi)
   const playerInfo: PlayerInfo | undefined = gameState?.playerInfo[activePlayerId]
   const gameOver = gameState?.gameOver
-  const _alert = useAlert()
-  const alert = (e: string): void => {
-    console.error(e)
-    _alert(e)
-  }
-  const clickToSeed = (): void => {
-    plantSeed(axial, axial2).catch(alert)
-  }
-  const clickToGrow = (): void => {
-    growTree(axial).catch(alert)
-  }
-  const clickToPurchase = (stage: GrowthStage): void => {
-    purchase(stage).catch(alert)
+  const clickToPurchase = (growthStage: GrowthStage): void => {
+    interactionStateReducer({ growthStage, action: GameActions.PURCHASE })
   }
   const clickToEndTurn = (): void => {
-    endTurn().catch(alert)
+    interactionStateReducer({ action: GameActions.END_TURN })
+  }
+  const handlerAvailableTokenClick = (growthStage: GrowthStage): void => {
+    if (growthStage === GrowthStage.SEED) {
+      interactionStateReducer({ action: GameActions.PLANT_SEED })
+    } else {
+      interactionStateReducer({ action: GameActions.GROW_TREE, growthStage: growthStage - 1 })
+    }
   }
   const id2Name = (id: number): string => Room.getName(roomState, id)
   const directionSvgs = [
@@ -109,16 +104,20 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
           </Flex>
         </Box>
         <Box>
-          <ButtonGroup>
-            {Object.entries(roomState.nameDict ?? {}).map(([name, id]) => (
-              <Button
-                key={id}
-                variant={id !== activePlayerId.toString() ? 'normal' : 'primary'}
-                onClick={() => setActivePlayerId(Number.parseInt(id))}>
-                {name}
-              </Button>
-            ))}
-          </ButtonGroup>
+          <Flex sx={{ justifyContent: 'space-between' }}>
+            <ButtonGroup>
+              {Object.entries(roomState.nameDict ?? {}).map(([name, id]) => (
+                <Button
+                  key={id}
+                  variant={id !== activePlayerId.toString() ? 'normal' : 'primary'}
+                  onClick={() => setActivePlayerId(Number.parseInt(id))}>
+                  {name}
+                </Button>
+              ))}
+              <Button onClick={() => console.log(roomState)}>O</Button>
+            </ButtonGroup>
+            {gameState.turn === mi && <Button onClick={clickToEndTurn}>End Turn</Button>}
+          </Flex>
           {playerInfo !== undefined && <Box>
             <Grid columns={2}>
               <SunlightTag>{playerInfo.lightPoint ?? ''}</SunlightTag>
@@ -131,8 +130,11 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
                   <Box key={growthStage} sx={{ position: 'relative' }}>
                     <ImageStack
                       key={growthStage}
+                      onClick={(activePlayerId === mi && (gameState.preparingRound <= 0 || growthStage === GrowthStage.SHORT.toString())) ? () => handlerAvailableTokenClick(Number.parseInt(growthStage)) : undefined}
                       imgPath={getTreeImageByColorGrowthStage(playerInfo.color, Number.parseInt(growthStage))}
-                      stack={new Array(amount).fill(undefined)}
+                      stack={new Array(amount).fill(<SunlightTag>
+                        {Number.parseInt(growthStage) === GrowthStage.SEED ? ACTION_COST_SEED : ACTION_COST_GROW[Number.parseInt(growthStage) - 1 as GrowthStage]}
+                      </SunlightTag>)}
                       badge={amount}
                     />
                   </Box>
@@ -146,7 +148,7 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
                     Object.entries(playerInfo.playerBoard).map(([growStage, canBuy]) => (
                       <TreeTokenStack
                         key={growStage}
-                        onClick={() => clickToPurchase(Number.parseInt(growStage))}
+                        onClick={activePlayerId === mi ? () => clickToPurchase(Number.parseInt(growStage)) : undefined}
                         growthStage={Number.parseInt(growStage)}
                         color={playerInfo.color}
                         canBuy={canBuy}
