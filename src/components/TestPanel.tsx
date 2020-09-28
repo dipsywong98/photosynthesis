@@ -8,6 +8,7 @@ import PropTypes, { InferProps } from 'prop-types'
 import { AppState } from './App'
 import { ConnEvent } from '../lib/ConnectionTypes'
 import Axial from '../3d/Coordinates/Axial'
+import { createTree } from '../Game/entities/tree'
 
 const roomState = {
   maxPlayers: 4,
@@ -47,17 +48,27 @@ globalRoom.network.state = roomState
 globalRoom.network.myConnectionManager.id = 'id1'
 globalRoom.network.myConnectionManager.on(ConnEvent.PEER_OPEN, () => {
   globalRoom.network.myConnectionManager.id = 'id1'
+  createTree(globalRoom.game.gameWorld, {
+    color: Color.BLUE,
+    growthStage: GrowthStage.SHORT,
+    axial: Axial.origin
+  })
+  roomState.game.board[Axial.origin.toString()] = {
+    color: Color.BLUE,
+    growthStage: GrowthStage.SHORT,
+    leaves: 4
+  }
+  createTree(globalRoom.game.gameWorld, {
+    color: Color.BLUE,
+    growthStage: GrowthStage.TALL,
+    axial: new Axial(1, 0)
+  })
+  roomState.game.board[new Axial(1, 0).toString()] = {
+    color: Color.BLUE,
+    growthStage: GrowthStage.TALL,
+    leaves: 3
+  }
 })
-roomState.game.board[Axial.origin.toString()] = {
-  color: Color.BLUE,
-  growthStage: GrowthStage.SHORT,
-  leaves: 4
-}
-roomState.game.board[new Axial(1, 0).toString()] = {
-  color: Color.BLUE,
-  growthStage: GrowthStage.TALL,
-  leaves: 3
-}
 
 const propTypes = {
   setState: PropTypes.func

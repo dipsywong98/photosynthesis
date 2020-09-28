@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback, useEffect, useReducer } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useReducer } from 'react'
 import PropTypes from 'prop-types'
 import { useGame } from '../Game/GameContext'
 import { Box, Flex } from '@theme-ui/components'
@@ -6,8 +6,8 @@ import { AppState } from './App'
 import { useRoom } from '../lib/RoomContext'
 import { Panel } from './Panel'
 import { Axial } from '../3d/Coordinates/Axial'
-import { ACTION_COST_GROW, ACTION_COST_SEED, GrowthStage } from '../3d/constants'
-import { GameActions, GameEvent } from '../Game/Game'
+import { ACTION_COST_GROW, ACTION_COST_SEED, GROWTH_STAGE_NAME, GrowthStage } from '../3d/constants'
+import { GameActions } from '../Game/Game'
 import { Card } from './common/Card'
 import { Image } from './common/Image'
 import { getTreeImageByColorGrowthStage } from './TreeTokenStack'
@@ -39,19 +39,19 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
       return { ...prevState, ...patch }
     }
   }, {})
-  useEffect(() => {
-    const id = game.on(GameEvent.CLICK, ({ data }) => {
-      interactionStateReducer({ axial: game.gameWorld.getActiveAxial() })
-    })
-    return () => {
-      game.off(GameEvent.CLICK, id)
+  if (interactionState.action === GameActions.PLANT_SEED && interactionState.popperCoord !== undefined) {
+    if (game.state?.board[interactionState.axial?.toString() ?? '']?.growthStage === undefined) {
+      interactionStateReducer({ target: interactionState.axial, popperCoord: undefined })
+    } else {
+      console.log(interactionState.axial, game.state?.board[interactionState.axial?.toString() ?? '']?.growthStage)
+      interactionStateReducer({ source: interactionState.axial, popperCoord: undefined })
     }
-  }, [game])
+  }
   const alert = useAlert()
   const errorHandler = useCallback((e: Error) => {
     console.log(e)
     alert(e.message)
-  }, [alert, interactionStateReducer])
+  }, [alert])
   useEffect(() => {
     console.log(interactionState)
     if (interactionState.action === GameActions.PURCHASE && interactionState.growthStage !== undefined) {
@@ -74,13 +74,6 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
       interactionStateReducer(undefined)
       game.growTree(interactionState.axial).catch(errorHandler)
     }
-    if (interactionState.action === GameActions.PLANT_SEED && interactionState.popperCoord !== undefined) {
-      if (interactionState.source === undefined) {
-        interactionStateReducer({ source: interactionState.axial, popperCoord: undefined })
-      } else {
-        interactionStateReducer({ target: interactionState.axial, popperCoord: undefined })
-      }
-    }
   }, [game, interactionState, interactionStateReducer, errorHandler])
   const domElement = game.gameWorld.renderer.domElement.parentElement
   useEffect(() => {
@@ -94,7 +87,11 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
         popperCoord[1] = event.changedTouches[0].pageY
       }
       const axial = game.gameWorld.getActiveAxial()
-      interactionStateReducer({ popperCoord: axial !== undefined ? popperCoord : undefined, axial })
+      if (axial === undefined) {
+        interactionStateReducer(undefined)
+      } else {
+        interactionStateReducer({ popperCoord: axial !== undefined ? popperCoord : undefined, axial })
+      }
     }
     domElement?.addEventListener('click', listener)
     return () => {
@@ -103,10 +100,22 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
   }, [domElement, game.gameWorld, interactionStateReducer])
   const isMyTile = (axial: Axial): boolean => game.started && game.state?.board[axial.toString()].color === game.mi
   const growthStateOfTile = game.started ? game.state?.board[interactionState?.axial?.toString() ?? '']?.growthStage : undefined
-  let hintText = ''
-  if (interactionState.action !== undefined) {
-    hintText += `${GameActions[interactionState.action]} `
-  }
+  const isPreparationRound = (game.state?.preparingRound ?? 1) > 0
+  const hintText: string = useMemo(() => {
+    if (interactionState.action !== undefined) {
+      switch (interactionState.action) {
+        case GameActions.GROW_TREE:
+          return isPreparationRound && interactionState.axial === undefined ? `Select a ${interactionState.growthStage !== undefined ? GROWTH_STAGE_NAME[interactionState.growthStage] : 'tree'} to grow` : ''
+        case GameActions.PLANT_SEED:
+          if (interactionState.source === undefined) {
+            return 'Select a tree as seed source tree'
+          } else if (interactionState.target === undefined) {
+            return 'Select an empty tile to plant seed'
+          }
+      }
+    }
+    return ''
+  }, [isPreparationRound, interactionState])
   return (
     <Box
       sx={{
@@ -114,6 +123,7 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
         height: '100%',
         position: 'relative'
       }}>
+      <Box sx={{ position: 'fixed', top: 0, width: '100%', textAlign: 'center' }}>{hintText}</Box>
       {game.state !== undefined && interactionState.axial !== undefined && interactionState.popperCoord !== undefined &&
       <Card
         sx={{
@@ -167,7 +177,6 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
           left: 0,
           bottom: 0
         }}>
-        <Box>{hintText}</Box>
         {
           room.started &&
           <Panel

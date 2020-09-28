@@ -135,3 +135,10 @@ export const ACTION_COST_PURCHASE: { [k in GrowthStage]: readonly number[] } = {
 
 export const IMAGE_SIZE = 50
 export const IMAGE_SIZE_CSS = `${IMAGE_SIZE}px`
+
+export const GROWTH_STAGE_NAME: { [k in GrowthStage]: string } = {
+  [GrowthStage.SEED]: 'seed',
+  [GrowthStage.SHORT]: 'short tree',
+  [GrowthStage.MID]: 'middle tree',
+  [GrowthStage.TALL]: 'tall tree'
+}
