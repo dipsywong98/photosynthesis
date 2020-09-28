@@ -16,11 +16,6 @@ export default class TreeComponent extends Component<TreeComponent> {
   groundShade?: ECSYThreeEntity
 
   reset (): void {
-    this.plant?.remove()
-    this.seed?.remove()
-    this.tree?.remove()
-    this.shade?.remove()
-    this.groundShade?.remove()
     this.plant = undefined
     this.seed = undefined
     this.tree = undefined

@@ -31,7 +31,6 @@ export default class TouchSystem extends GameWorldSystem {
       this.panDistances.push([velocityX, velocityY])
     })
     this.hm.on('tap', () => {
-      console.log('ran')
       this.gameWorld.activeObject = this.gameWorld.hoverObject
     })
     this.hm.on('pinch', ({ scale }) => {
@@ -49,7 +48,7 @@ export default class TouchSystem extends GameWorldSystem {
   execute (delta: number, time: number): void {
     while (this.panDistances.length > 0) {
       const [hDistance, vDistance] = this.panDistances.pop()
-      this.gameWorld.cameraRotationObj.rotation.y -= hDistance * 0.05
+      this.gameWorld.cameraRotationObj.rotation.y -= hDistance * 0.1
 
       const newTilt = this.gameWorld.cameraTiltObj.rotation.x - vDistance * 0.05
       this.gameWorld.cameraTiltObj.rotation.x = Math.max(-Math.PI / 2, Math.min(-0.1, newTilt))

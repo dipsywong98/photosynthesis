@@ -22,24 +22,10 @@ import jelly from '../easing/3d/jelly'
 import TweenComponent from '../components/TweenComponent'
 import TweenObjectProperties from '../types/TweenObjectProperties'
 import linear from '../easing/3d/linear'
-import SelectableTagComponent from '../components/SelectableTagComponent'
+import SelectableComponent from '../components/SelectableComponent'
 
 export default class TreeSystem extends GameWorldSystem {
   execute (delta: number, time: number): void {
-    this.queries.trees.removed?.forEach(entity => {
-      // Removed
-      const treeComp = entity.getComponent(TreeComponent)
-      const axialComp = entity.getComponent(AxialCoordsComponent)
-      if (treeComp === undefined || axialComp === undefined) {
-        return
-      }
-
-      const linkedTileComp = this.gameWorld.tileEntities.get(axialComp.axial.toString())?.getMutableComponent(TileComponent)
-      if (linkedTileComp !== undefined) {
-        linkedTileComp.treeEntity = undefined
-      }
-    })
-
     this.queries.trees.changed?.forEach(TreeSystem.updateGrowthStage.bind(this))
 
     this.queries.trees.added?.forEach((entity) => {
@@ -51,10 +37,16 @@ export default class TreeSystem extends GameWorldSystem {
         return
       }
 
-      const linkedTileComp = this.gameWorld.tileEntities.get(axialComp.axial.toString())?.getMutableComponent(TileComponent)
-      if (linkedTileComp !== undefined) {
-        linkedTileComp.treeEntity = entity
+      const linkedTileEntity = this.gameWorld.tileEntities.get(axialComp.axial.toString())
+      if (linkedTileEntity === undefined) {
+        return
       }
+
+      const linkedTileComp = linkedTileEntity.getMutableComponent(TileComponent)
+      if (linkedTileComp === undefined) {
+        return
+      }
+      linkedTileComp.treeEntity = entity
 
       const { color } = treeComp
       obj3d.name = 'tree-' + entity.id.toString() + '-' + Color[color]
@@ -90,7 +82,10 @@ export default class TreeSystem extends GameWorldSystem {
         topObj.position.y = TREE_TOP_Y
         treeComp.topObj = topObj
         treeComp.trunkObj = trunkObj
+        treeObj.scale.set(0, 0, 0)
         treeObj.add(topObj, trunkObj)
+
+        seedObj.scale.set(0, 0, 0)
 
         const plantContainerObj = new Object3D()
         plantContainerObj.name = 'plantContainer'
@@ -100,7 +95,7 @@ export default class TreeSystem extends GameWorldSystem {
         treeComp.plant = this.world
           .createEntity()
           .addObject3DComponent(plantContainerObj, entity)
-          .addComponent(SelectableTagComponent)
+          .addComponent(SelectableComponent, { refEntity: linkedTileEntity })
         treeComp.tree = this.world
           .createEntity()
           .addObject3DComponent(treeObj, treeComp.plant)
@@ -126,8 +121,24 @@ export default class TreeSystem extends GameWorldSystem {
         // Initialize scales and positions
         groundShadeObj.rotation.x = treeComp.growthStage === GrowthStage.SEED ? GROUND_SHADE_HIDDEN_ROTATION : 0
         shadeContainer.position.y = SHADE_Y[treeComp.growthStage]
-        treeObj.scale.fromArray(TREE_GROWTH_PROPS[treeComp.growthStage].tree.scale.toArray())
-        seedObj.scale.fromArray(TREE_GROWTH_PROPS[treeComp.growthStage].seed.scale.toArray())
+        treeComp.tree.getComponent<TweenComponent<TweenObjectProperties<Object3D, 'scale'>>>(TweenComponent)?.tweens?.push({
+          duration: TREE_GROWTH_DURATION,
+          loop: 1,
+          value: 0,
+          prop: 'scale',
+          from: new Vector3(0, 0, 0),
+          to: TREE_GROWTH_PROPS[treeComp.growthStage].tree.scale,
+          func: applyVector3(jelly)
+        })
+        treeComp.seed.getComponent<TweenComponent<TweenObjectProperties<Object3D, 'scale'>>>(TweenComponent)?.tweens?.push({
+          duration: TREE_GROWTH_DURATION,
+          loop: 1,
+          value: 0,
+          prop: 'scale',
+          from: new Vector3(0, 0, 0),
+          to: TREE_GROWTH_PROPS[treeComp.growthStage].seed.scale,
+          func: applyVector3(jelly)
+        })
       }).catch(console.error)
     })
   }

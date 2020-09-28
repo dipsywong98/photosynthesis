@@ -12,14 +12,11 @@ import { isTreeGrowthStage } from './isTreeGrowthStage'
 
 export enum GameEvent {
   UPDATE_GAME_STATE,
-  REQUEST_GAME_STATE,
   GAME_OVER,
-  CLICK,
-  GAME_INIT
+  CLICK
 }
 
 export enum GameActions {
-  CLICK,
   GROW_TREE,
   END_TURN,
   PLANT_SEED,
@@ -83,14 +80,6 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
 
   public stop (payload: unknown): void {
     this.emit(GameEvent.GAME_OVER, { data: payload })
-    // this.gameWorld.dispose()
-  }
-
-  public async click (x: number, y: number): Promise<void> {
-    return await this.dispatch({
-      action: GameActions.CLICK,
-      payload: [x, y]
-    }).catch(this.errorHandler)
   }
 
   public async endTurn (): Promise<void> {
@@ -106,6 +95,9 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     if (gameState.turn === this.nPlayers) {
       if (gameState.preparingRound > 0) {
         gameState.preparingRound--
+        if (gameState.preparingRound === 0) {
+          gameState.rayDirection = -1
+        }
       }
       if (gameState.preparingRound === 0) {
         gameState.rayDirection++

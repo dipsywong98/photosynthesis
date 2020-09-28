@@ -5,6 +5,7 @@ import { Color, GrowthStage } from '../../3d/constants'
 import { Axial } from '../../3d/Coordinates/Axial'
 import AxialCoordsComponent from '../components/AxialCoordsComponent'
 import { ECSYThreeEntity } from 'ecsy-three'
+import TweenComponent from '../components/TweenComponent'
 
 export interface TreeOptions {
   color: Color
@@ -32,4 +33,5 @@ export const createTree = (gameWorld: GameWorld, { color, growthStage, axial }: 
     .addComponent(AxialCoordsComponent, {
       axial
     })
+    .addComponent(TweenComponent)
 }

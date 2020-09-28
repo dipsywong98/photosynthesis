@@ -26,6 +26,7 @@ export enum RoomEvents {
   START_GAME,
   ERROR,
   END_GAME,
+  LEAVE_ROOM,
 }
 
 export interface RoomEventPayload {
@@ -205,6 +206,7 @@ export class Room extends Observable<typeof RoomEvents, RoomEventPayload> {
   public leaveRoom = (): void => {
     this.network.leave()
     this.emit(RoomEvents.SET_HOST, { data: undefined })
+    this.emit(RoomEvents.LEAVE_ROOM, { data: undefined })
   }
 
   public startGame = async (): Promise<void> => {

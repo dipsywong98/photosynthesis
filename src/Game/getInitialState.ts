@@ -39,7 +39,7 @@ export const getInitialState = (players: number): GameState => {
     preparingRound: 2,
     dirtyTiles: [],
     turn: 0,
-    rayDirection: -1,
+    rayDirection: 0,
     revolutionLeft: 3,
     board: getInitialBoard(),
     scoreTokens: {
@@ -55,7 +55,7 @@ export const getInitialState = (players: number): GameState => {
     state.playerInfo[id] = getInitialPlayerInfo(id)
   }
   if (players === 2) {
-    state.scoreTokens[3] = []
+    state.scoreTokens[4] = []
   }
   return state
 }

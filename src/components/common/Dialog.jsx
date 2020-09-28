@@ -16,7 +16,7 @@ const Dialog = props => {
       contentLabel={props.contentLabel}
       style={{
         overlay: {
-          backgroundColor: theme.colors.fgPales[0],
+          backgroundColor: 'fgPales.0',
           zIndex: 200,
           display: 'flex',
           justifyContent: 'center',
