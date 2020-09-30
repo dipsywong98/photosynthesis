@@ -1,5 +1,7 @@
 import { Vector3 } from 'three'
 
+export const TAU = Math.PI * 2
+
 export const MODELS_LOCATION = process.env.PUBLIC_URL + '/models'
 
 export const MODELS = {

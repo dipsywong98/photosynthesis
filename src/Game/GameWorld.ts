@@ -26,7 +26,7 @@ import {
   MODELS,
   SKY_COLOR,
   SUN_ANGLE,
-  SUN_COLOR,
+  SUN_COLOR, TAU,
   TREE_GROWTH_DURATION
 } from '../3d/constants'
 import { getObject } from '../3d/assets'
@@ -39,7 +39,7 @@ import dat from 'dat.gui'
 import { Axial } from '../3d/Coordinates/Axial'
 import { CYLINDER_OBJ } from '../3d/extraObjects'
 import Stats from 'stats.js'
-import { GameWorldMessages } from './GameWorldMessages'
+import GameWorldMessages from './types/GameWorldMessages'
 import { TileInfo } from './types/TileInfo'
 import TouchSystem from './systems/TouchSystem'
 import { RendererComposerSystem } from './systems/RendererComposerSystem'
@@ -48,26 +48,32 @@ import SelectableComponent from './components/SelectableComponent'
 import SelectionSystem from './systems/SelectionSystem'
 import { createTree } from './entities/tree'
 import TweenObjectProperties from './types/TweenObjectProperties'
-import { applyVector3 } from './easing/applyEasing'
+import { applyNumber, applyVector3 } from './easing/applyEasing'
 import jelly from './easing/3d/jelly'
+import TweenTargetComponent from './components/TweenTargetComponent'
+import { Entity } from 'ecsy'
+import easeInOut from './easing/1d/easeInOut'
 
 export default class GameWorld {
   gui: dat.GUI
   stats: Stats
 
-  renderer: WebGLRenderer
-  world: ECSYThreeWorld
-  sceneEntity!: ECSYThreeEntity
-  camera!: PerspectiveCamera
+  hasStarted = false
   messages: Record<string, unknown[]> = {}
+
+  world: ECSYThreeWorld
+  renderer: WebGLRenderer
+
+  camera!: PerspectiveCamera
   cameraTiltObj!: Object3D
   cameraRotationObj!: Object3D
 
-  sunOrientationRad = 0
-  hasStarted = false
+  sunOrientationRad = INITIAL_SUN_ORIENTATION
 
+  sceneEntity!: ECSYThreeEntity
   gameEntity!: ECSYThreeEntity
   tileEntities: Map<string, ECSYThreeEntity> = new Map<string, ECSYThreeEntity>()
+  sunManagerEntity!: Entity
 
   // ray casting selections
   mouseScreenPosition = new Vector2()
@@ -121,6 +127,12 @@ export default class GameWorld {
     this.initRenderer()
     this.initECS()
     this.initScene()
+
+    this.sunManagerEntity = this.world
+      .createEntity('sunManager')
+      .addComponent(TweenTargetComponent, { ref: this })
+      .addComponent(TweenComponent)
+
     this.world.play()
   }
 
@@ -143,6 +155,7 @@ export default class GameWorld {
     this.world.registerComponent(SunOrientationTagComponent)
     this.world.registerComponent(RendererComposerComponent)
     this.world.registerComponent(SelectableComponent)
+    this.world.registerComponent(TweenTargetComponent)
 
     this.world.unregisterSystem(WebGLRendererSystem)
     this.world.registerSystem(RendererComposerSystem, { priority: 999, gameWorld: this })
@@ -184,7 +197,7 @@ export default class GameWorld {
 
     cameraFolder.add(this.camera.position, 'z', 20, 300, 1).name('zoom')
     // cameraFolder.add(cameraTiltObj.rotation, 'x', -Math.PI / 2, 0, 0.01).name('tilt')
-    // cameraFolder.add(cameraRotationObj.rotation, 'y', 0, Math.PI * 2, 0.01).name('rotation')
+    // cameraFolder.add(cameraRotationObj.rotation, 'y', 0, TAU, 0.01).name('rotation')
     cameraFolder.open()
 
     this.world.createEntity()
@@ -343,7 +356,22 @@ export default class GameWorld {
   }
 
   public setRayDirection (directionType: number): void {
-    this.sunOrientationRad = INITIAL_SUN_ORIENTATION + directionType * Math.PI / 3
+    // rotate clock-wise
+    const from = this.sunOrientationRad % TAU
+    const to = Math.floor(from / TAU) * TAU + (INITIAL_SUN_ORIENTATION + directionType * Math.PI / 3) % TAU
+    const realTo = to > from ? to - TAU : to
+    console.log(from, realTo)
+    this.sunManagerEntity
+      .getComponent<TweenComponent<TweenObjectProperties<GameWorld, 'sunOrientationRad'>>>(TweenComponent)?.tweens
+      .push({
+        duration: 2,
+        from,
+        func: applyNumber(easeInOut),
+        loop: 1,
+        prop: 'sunOrientationRad',
+        to: realTo,
+        value: 0
+      })
   }
 
   public getActiveEntity (): ECSYThreeEntity | undefined {

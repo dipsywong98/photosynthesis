@@ -6,7 +6,7 @@ import {
   GrowthStage,
   MODELS,
   SEED_MODELS,
-  SHADE_Y, TREE_GROWTH_DURATION,
+  SHADE_Y, TAU, TREE_GROWTH_DURATION,
   TREE_GROWTH_PROPS,
   TREE_MODELS,
   TREE_TOP_Y
@@ -89,7 +89,7 @@ export default class TreeSystem extends GameWorldSystem {
 
         const plantContainerObj = new Object3D()
         plantContainerObj.name = 'plantContainer'
-        plantContainerObj.rotation.y = Math.random() * Math.PI * 2
+        plantContainerObj.rotation.y = Math.random() * TAU
         plantContainerObj.add(treeObj, seedObj)
 
         treeComp.plant = this.world

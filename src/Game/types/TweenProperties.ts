@@ -7,4 +7,5 @@ export default interface TweenProperties<T> {
   from: T
   to: T
   func: TweenFunction<T>
+  id?: string
 }
