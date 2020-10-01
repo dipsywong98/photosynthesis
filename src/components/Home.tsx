@@ -7,7 +7,6 @@ import Well from './common/Well'
 import { useRoom } from '../lib/RoomContext'
 import { AppState } from './App'
 import { Card } from './common/Card'
-import { RoomEvents } from '../lib/Room'
 
 const propTypes = {
   setState: PropTypes.func.isRequired
@@ -74,15 +73,6 @@ export const Home: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = (
         setLoading(false)
       })
   }
-  useEffect(() => {
-    const id = room.on(RoomEvents.LEAVE_ROOM, () => {
-      setRoomCode('')
-      pushRoomCodeToHistory()
-    })
-    return () => {
-      room.off(RoomEvents.LEAVE_ROOM, id)
-    }
-  }, [room])
   useEffect(() => {
     const listener = ({ state }: { state?: { roomCode: string } }): void => {
       setRoomCode(state?.roomCode ?? '')
