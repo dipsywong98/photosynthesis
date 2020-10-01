@@ -92,7 +92,7 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
             <Box>Ray Direction</Box>
             <Box><Icon path={directionSvgs[gameState.rayDirection]}/></Box>
             <Box>Next Ray Direction</Box>
-            <Box><Icon path={directionSvgs[(gameState.rayDirection + 1) % 6]}/></Box>
+            <Box><Icon path={directionSvgs[(gameState.rayDirection + 5) % 6]}/></Box>
           </Grid>
           <Box>Score Tokens</Box>
           <Flex>
