@@ -6,8 +6,14 @@ import theme from '../theme'
 import Button from './common/Button'
 import Icon from './common/Icon'
 import { FunctionComponent } from 'react'
+import PropTypes from 'prop-types'
 
-const NavBar: FunctionComponent = () => {
+const propTypes = {
+  setState: PropTypes.func.isRequired,
+  state: PropTypes.number.isRequired
+}
+
+const NavBar: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = () => {
   const [colorMode, setColorMode] = useColorMode()
   const toggleDarkMode = (): void => setColorMode(colorMode === 'default' ? 'dark' : 'default')
 
@@ -26,3 +32,5 @@ const NavBar: FunctionComponent = () => {
   )
 }
 export default NavBar
+
+NavBar.propTypes = propTypes
