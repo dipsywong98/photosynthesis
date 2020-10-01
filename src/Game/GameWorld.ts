@@ -38,7 +38,7 @@ import SunOrientationTagComponent from './components/SunOrientationTagComponent'
 import SunOrientationSystem from './systems/SunOrientationSystem'
 import dat from 'dat.gui'
 import { Axial } from '../3d/Coordinates/Axial'
-import { CYLINDER_OBJ } from '../3d/extraObjects'
+import { CYLINDER_OBJ, sunSegmentMesh } from '../3d/extraObjects'
 import Stats from 'stats.js'
 import GameWorldMessages from './types/GameWorldMessages'
 import { TileInfo } from './types/TileInfo'
@@ -265,6 +265,21 @@ export default class GameWorld {
       .addObject3DComponent(game, this.sceneEntity)
 
     this.generateGrid()
+
+    const sunSegmentWrapperObj = new Object3D()
+    sunSegmentWrapperObj.name = 'sunSegmentWrapper'
+    const sunSegmentObj = new Object3D()
+    sunSegmentObj.name = 'sugSegment'
+    sunSegmentObj.position.y = 2.2
+    sunSegmentObj.rotation.y = Math.PI
+    sunSegmentObj.add(sunSegmentMesh)
+    sunSegmentObj.position.z = 28
+    sunSegmentWrapperObj.add(sunSegmentObj)
+
+    this.world
+      .createEntity('sunSegment')
+      .addObject3DComponent(sunSegmentWrapperObj, this.gameEntity)
+      .addComponent(SunOrientationTagComponent)
   }
 
   private generateGrid (): void {

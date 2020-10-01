@@ -40,10 +40,6 @@ const RevolutionCounter: FunctionComponent<BoxProps> = ({
   const isPreparation = preparingRounds > 0
   const totalRounds = isPreparation ? 6 : (state?.totalRevolutions ?? 0) * 6
   const elapsedRounds = isPreparation ? 6 - preparingRounds : totalRounds - (state?.revolutionLeft ?? 0) * 6 + (6 - (state?.rayDirection ?? 0)) % 6
-  // eslint-disable-next-line
-  // @ts-ignore
-  window.state = state
-  console.log('ray direction ' + (state?.rayDirection ?? 0).toString())
 
   // eslint-disable-next-line
   const circleIndexes = React.useMemo(() => [...Array(Math.ceil(totalRounds / 6)).keys()], [elapsedRounds, totalRounds])
