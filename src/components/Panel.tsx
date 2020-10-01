@@ -24,6 +24,7 @@ import { getTreeImageByColorGrowthStage, TreeTokenStack } from './TreeTokenStack
 import { ImageStack } from './common/ImageStack'
 import { InteractionState } from './GamePlayer'
 import { GameActions } from '../Game/Game'
+import { SunlightBadge } from './SunlightBadge'
 
 interface props {
   mi: number // my player id
@@ -132,9 +133,14 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
                       key={growthStage}
                       onClick={(activePlayerId === mi && (gameState.preparingRound <= 0 || growthStage === GrowthStage.SHORT.toString())) ? () => handlerAvailableTokenClick(Number.parseInt(growthStage)) : undefined}
                       imgPath={getTreeImageByColorGrowthStage(playerInfo.color, Number.parseInt(growthStage))}
-                      stack={new Array(amount).fill(<SunlightTag>
+                      stack={new Array(amount).fill(<SunlightBadge
+                        sx={{
+                          top: 0,
+                          right: '-4px',
+                          position: 'absolute'
+                        }}>
                         {Number.parseInt(growthStage) === GrowthStage.SEED ? ACTION_COST_SEED : ACTION_COST_GROW[Number.parseInt(growthStage) - 1 as GrowthStage]}
-                      </SunlightTag>)}
+                      </SunlightBadge>)}
                       badge={amount}
                     />
                   </Box>

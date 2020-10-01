@@ -26,7 +26,8 @@ import {
   MODELS,
   SKY_COLOR,
   SUN_ANGLE,
-  SUN_COLOR, TAU,
+  SUN_COLOR,
+  TAU,
   TREE_GROWTH_DURATION
 } from '../3d/constants'
 import { getObject } from '../3d/assets'
@@ -400,6 +401,6 @@ export default class GameWorld {
       if (linkedTileComponent !== undefined) {
         linkedTileComponent.treeEntity = undefined
       }
-    }, TREE_GROWTH_DURATION)
+    }, TREE_GROWTH_DURATION * 1000)
   }
 }

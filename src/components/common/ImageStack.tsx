@@ -8,13 +8,13 @@ import Hammer from 'react-hammerjs'
 
 const propTypes = {
   stack: PropTypes.arrayOf(PropTypes.node).isRequired,
-  shouldMute: PropTypes.arrayOf(PropTypes.bool.isRequired),
+  enabled: PropTypes.arrayOf(PropTypes.bool.isRequired),
   imgPath: PropTypes.string.isRequired,
   onClick: PropTypes.func,
   badge: PropTypes.node
 }
 
-export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ stack, imgPath, badge, shouldMute, onClick }) => {
+export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ stack, imgPath, badge, enabled, onClick }) => {
   const [hovering, setHovering] = useState(false)
   useEffect(() => {
     const listener = (): void => setHovering(false)
@@ -61,9 +61,9 @@ export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ st
             }}>
             <Image
               path={imgPath}
-              disabled={content === '-' || shouldMute?.[k] === false}
+              disabled={content === '-' || enabled?.[k] === false}
               onClick={k === 0 ? onClick : undefined}>
-              {content}
+              {enabled?.[k] === false ? '-' : content}
             </Image>
           </Box>
         ))}

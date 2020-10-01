@@ -1,9 +1,9 @@
 import React, { FunctionComponent } from 'react'
 import PropTypes, { InferProps } from 'prop-types'
-import token1 from '../assets/images/token1.png'
-import token2 from '../assets/images/token2.png'
-import token3 from '../assets/images/token3.png'
-import token4 from '../assets/images/token4.png'
+import token1 from '../assets/images/tokens/token1.png'
+import token2 from '../assets/images/tokens/token2.png'
+import token3 from '../assets/images/tokens/token3.png'
+import token4 from '../assets/images/tokens/token4.png'
 import { ImageStack } from './common/ImageStack'
 
 const tokenImages = ['', token1, token2, token3, token4]
