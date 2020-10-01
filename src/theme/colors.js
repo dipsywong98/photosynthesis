@@ -60,6 +60,7 @@ export const light = {
   fgPales: colors.dark.map(makeFade),
   border: transparentize(0.8, baseColors.dark[0]),
   highlight: transparentize(0.9, baseColors.dark[0]),
+  sunTagShadow: '#9c4727',
   code: {
     color: '#0451a5',
     backgroundColor: '#ffffff',

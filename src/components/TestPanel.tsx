@@ -46,32 +46,17 @@ roomState.game.playerInfo[0].playerBoard[GrowthStage.TALL][1] = false
 roomState.game.preparingRound = 0
 globalRoom.network.state = roomState
 globalRoom.network.myConnectionManager.id = 'id1'
+// const axial0 = new Axial(0, 0)
+// const axial1 = new Axial(-1, 1)
+// const axial2 = new Axial(-2, 2)
+const axial3 = new Axial(-3, 3)
 globalRoom.network.myConnectionManager.on(ConnEvent.PEER_OPEN, () => {
   globalRoom.network.myConnectionManager.id = 'id1'
   createTree(globalRoom.game.gameWorld, {
     color: Color.BLUE,
-    growthStage: GrowthStage.SHORT,
-    axial: Axial.origin
+    growthStage: GrowthStage.SEED,
+    axial: axial3
   })
-  roomState.game.board[Axial.origin.toString()] = {
-    color: Color.BLUE,
-    growthStage: GrowthStage.SHORT,
-    leaves: 4
-  }
-  createTree(globalRoom.game.gameWorld, {
-    color: Color.BLUE,
-    growthStage: GrowthStage.TALL,
-    axial: new Axial(1, 0)
-  })
-  roomState.game.board[new Axial(1, 0).toString()] = {
-    color: Color.BLUE,
-    growthStage: GrowthStage.TALL,
-    leaves: 3
-  }
-  window.setTimeout(() => {
-    globalRoom.game.gameWorld.setTile(Axial.origin, { color: Color.BLUE, growthStage: GrowthStage.TALL })
-    globalRoom.game.gameWorld.setTile(new Axial(1, 0), { color: undefined, growthStage: undefined })
-  }, 1000)
 })
 
 const propTypes = {

@@ -4,12 +4,13 @@ import { Box, Flex } from '@theme-ui/components'
 import sun from '../assets/images/sun.svg'
 
 const propTypes = {
-  children: PropTypes.node
+  children: PropTypes.node,
+  sx: PropTypes.object
 }
 
-export const SunlightTag: FunctionComponent<InferProps<typeof propTypes>> = ({ children }) => {
+export const SunlightTag: FunctionComponent<InferProps<typeof propTypes>> = ({ children, sx }) => {
   return (
-    <Flex>
+    <Flex sx={sx}>
       <Box>
         <img alt='sun icon' style={{ maxHeight: '24px' }} src={sun}/>
       </Box>
