@@ -21,7 +21,10 @@ const NavBar: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = () => 
     // eslint-disable-next-line
     // @ts-ignore
     // eslint-disable-next-line
-    <Flex py={2} px={theme.layout?.container.p} sx={{ alignItems: 'center', position: 'fixed', width: '100%' }}>
+    <Flex
+      py={2}
+      px={theme.layout?.container.p}
+      sx={{ alignItems: 'center', position: 'fixed', width: '100%', zIndex: 1 }}>
       <Flex mr={2} sx={{ alignItems: 'center', flex: 1 }}>
         {/* {state > 0 && <Button onClick={() => setState(state - 1)}><Icon path={mdiArrowLeft}/></Button>} */}
       </Flex>
