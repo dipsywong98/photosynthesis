@@ -26,7 +26,7 @@ import {
   MODELS,
   SKY_COLOR,
   SUN_ANGLE,
-  SUN_COLOR,
+  SUN_COLOR, SUN_SEGMENT_POSITION_Y, SUN_SEGMENT_POSITION_Z,
   TAU,
   TREE_GROWTH_DURATION
 } from '../3d/constants'
@@ -270,10 +270,10 @@ export default class GameWorld {
     sunSegmentWrapperObj.name = 'sunSegmentWrapper'
     const sunSegmentObj = new Object3D()
     sunSegmentObj.name = 'sugSegment'
-    sunSegmentObj.position.y = 2.2
+    sunSegmentObj.position.y = SUN_SEGMENT_POSITION_Y
+    sunSegmentObj.position.z = SUN_SEGMENT_POSITION_Z
     sunSegmentObj.rotation.y = Math.PI
     sunSegmentObj.add(sunSegmentMesh)
-    sunSegmentObj.position.z = 28
     sunSegmentWrapperObj.add(sunSegmentObj)
 
     this.world

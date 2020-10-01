@@ -70,6 +70,8 @@ export const TILE_SIZE = 5
 export const INITIAL_SUN_ORIENTATION = 1.50 * Math.PI
 export const GROUND_SHADE_HIDDEN_ROTATION = -0.8
 export const SUN_SEGMENT_SIZE = 56
+export const SUN_SEGMENT_POSITION_Y = 2.2
+export const SUN_SEGMENT_POSITION_Z = SUN_SEGMENT_SIZE / 2
 
 export interface TreeGrowthProp {
   tree: { scale: Vector3 }
