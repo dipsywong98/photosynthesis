@@ -6,6 +6,7 @@ export interface GameState {
   dirtyTiles: string[]
   turn: number
   rayDirection: number
+  totalRevolutions: number
   revolutionLeft: number
   gameOver?: string
   board: TileMap
