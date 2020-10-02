@@ -359,7 +359,7 @@ const RevolutionCounter: FunctionComponent<BoxProps> = ({
           <g mask='url(#hexBorder)'>
             <circle cx={0} cy={0} r={1} fill='url(#containerFg)'/>
           </g>
-          <text fontSize={0.6} textAnchor='middle' alignmentBaseline='central'>
+          <text fontSize={0.6} textAnchor='middle' dy={0.2}>
             {totalRounds - elapsedRounds}
           </text>
         </g>
