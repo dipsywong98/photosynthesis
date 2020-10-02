@@ -6,7 +6,7 @@ import { AppState } from './App'
 import { useRoom } from '../lib/RoomContext'
 import { Panel } from './Panel'
 import { Axial } from '../3d/Coordinates/Axial'
-import { GROWTH_STAGE_NAME, GrowthStage } from '../3d/constants'
+import { COLOR_VALUES, GROWTH_STAGE_NAME, GrowthStage } from '../3d/constants'
 import { GameActions } from '../Game/Game'
 import { useAlert } from './common/AlertContext'
 import { Popper } from './Popper'
@@ -99,7 +99,21 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
   const flag = gameOver !== undefined
   return (
     <Box>
-      <Box sx={{ position: 'fixed', top: 0, width: '100%', textAlign: 'center' }}>{hintText}</Box>
+      {game.started && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            left: 0,
+            bottom: 0,
+            pointerEvents: 'none',
+            boxShadow: (hintText !== '' ? `inset 0 0 100px #${COLOR_VALUES[game.mi as GrowthStage].toString(16)}` : undefined),
+            ...transition(SLOW, ['box-shadow'])
+          }}
+        />)
+      }
+      <Heading sx={{ position: 'fixed', top: 0, width: '100%', textAlign: 'center' }}>{hintText}</Heading>
       <Popper interactionState={interactionState} interactionStateReducer={interactionStateReducer} game={game}/>
       <Card
         sx={{
