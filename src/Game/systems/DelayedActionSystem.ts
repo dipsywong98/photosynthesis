@@ -1,8 +1,8 @@
-import { System } from 'ecsy'
 import DelayedActionComponent from '../components/DelayedActionComponent'
 import DelayedAction from '../types/DelayedAction'
+import GameWorldSystem from './GameWorldSystem'
 
-export default class DelayedActionSystem extends System {
+export default class DelayedActionSystem extends GameWorldSystem {
   execute (delta: number, time: number): void {
     this.queries.delayedActions.results.forEach(entity => {
       const delayedActionComp = entity.getMutableComponent(DelayedActionComponent)
@@ -14,6 +14,7 @@ export default class DelayedActionSystem extends System {
           delayedAction.timeout = Math.max(0, delayedAction.timeout - delta)
           if (delayedAction.timeout === 0) {
             delayedAction.handler(entity)
+            this.gameWorld.sceneHasUpdated = true
           } else {
             newActions.push(delayedAction)
           }
