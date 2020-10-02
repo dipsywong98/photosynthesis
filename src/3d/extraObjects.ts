@@ -17,7 +17,11 @@ export const basicGray = new MeshBasicMaterial({
 const sunSegmentTexture = new TextureLoader().load(
   IMAGES_LOCATION + '/sun_segment.png', undefined, undefined, console.error
 )
-const sunSegmentMaterial = new MeshBasicMaterial({ transparent: true, map: sunSegmentTexture })
+const sunSegmentMaterial = new MeshBasicMaterial({
+  transparent: true,
+  map: sunSegmentTexture
+})
 const sunSegmentGeometry = new PlaneBufferGeometry(SUN_SEGMENT_SIZE, SUN_SEGMENT_SIZE)
 export const sunSegmentMesh = new Mesh(sunSegmentGeometry, sunSegmentMaterial)
 sunSegmentMesh.rotation.x = -Math.PI / 2
+sunSegmentMesh.renderOrder = 1

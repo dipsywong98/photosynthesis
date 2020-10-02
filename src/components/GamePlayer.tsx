@@ -177,10 +177,6 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
           <Panel
             mi={game.mi}
             roomState={room.state}
-            purchase={game.purchase.bind(game)}
-            plantSeed={game.plantSeed.bind(game)}
-            growTree={game.growTree.bind(game)}
-            endTurn={game.endTurn.bind(game)}
             nextRound={() => {
               setState(AppState.ROOM)
             }}
