@@ -8,6 +8,8 @@ import PropTypes, { InferProps } from 'prop-types'
 import { AppState } from './App'
 import { ConnEvent } from '../lib/ConnectionTypes'
 import Axial from '../3d/Coordinates/Axial'
+import { RoomActionTypes } from '../lib/Room'
+import { GameActions } from '../Game/Game'
 
 const roomState = {
   maxPlayers: 4,
@@ -50,7 +52,7 @@ const axial1 = new Axial(-1, 1)
 const axial2 = new Axial(-2, 2)
 const axial3 = new Axial(-3, 3)
 globalRoom.network.myConnectionManager.on(ConnEvent.PEER_OPEN, () => {
-  globalRoom.network.myConnectionManager.id = 'id1'
+  globalRoom.network.myConnectionManager.id = 'id4'
   globalRoom.game.setTile(roomState.game, axial3, {
     color: Color.BLUE,
     growthStage: GrowthStage.TALL
@@ -79,6 +81,16 @@ globalRoom.network.myConnectionManager.on(ConnEvent.PEER_OPEN, () => {
     color: Color.BLUE,
     growthStage: GrowthStage.SEED
   })
+  // globalRoom.game.endGameCalculation(roomState.game)
+  roomState.game.revolutionLeft = 0
+  roomState.game.turn = 3
+  globalRoom.network.dispatchLocal({
+    action: RoomActionTypes.GAME_EVENT,
+    payload: {
+      action: GameActions.END_TURN,
+      payload: []
+    }
+  }).catch(console.log)
 })
 
 const propTypes = {
@@ -90,9 +102,6 @@ export const TestPanel: FunctionComponent<InferProps<typeof propTypes>> = ({ set
     console.log(params)
     await Promise.resolve()
   }
-  const nextRound = (): void => {
-    console.log('nextRound')
-  }
   useEffect(() => {
     setState?.(AppState.GAME)
   }, [setState])
@@ -101,7 +110,6 @@ export const TestPanel: FunctionComponent<InferProps<typeof propTypes>> = ({ set
       <Panel
         mi={0}
         roomState={roomState}
-        nextRound={nextRound}
         interactionStateReducer={mockFn}
       />
     </Box>

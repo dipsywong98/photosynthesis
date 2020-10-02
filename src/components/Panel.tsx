@@ -1,8 +1,8 @@
-import { Box, Divider, Flex, Grid } from '@theme-ui/components'
+import { Box, Flex, Grid } from '@theme-ui/components'
 import Button from './common/Button'
 import { ACTION_COST_GROW, ACTION_COST_SEED, GrowthStage } from '../3d/constants'
 import CollapsibleWell from './common/CollapsibleWell'
-import React, { FunctionComponent, useState } from 'react'
+import React, { FunctionComponent, useEffect, useState } from 'react'
 import { GameState } from '../Game/types/GameState'
 import { Room, RoomState } from '../lib/Room'
 import PropTypes from 'prop-types'
@@ -17,24 +17,26 @@ import { GameActions } from '../Game/Game'
 import { SunlightBadge } from './SunlightBadge'
 
 interface props {
-  mi: number // my player id
+  mi: number | undefined // my player id
   roomState: RoomState
-  nextRound: () => void
   interactionStateReducer: (patch: Partial<InteractionState>) => void
 }
 
 const propTypes = {
-  mi: PropTypes.number.isRequired,
+  mi: PropTypes.number,
   roomState: PropTypes.any.isRequired,
-  nextRound: PropTypes.func.isRequired,
   interactionStateReducer: PropTypes.func.isRequired
 }
 
-export const Panel: FunctionComponent<props> = ({ mi, roomState, nextRound, interactionStateReducer }) => {
+export const Panel: FunctionComponent<props> = ({ mi, roomState, interactionStateReducer }) => {
   const gameState: GameState | undefined = roomState.game
   const [activePlayerId, setActivePlayerId] = useState(mi)
-  const playerInfo: PlayerInfo | undefined = gameState?.playerInfo[activePlayerId]
-  const gameOver = gameState?.gameOver
+  useEffect(() => {
+    if (mi !== undefined) {
+      setActivePlayerId(mi)
+    }
+  }, [mi])
+  const playerInfo: PlayerInfo | undefined = gameState?.playerInfo[activePlayerId ?? -1]
   const clickToPurchase = (growthStage: GrowthStage): void => {
     interactionStateReducer({ growthStage, action: GameActions.PURCHASE })
   }
@@ -71,7 +73,7 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, nextRound, inte
               {Object.entries(roomState.nameDict ?? {}).map(([name, id]) => (
                 <Button
                   key={id}
-                  variant={id !== activePlayerId.toString() ? 'normal' : 'primary'}
+                  variant={id !== activePlayerId?.toString() ? 'normal' : 'primary'}
                   onClick={() => setActivePlayerId(Number.parseInt(id))}>
                   {name}
                 </Button>
@@ -128,15 +130,6 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, nextRound, inte
           </Box>}
         </Box>
       </Flex>}
-      {
-        gameOver !== undefined && (
-          <Box>
-            <Divider/>
-            <Button variant='primary' onClick={() => nextRound}>Next Round</Button>
-            {gameOver}
-          </Box>
-        )
-      }
     </CollapsibleWell>
   )
 }

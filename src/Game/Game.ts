@@ -66,7 +66,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
   }
 
   public start (_gameState: GameState): void {
-    //
+    this.gameWorld.resetBoard()
   }
 
   public rejoin (gameState: GameState): void {
@@ -155,7 +155,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         winningsPlayerIds.push(id.toString())
       }
     })
-    gameState.gameOver = `Player '${winningsPlayerIds.map(i => this.room.whoami(i)).join(', ')}' win`
+    gameState.gameOver = `Player ${winningsPlayerIds.map(i => `'${this.room.whoami(i)}'`).join(', ')} win`
     return { ...gameState }
   }
 
@@ -247,7 +247,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     if (source.tileDistance(target) > tileInfo.growthStage) {
       throw new Error('Seed is too far from tree')
     }
-    if (gameState.playerInfo[playerId].lightPoint >= ACTION_COST_SEED) {
+    if (gameState.playerInfo[playerId].lightPoint < ACTION_COST_SEED) {
       throw new Error(`Need ${ACTION_COST_SEED} light points, but only got ${gameState.playerInfo[playerId].lightPoint}`)
     }
     gameState.dirtyTiles.push(source.toString(), target.toString())

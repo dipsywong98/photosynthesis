@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useReducer } from 'react'
 import PropTypes from 'prop-types'
 import { useGame } from '../Game/GameContext'
-import { Box, Flex } from '@theme-ui/components'
+import { Box, Flex, Heading, Text } from '@theme-ui/components'
 import { AppState } from './App'
 import { useRoom } from '../lib/RoomContext'
 import { Panel } from './Panel'
@@ -10,6 +10,9 @@ import { GROWTH_STAGE_NAME, GrowthStage } from '../3d/constants'
 import { GameActions } from '../Game/Game'
 import { useAlert } from './common/AlertContext'
 import { Popper } from './Popper'
+import { Card } from './common/Card'
+import { SLOW, transition } from '../theme/transitions'
+import Button from './common/Button'
 
 const propTypes = {
   setState: PropTypes.func.isRequired
@@ -88,10 +91,28 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
     }
     return ''
   }, [isPreparationRound, interactionState])
+  const nextRound = (): void => {
+    game.gameWorld.resetBoard()
+    setState(AppState.ROOM)
+  }
+  const gameOver = game.state?.gameOver
+  const flag = gameOver !== undefined
   return (
     <Box>
       <Box sx={{ position: 'fixed', top: 0, width: '100%', textAlign: 'center' }}>{hintText}</Box>
       <Popper interactionState={interactionState} interactionStateReducer={interactionStateReducer} game={game}/>
+      <Card
+        sx={{
+          position: 'fixed',
+          top: (flag ? '50%' : '200%'),
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          ...transition(SLOW, ['top'])
+        }}>
+        <Heading>Game Over</Heading>
+        <Text>{gameOver}</Text>
+        <Button variant='primary' mt={3} onClick={nextRound}>Next Round</Button>
+      </Card>
       <Flex
         sx={{
           width: '100vw',
@@ -102,17 +123,11 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
           left: 0,
           bottom: 0
         }}>
-        {
-          room.started &&
-          <Panel
-            mi={game.mi}
-            roomState={room.state}
-            nextRound={() => {
-              setState(AppState.ROOM)
-            }}
-            interactionStateReducer={interactionStateReducer}
-          />
-        }
+        <Panel
+          mi={game.started ? game.mi : undefined}
+          roomState={room.state}
+          interactionStateReducer={interactionStateReducer}
+        />
       </Flex>
     </Box>
   )
