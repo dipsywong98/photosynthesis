@@ -26,8 +26,11 @@ import {
   MODELS,
   SKY_COLOR,
   SUN_ANGLE,
-  SUN_COLOR, SUN_SEGMENT_POSITION_Y, SUN_SEGMENT_POSITION_Z,
+  SUN_COLOR,
+  SUN_SEGMENT_POSITION_Y,
+  SUN_SEGMENT_POSITION_Z,
   TAU,
+  TILE_SIZE,
   TREE_GROWTH_DURATION
 } from '../3d/constants'
 import { getObject } from '../3d/assets'
@@ -38,7 +41,7 @@ import SunOrientationTagComponent from './components/SunOrientationTagComponent'
 import SunOrientationSystem from './systems/SunOrientationSystem'
 import dat from 'dat.gui'
 import { Axial } from '../3d/Coordinates/Axial'
-import { CYLINDER_OBJ, sunSegmentMesh } from '../3d/extraObjects'
+import { LEAF_CIRCLES, sunSegmentMesh } from '../3d/extraObjects'
 import Stats from 'stats.js'
 import GameWorldMessages from './types/GameWorldMessages'
 import { TileInfo } from './types/TileInfo'
@@ -54,6 +57,8 @@ import jelly from './easing/3d/jelly'
 import TweenTargetComponent from './components/TweenTargetComponent'
 import { Entity } from 'ecsy'
 import easeInOut from './easing/1d/easeInOut'
+import DelayedActionComponent from './components/DelayedActionComponent'
+import DelayedActionSystem from './systems/DelayedActionSystem'
 
 export default class GameWorld {
   gui: dat.GUI
@@ -81,6 +86,8 @@ export default class GameWorld {
   hasMouseMoved = false
   activeObject?: Object3D & ECSYThreeObject3D
   hoverObject?: Object3D & ECSYThreeObject3D
+
+  sceneHasUpdated = false
 
   constructor () {
     this.stats = new Stats()
@@ -134,6 +141,10 @@ export default class GameWorld {
       .addComponent(TweenTargetComponent, { ref: this })
       .addComponent(TweenComponent)
 
+    Promise.all(Object.values(MODELS).map(getObject)).then(() => {
+      this.sceneHasUpdated = true
+    }).catch(console.error)
+
     this.world.play()
   }
 
@@ -157,14 +168,16 @@ export default class GameWorld {
     this.world.registerComponent(RendererComposerComponent)
     this.world.registerComponent(SelectableComponent)
     this.world.registerComponent(TweenTargetComponent)
+    this.world.registerComponent(DelayedActionComponent)
 
     this.world.unregisterSystem(WebGLRendererSystem)
     this.world.registerSystem(RendererComposerSystem, { priority: 999, gameWorld: this })
 
-    this.world.registerSystem(AxialCoordsSystem)
-    this.world.registerSystem(TileSystem)
+    this.world.registerSystem(DelayedActionSystem, { gameWorld: this })
+    this.world.registerSystem(AxialCoordsSystem, { gameWorld: this })
+    this.world.registerSystem(TileSystem, { gameWorld: this })
     this.world.registerSystem(TreeSystem, { gameWorld: this })
-    this.world.registerSystem(TweenSystem)
+    this.world.registerSystem(TweenSystem, { gameWorld: this })
     this.world.registerSystem(SunOrientationSystem, { gameWorld: this })
     this.world.registerSystem(SelectionSystem, { gameWorld: this })
     this.world.registerSystem(TouchSystem, { gameWorld: this })
@@ -263,6 +276,7 @@ export default class GameWorld {
     this.gameEntity = this.world
       .createEntity()
       .addObject3DComponent(game, this.sceneEntity)
+      .addComponent(DelayedActionComponent)
 
     this.generateGrid()
 
@@ -316,16 +330,25 @@ export default class GameWorld {
           if (mesh !== undefined && originalMaterial instanceof MeshStandardMaterial && axialComp !== undefined) {
             const material = originalMaterial.clone()
             mesh.material = material
-            mesh.material.name = 'tileRing-' + axialComp.axial.toString()
+            const axial = axialComp.axial
+            mesh.material.name = 'tileRing-' + axial.toString()
             const tileComp = entity.getMutableComponent(TileComponent)
             if (tileComp !== undefined) {
               tileComp.material = material
             }
+            const distFromOrigin = axial.tileDistance(Axial.origin)
+            const leafObj = LEAF_CIRCLES[3 - distFromOrigin].clone()
+            if (distFromOrigin > 0) {
+              const cartesian = axial.toCartesian(TILE_SIZE)
+              const atan = Math.atan(cartesian.x / cartesian.y)
+              leafObj.rotation.y = cartesian.y < 0 ? atan : (atan + Math.PI)
+            }
+            ringContainerObj.add(ringClone, leafObj)
+            entity.getObject3D()?.add(ringContainerObj)
           } else {
             console.error('Cannot find standard material inside ring object')
           }
-          ringContainerObj.add(ringClone, CYLINDER_OBJ.clone())
-          entity.getObject3D()?.add(ringContainerObj)
+          this.sceneHasUpdated = true
         })
       })
       .catch(console.error)
@@ -402,20 +425,29 @@ export default class GameWorld {
     // animate tree removal
     const linkedTileComponent = this.tileEntities.get(axial.toString())?.getMutableComponent(TileComponent)
     const treeEntity = linkedTileComponent?.treeEntity
-    treeEntity?.getComponent<TweenComponent<TweenObjectProperties<Object3D, 'scale'>>>(TweenComponent)?.tweens?.push({
-      duration: TREE_GROWTH_DURATION,
-      from: new Vector3(1, 1, 1),
-      func: applyVector3(jelly),
-      loop: 1,
-      prop: 'scale',
-      to: new Vector3(0, 0, 0),
-      value: 0
-    })
-    setTimeout(() => {
-      treeEntity?.remove()
-      if (linkedTileComponent !== undefined) {
-        linkedTileComponent.treeEntity = undefined
-      }
-    }, TREE_GROWTH_DURATION * 1000)
+    if (treeEntity !== undefined) {
+      treeEntity
+        .getComponent<TweenComponent<TweenObjectProperties<Object3D, 'scale'>>>(TweenComponent)
+        ?.tweens
+        ?.push({
+          duration: TREE_GROWTH_DURATION,
+          from: new Vector3(1, 1, 1),
+          func: applyVector3(jelly),
+          loop: 1,
+          prop: 'scale',
+          to: new Vector3(0, 0, 0),
+          value: 0
+        })
+      DelayedActionComponent.setTimeout(
+        this.gameEntity,
+        () => {
+          treeEntity.remove()
+          if (linkedTileComponent !== undefined) {
+            linkedTileComponent.treeEntity = undefined
+          }
+        },
+        TREE_GROWTH_DURATION
+      )
+    }
   }
 }

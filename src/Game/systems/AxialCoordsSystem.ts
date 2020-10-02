@@ -1,8 +1,9 @@
 import AxialCoordsComponent from '../components/AxialCoordsComponent'
-import { ECSYThreeSystem, Object3DComponent } from 'ecsy-three'
+import { Object3DComponent } from 'ecsy-three'
 import { TILE_SIZE } from '../../3d/constants'
+import GameWorldSystem from './GameWorldSystem'
 
-export default class AxialCoordsSystem extends ECSYThreeSystem {
+export default class AxialCoordsSystem extends GameWorldSystem {
   execute (delta: number, time: number): void {
     this.queries.axialPositions.results.forEach(entity => {
       const axial = entity.getComponent(AxialCoordsComponent)?.axial
@@ -20,6 +21,7 @@ export default class AxialCoordsSystem extends ECSYThreeSystem {
         obj3d.userData.q = axial.q
         obj3d.userData.r = axial.r
         obj3d.position.set(x, 0, z)
+        this.gameWorld.sceneHasUpdated = true
       }
     })
   }

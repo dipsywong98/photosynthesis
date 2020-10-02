@@ -29,6 +29,11 @@ export class RendererComposerSystem extends GameWorldSystem {
   execute (delta: number, time: number): void {
     this.intersectionCounter += delta
 
+    if (!this.gameWorld.sceneHasUpdated) {
+      return
+    }
+    this.gameWorld.sceneHasUpdated = false
+
     // Change renderers into composerRenderers
     this.queries.renderers.results.forEach(entity => {
       const component = entity.getComponent(WebGLRendererComponent)

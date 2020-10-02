@@ -1,10 +1,11 @@
-import { ECSYThreeSystem, Object3DComponent } from 'ecsy-three'
+import { Object3DComponent } from 'ecsy-three'
 import TweenComponent from '../components/TweenComponent'
 import { Object3D } from 'three'
 import TweenObjectProperties from '../types/TweenObjectProperties'
 import TweenTargetComponent from '../components/TweenTargetComponent'
+import GameWorldSystem from './GameWorldSystem'
 
-export default class TweenSystem extends ECSYThreeSystem {
+export default class TweenSystem extends GameWorldSystem {
   execute (delta: number, time: number): void {
     this.queries.object3DTweens.results.forEach(entity => {
       const obj3d = entity?.getObject3D()
@@ -64,6 +65,8 @@ export default class TweenSystem extends ECSYThreeSystem {
 
       const result = func(from, to, value)
       valueSetter(result, target, prop)
+
+      this.gameWorld.sceneHasUpdated = true
 
       if (value === 1) {
         tweenProp.value = 0

@@ -52,11 +52,13 @@ export default class SelectionSystem extends GameWorldSystem {
         console.error('currentRef cannot be parent')
       } else if (parent === null) {
         console.error('parent cannot be null')
-      } else if (isECSYObject3D(parent)) {
+      } else if (isECSYObject3D(parent) && this.gameWorld.hoverObject !== parent) {
         this.gameWorld.hoverObject = parent
+        this.gameWorld.sceneHasUpdated = true
       }
-    } else {
+    } else if (this.gameWorld.hoverObject !== undefined) {
       this.gameWorld.hoverObject = undefined
+      this.gameWorld.sceneHasUpdated = true
     }
   }
 }

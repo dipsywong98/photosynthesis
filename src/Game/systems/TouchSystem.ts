@@ -52,6 +52,8 @@ export default class TouchSystem extends GameWorldSystem {
 
       const newTilt = this.gameWorld.cameraTiltObj.rotation.x - vDistance * 0.05
       this.gameWorld.cameraTiltObj.rotation.x = Math.max(-Math.PI / 2, Math.min(-0.1, newTilt))
+
+      this.gameWorld.sceneHasUpdated = true
     }
   }
 }

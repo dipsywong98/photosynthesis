@@ -101,10 +101,6 @@ export const TestPanel: FunctionComponent<InferProps<typeof propTypes>> = ({ set
       <Panel
         mi={0}
         roomState={roomState}
-        purchase={mockFn}
-        plantSeed={mockFn}
-        growTree={mockFn}
-        endTurn={mockFn}
         nextRound={nextRound}
         interactionStateReducer={mockFn}
       />
