@@ -13,8 +13,12 @@ const propTypes = {
   leaves: PropTypes.number.isRequired
 }
 
+export const getScoreTokenImageByLeaves = (leaves: number): string => {
+  return tokenImages[leaves]
+}
+
 export const ScoreTokenStack: FunctionComponent<InferProps<typeof propTypes>> = ({ stack, leaves }) => {
-  const tokenImage = tokenImages[leaves]
+  const tokenImage = getScoreTokenImageByLeaves(leaves)
   return (
     <ImageStack stack={stack} imgPath={tokenImage} badge={stack.length}/>
   )

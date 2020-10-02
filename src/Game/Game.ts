@@ -332,7 +332,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     return prevState
   }
 
-  private setTile (gameState: GameState, axial: Axial, tileInfo: Partial<TileInfo>): GameState {
+  public setTile (gameState: GameState, axial: Axial, tileInfo: Partial<TileInfo>): GameState {
     gameState.board[axial.toString()].growthStage = tileInfo.growthStage
     gameState.board[axial.toString()].color = tileInfo.color
     this.gameWorld.setTile(axial, tileInfo)
@@ -356,15 +356,26 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     return gameState
   }
 
-  private obtainToken (gameState: GameState, playerId: number, axial: Axial): GameState {
+  public nextToken (gameState: GameState, axial: Axial): { leaves: number, score: number } {
     for (let leaves = gameState.board[axial.toString()].leaves; leaves >= 1; leaves--) {
       const scoreToken = gameState.scoreTokens[leaves]
-      const amount = scoreToken.shift()
-      if (amount !== undefined) {
-        gameState.playerInfo[playerId].score += amount
-        break
+      const score = scoreToken[0]
+      if (score !== undefined) {
+        return {
+          leaves,
+          score
+        }
       }
     }
+    return {
+      leaves: 0, score: 0
+    }
+  }
+
+  private obtainToken (gameState: GameState, playerId: number, axial: Axial): GameState {
+    const { leaves } = this.nextToken(gameState, axial)
+    const amount = gameState.scoreTokens[leaves].shift()
+    gameState.playerInfo[playerId].score += amount ?? 0
     return gameState
   }
 

@@ -20,12 +20,13 @@ export const SunlightBadge: FunctionComponent<InferProps<typeof propTypes>> = ({
         width: size,
         height: size,
         lineHeight: size,
+        // color: 'sunTagShadow',
         textShadow: (theme: { colors: { sunTagShadow: string } }) => `
             -1px -1px 1px ${theme.colors.sunTagShadow},
             1px -1px 1px ${theme.colors.sunTagShadow},
             -1px 1px 1px ${theme.colors.sunTagShadow},
             1px 1px 1px ${theme.colors.sunTagShadow}`,
-        fontSize: 0,
+        fontSize: 1,
         ...sx
       }}>
       {children}

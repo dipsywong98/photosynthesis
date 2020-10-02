@@ -8,7 +8,6 @@ import PropTypes, { InferProps } from 'prop-types'
 import { AppState } from './App'
 import { ConnEvent } from '../lib/ConnectionTypes'
 import Axial from '../3d/Coordinates/Axial'
-import { createTree } from '../Game/entities/tree'
 
 const roomState = {
   maxPlayers: 4,
@@ -46,16 +45,39 @@ roomState.game.playerInfo[0].playerBoard[GrowthStage.TALL][1] = false
 roomState.game.preparingRound = 0
 globalRoom.network.state = roomState
 globalRoom.network.myConnectionManager.id = 'id1'
-// const axial0 = new Axial(0, 0)
-// const axial1 = new Axial(-1, 1)
-// const axial2 = new Axial(-2, 2)
+const axial0 = new Axial(0, 0)
+const axial1 = new Axial(-1, 1)
+const axial2 = new Axial(-2, 2)
 const axial3 = new Axial(-3, 3)
 globalRoom.network.myConnectionManager.on(ConnEvent.PEER_OPEN, () => {
   globalRoom.network.myConnectionManager.id = 'id1'
-  createTree(globalRoom.game.gameWorld, {
+  globalRoom.game.setTile(roomState.game, axial3, {
     color: Color.BLUE,
-    growthStage: GrowthStage.SEED,
-    axial: axial3
+    growthStage: GrowthStage.TALL
+  })
+  globalRoom.game.setTile(roomState.game, axial2, {
+    color: Color.BLUE,
+    growthStage: GrowthStage.TALL
+  })
+  globalRoom.game.setTile(roomState.game, axial1, {
+    color: Color.BLUE,
+    growthStage: GrowthStage.TALL
+  })
+  globalRoom.game.setTile(roomState.game, axial0, {
+    color: Color.BLUE,
+    growthStage: GrowthStage.TALL
+  })
+  globalRoom.game.setTile(roomState.game, new Axial(0, 1), {
+    color: Color.BLUE,
+    growthStage: GrowthStage.MID
+  })
+  globalRoom.game.setTile(roomState.game, new Axial(0, 2), {
+    color: Color.BLUE,
+    growthStage: GrowthStage.SHORT
+  })
+  globalRoom.game.setTile(roomState.game, new Axial(0, 3), {
+    color: Color.BLUE,
+    growthStage: GrowthStage.SEED
   })
 })
 

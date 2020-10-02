@@ -18,11 +18,11 @@ const NavBar: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = () => 
   const toggleDarkMode = (): void => setColorMode(colorMode === 'default' ? 'dark' : 'default')
 
   return (
-    // eslint-disable-next-line
-    // @ts-ignore
-    // eslint-disable-next-line
     <Flex
       py={2}
+      // eslint-disable-next-line
+      // @ts-ignore
+      // eslint-disable-next-line
       px={theme.layout?.container.p}
       sx={{ alignItems: 'center', position: 'fixed', width: '100%', zIndex: 1 }}>
       <Flex mr={2} sx={{ alignItems: 'center', flex: 1 }}>
