@@ -26,8 +26,11 @@ import {
   MODELS,
   SKY_COLOR,
   SUN_ANGLE,
-  SUN_COLOR, SUN_SEGMENT_POSITION_Y, SUN_SEGMENT_POSITION_Z,
+  SUN_COLOR,
+  SUN_SEGMENT_POSITION_Y,
+  SUN_SEGMENT_POSITION_Z,
   TAU,
+  TILE_SIZE,
   TREE_GROWTH_DURATION
 } from '../3d/constants'
 import { getObject } from '../3d/assets'
@@ -38,7 +41,7 @@ import SunOrientationTagComponent from './components/SunOrientationTagComponent'
 import SunOrientationSystem from './systems/SunOrientationSystem'
 import dat from 'dat.gui'
 import { Axial } from '../3d/Coordinates/Axial'
-import { CYLINDER_OBJ, sunSegmentMesh } from '../3d/extraObjects'
+import { LEAF_CIRCLES, sunSegmentMesh } from '../3d/extraObjects'
 import Stats from 'stats.js'
 import GameWorldMessages from './types/GameWorldMessages'
 import { TileInfo } from './types/TileInfo'
@@ -327,16 +330,24 @@ export default class GameWorld {
           if (mesh !== undefined && originalMaterial instanceof MeshStandardMaterial && axialComp !== undefined) {
             const material = originalMaterial.clone()
             mesh.material = material
-            mesh.material.name = 'tileRing-' + axialComp.axial.toString()
+            const axial = axialComp.axial
+            mesh.material.name = 'tileRing-' + axial.toString()
             const tileComp = entity.getMutableComponent(TileComponent)
             if (tileComp !== undefined) {
               tileComp.material = material
             }
+            const distFromOrigin = axial.tileDistance(Axial.origin)
+            const leafObj = LEAF_CIRCLES[3 - distFromOrigin].clone()
+            if (distFromOrigin > 0) {
+              const cartesian = axial.toCartesian(TILE_SIZE)
+              const atan = Math.atan(cartesian.x / cartesian.y)
+              leafObj.rotation.y = cartesian.y < 0 ? atan : (atan + Math.PI)
+            }
+            ringContainerObj.add(ringClone, leafObj)
+            entity.getObject3D()?.add(ringContainerObj)
           } else {
             console.error('Cannot find standard material inside ring object')
           }
-          ringContainerObj.add(ringClone, CYLINDER_OBJ.clone())
-          entity.getObject3D()?.add(ringContainerObj)
           this.sceneHasUpdated = true
         })
       })
