@@ -40,6 +40,7 @@ export const getInitialState = (players: number): GameState => {
     dirtyTiles: [],
     turn: 0,
     rayDirection: 0,
+    totalRevolutions: 3,
     revolutionLeft: 3,
     board: getInitialBoard(),
     scoreTokens: {

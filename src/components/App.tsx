@@ -9,6 +9,7 @@ import { GamePlayer } from './GamePlayer'
 import { withAlertQueue } from './common/AlertContext'
 import GameRenderer from './GameRenderer'
 import { Box } from '@theme-ui/components'
+import RevolutionCounter from './RevolutionCounter'
 
 export enum AppState {
   HOME,
@@ -61,6 +62,9 @@ const App: FunctionComponent = () => {
               // <TestPanel setState={setState}/>
             }
           </Flex>
+          <Box sx={{ position: 'fixed', top: '60px', left: '0' }}>
+            <RevolutionCounter/>
+          </Box>
         </GameContextProvider>
       </Box>
     </Box>

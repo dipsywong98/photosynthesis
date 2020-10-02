@@ -99,6 +99,9 @@ const buttonColors = {
   }
 }
 
+/**
+ * @type {Record<string, any>}
+ */
 const buttons = {}
 
 for (const styleName in buttonStyles) {

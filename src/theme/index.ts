@@ -10,8 +10,9 @@ import text from './text'
 import wells from './wells'
 import messages from './messages'
 import badges from './badges'
+import { Theme } from '@theme-ui/css'
 
-export default {
+const theme: Theme = {
   useColorSchemeMediaQuery: true,
   colors: {
     ...light,
@@ -24,6 +25,8 @@ export default {
     danger: colors.red[0],
     warning: colors.yellow[0]
   },
+  // eslint-disable-next-line
+  // @ts-ignore
   text,
   breakpoints: ['40em', '52em', '64em', '110em'],
   space: [
@@ -65,7 +68,7 @@ export default {
   },
   radii: [0, 4, 8, 16, 32],
   shadows: [
-    null,
+    'none',
     '0 2px 4px rgba(0, 0, 0, 0.2)',
     '0 4px 8px rgba(0, 0, 0, 0.3)'
   ],
@@ -87,5 +90,8 @@ export default {
   links,
   dropdown,
   wells,
+  // eslint-disable-next-line
+  // @ts-ignore
   styles
 }
+export default theme

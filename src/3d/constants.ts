@@ -3,6 +3,7 @@ import { Vector3 } from 'three'
 export const TAU = Math.PI * 2
 
 export const MODELS_LOCATION = process.env.PUBLIC_URL + '/models'
+export const IMAGES_LOCATION = process.env.PUBLIC_URL + '/images'
 
 export const MODELS = {
   BLUE_TOP: 'blueTop',
@@ -63,16 +64,14 @@ export const COLOR_VALUES: { [k in Color]: number } = {
 }
 
 export const SHADE_Y: { [k in GrowthStage]: number } = [-18, -10.7, -5.63, 0]
-
 export const SUN_ANGLE = 52.725
-
 export const TREE_TOP_Y = 10
-
 export const TILE_SIZE = 5
-
 export const INITIAL_SUN_ORIENTATION = 1.50 * Math.PI
-
 export const GROUND_SHADE_HIDDEN_ROTATION = -0.8
+export const SUN_SEGMENT_SIZE = 56
+export const SUN_SEGMENT_POSITION_Y = 2.2
+export const SUN_SEGMENT_POSITION_Z = SUN_SEGMENT_SIZE / 2
 
 export interface TreeGrowthProp {
   tree: { scale: Vector3 }

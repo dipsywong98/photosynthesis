@@ -90,7 +90,7 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
       if (axial === undefined) {
         interactionStateReducer(undefined)
       } else {
-        interactionStateReducer({ popperCoord: axial !== undefined ? popperCoord : undefined, axial })
+        interactionStateReducer({ popperCoord: popperCoord, axial })
       }
     }
     domElement?.addEventListener('click', listener)
@@ -117,12 +117,7 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
     return ''
   }, [isPreparationRound, interactionState])
   return (
-    <Box
-      sx={{
-        width: '100%',
-        height: '100%',
-        position: 'relative'
-      }}>
+    <Box>
       <Box sx={{ position: 'fixed', top: 0, width: '100%', textAlign: 'center' }}>{hintText}</Box>
       {game.state !== undefined && interactionState.axial !== undefined && interactionState.popperCoord !== undefined &&
       <Card

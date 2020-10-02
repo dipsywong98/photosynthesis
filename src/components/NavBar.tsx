@@ -13,12 +13,15 @@ const propTypes = {
   state: PropTypes.number.isRequired
 }
 
-const NavBar: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({ state, setState }) => {
+const NavBar: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = () => {
   const [colorMode, setColorMode] = useColorMode()
   const toggleDarkMode = (): void => setColorMode(colorMode === 'default' ? 'dark' : 'default')
 
   return (
-    <Flex py={2} px={theme.layout.container.p} sx={{ alignItems: 'center', position: 'fixed', width: '100%' }}>
+    // eslint-disable-next-line
+    // @ts-ignore
+    // eslint-disable-next-line
+    <Flex py={2} px={theme.layout?.container.p} sx={{ alignItems: 'center', position: 'fixed', width: '100%' }}>
       <Flex mr={2} sx={{ alignItems: 'center', flex: 1 }}>
         {/* {state > 0 && <Button onClick={() => setState(state - 1)}><Icon path={mdiArrowLeft}/></Button>} */}
       </Flex>
