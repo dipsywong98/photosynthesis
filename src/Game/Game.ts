@@ -97,6 +97,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         gameState.preparingRound--
         if (gameState.preparingRound === 0) {
           gameState.rayDirection = 1
+          gameState.revolutionLeft++
         }
       }
       if (gameState.preparingRound === 0) {
@@ -108,7 +109,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         gameState = this.setRayDirection(gameState, gameState.rayDirection)
       }
       gameState.turn = 0
-      if (gameState.revolutionLeft <= -1) {
+      if (gameState.revolutionLeft <= 0) {
         return this.endGameCalculation(gameState)
       }
       if (gameState.preparingRound === 0) {
