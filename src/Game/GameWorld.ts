@@ -84,6 +84,8 @@ export default class GameWorld {
   activeObject?: Object3D & ECSYThreeObject3D
   hoverObject?: Object3D & ECSYThreeObject3D
 
+  sceneHasUpdated = false
+
   constructor () {
     this.stats = new Stats()
     this.gui = new dat.GUI()
@@ -136,6 +138,10 @@ export default class GameWorld {
       .addComponent(TweenTargetComponent, { ref: this })
       .addComponent(TweenComponent)
 
+    Promise.all(Object.values(MODELS).map(getObject)).then(() => {
+      this.sceneHasUpdated = true
+    }).catch(console.error)
+
     this.world.play()
   }
 
@@ -164,11 +170,11 @@ export default class GameWorld {
     this.world.unregisterSystem(WebGLRendererSystem)
     this.world.registerSystem(RendererComposerSystem, { priority: 999, gameWorld: this })
 
-    this.world.registerSystem(DelayedActionSystem)
-    this.world.registerSystem(AxialCoordsSystem)
-    this.world.registerSystem(TileSystem)
+    this.world.registerSystem(DelayedActionSystem, { gameWorld: this })
+    this.world.registerSystem(AxialCoordsSystem, { gameWorld: this })
+    this.world.registerSystem(TileSystem, { gameWorld: this })
     this.world.registerSystem(TreeSystem, { gameWorld: this })
-    this.world.registerSystem(TweenSystem)
+    this.world.registerSystem(TweenSystem, { gameWorld: this })
     this.world.registerSystem(SunOrientationSystem, { gameWorld: this })
     this.world.registerSystem(SelectionSystem, { gameWorld: this })
     this.world.registerSystem(TouchSystem, { gameWorld: this })
@@ -331,6 +337,7 @@ export default class GameWorld {
           }
           ringContainerObj.add(ringClone, CYLINDER_OBJ.clone())
           entity.getObject3D()?.add(ringContainerObj)
+          this.sceneHasUpdated = true
         })
       })
       .catch(console.error)

@@ -26,7 +26,10 @@ import SelectableComponent from '../components/SelectableComponent'
 
 export default class TreeSystem extends GameWorldSystem {
   execute (delta: number, time: number): void {
-    this.queries.trees.changed?.forEach(TreeSystem.updateGrowthStage.bind(this))
+    this.queries.trees.changed?.forEach((entity) => {
+      TreeSystem.updateGrowthStage(entity)
+      this.gameWorld.sceneHasUpdated = true
+    })
 
     this.queries.trees.added?.forEach((entity) => {
       // Added
@@ -50,6 +53,8 @@ export default class TreeSystem extends GameWorldSystem {
 
       const { color } = treeComp
       obj3d.name = 'tree-' + entity.id.toString() + '-' + Color[color]
+
+      this.gameWorld.sceneHasUpdated = true
 
       // setup components
       const objectsToFetch = [
