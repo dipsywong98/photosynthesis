@@ -5,7 +5,7 @@ import { StarMeshAction, StarMeshNetworkEvents, StarMeshReducer } from '../lib/S
 import { GameState } from './types/GameState'
 import { getInitialState } from './getInitialState'
 import { Axial } from '../3d/Coordinates/Axial'
-import { ACTION_COST_GROW, ACTION_COST_PURCHASE, GrowthStage } from '../3d/constants'
+import { ACTION_COST_GROW, ACTION_COST_PURCHASE, ACTION_COST_SEED, GrowthStage } from '../3d/constants'
 import { TileInfo } from './types/TileInfo'
 import { clone } from 'ramda'
 import { isTreeGrowthStage } from './isTreeGrowthStage'
@@ -65,7 +65,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     })
   }
 
-  public start (gameState: GameState): void {
+  public start (_gameState: GameState): void {
     //
   }
 
@@ -246,7 +246,11 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     if (source.tileDistance(target) > tileInfo.growthStage) {
       throw new Error('Seed is too far from tree')
     }
+    if (gameState.playerInfo[playerId].lightPoint >= ACTION_COST_SEED) {
+      throw new Error(`Need ${ACTION_COST_SEED} light points, but only got ${gameState.playerInfo[playerId].lightPoint}`)
+    }
     gameState.dirtyTiles.push(source.toString(), target.toString())
+    gameState.playerInfo[playerId].lightPoint -= ACTION_COST_SEED
     gameState.playerInfo[playerId].availableArea[GrowthStage.SEED]--
     gameState = this.setTile(gameState, target, { color: playerId, growthStage: GrowthStage.SEED })
     return gameState
