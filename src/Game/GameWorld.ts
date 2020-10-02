@@ -54,6 +54,8 @@ import jelly from './easing/3d/jelly'
 import TweenTargetComponent from './components/TweenTargetComponent'
 import { Entity } from 'ecsy'
 import easeInOut from './easing/1d/easeInOut'
+import DelayedActionComponent from './components/DelayedActionComponent'
+import DelayedActionSystem from './systems/DelayedActionSystem'
 
 export default class GameWorld {
   gui: dat.GUI
@@ -157,10 +159,12 @@ export default class GameWorld {
     this.world.registerComponent(RendererComposerComponent)
     this.world.registerComponent(SelectableComponent)
     this.world.registerComponent(TweenTargetComponent)
+    this.world.registerComponent(DelayedActionComponent)
 
     this.world.unregisterSystem(WebGLRendererSystem)
     this.world.registerSystem(RendererComposerSystem, { priority: 999, gameWorld: this })
 
+    this.world.registerSystem(DelayedActionSystem)
     this.world.registerSystem(AxialCoordsSystem)
     this.world.registerSystem(TileSystem)
     this.world.registerSystem(TreeSystem, { gameWorld: this })
@@ -263,6 +267,7 @@ export default class GameWorld {
     this.gameEntity = this.world
       .createEntity()
       .addObject3DComponent(game, this.sceneEntity)
+      .addComponent(DelayedActionComponent)
 
     this.generateGrid()
 
@@ -402,20 +407,29 @@ export default class GameWorld {
     // animate tree removal
     const linkedTileComponent = this.tileEntities.get(axial.toString())?.getMutableComponent(TileComponent)
     const treeEntity = linkedTileComponent?.treeEntity
-    treeEntity?.getComponent<TweenComponent<TweenObjectProperties<Object3D, 'scale'>>>(TweenComponent)?.tweens?.push({
-      duration: TREE_GROWTH_DURATION,
-      from: new Vector3(1, 1, 1),
-      func: applyVector3(jelly),
-      loop: 1,
-      prop: 'scale',
-      to: new Vector3(0, 0, 0),
-      value: 0
-    })
-    setTimeout(() => {
-      treeEntity?.remove()
-      if (linkedTileComponent !== undefined) {
-        linkedTileComponent.treeEntity = undefined
-      }
-    }, TREE_GROWTH_DURATION * 1000)
+    if (treeEntity !== undefined) {
+      treeEntity
+        .getComponent<TweenComponent<TweenObjectProperties<Object3D, 'scale'>>>(TweenComponent)
+        ?.tweens
+        ?.push({
+          duration: TREE_GROWTH_DURATION,
+          from: new Vector3(1, 1, 1),
+          func: applyVector3(jelly),
+          loop: 1,
+          prop: 'scale',
+          to: new Vector3(0, 0, 0),
+          value: 0
+        })
+      DelayedActionComponent.setTimeout(
+        this.gameEntity,
+        () => {
+          treeEntity.remove()
+          if (linkedTileComponent !== undefined) {
+            linkedTileComponent.treeEntity = undefined
+          }
+        },
+        TREE_GROWTH_DURATION
+      )
+    }
   }
 }
