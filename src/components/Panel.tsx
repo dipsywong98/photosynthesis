@@ -5,18 +5,8 @@ import CollapsibleWell from './common/CollapsibleWell'
 import React, { FunctionComponent, useState } from 'react'
 import { GameState } from '../Game/types/GameState'
 import { Room, RoomState } from '../lib/Room'
-import { Axial } from '../3d/Coordinates/Axial'
 import PropTypes from 'prop-types'
 import { PlayerInfo } from '../Game/types/PlayerInfo'
-import {
-  mdiArrowBottomLeft,
-  mdiArrowBottomRight,
-  mdiArrowLeft,
-  mdiArrowRight,
-  mdiArrowTopLeft,
-  mdiArrowTopRight
-} from '@mdi/js'
-import Icon from './common/Icon'
 import { ScoreTokenStack } from './ScoreTokenStack'
 import ButtonGroup from './common/ButtonGroup'
 import { SunlightTag } from './SunlightTag'
@@ -29,10 +19,6 @@ import { SunlightBadge } from './SunlightBadge'
 interface props {
   mi: number // my player id
   roomState: RoomState
-  purchase: (growStage: GrowthStage) => Promise<void>
-  plantSeed: (source: Axial, target: Axial) => Promise<void>
-  growTree: (source: Axial) => Promise<void>
-  endTurn: () => Promise<void>
   nextRound: () => void
   interactionStateReducer: (patch: Partial<InteractionState>) => void
 }
@@ -40,15 +26,11 @@ interface props {
 const propTypes = {
   mi: PropTypes.number.isRequired,
   roomState: PropTypes.any.isRequired,
-  purchase: PropTypes.func.isRequired,
-  plantSeed: PropTypes.func.isRequired,
-  growTree: PropTypes.func.isRequired,
-  endTurn: PropTypes.func.isRequired,
   nextRound: PropTypes.func.isRequired,
   interactionStateReducer: PropTypes.func.isRequired
 }
 
-export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plantSeed, growTree, endTurn, nextRound, interactionStateReducer }) => {
+export const Panel: FunctionComponent<props> = ({ mi, roomState, nextRound, interactionStateReducer }) => {
   const gameState: GameState | undefined = roomState.game
   const [activePlayerId, setActivePlayerId] = useState(mi)
   const playerInfo: PlayerInfo | undefined = gameState?.playerInfo[activePlayerId]
@@ -67,14 +49,6 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
     }
   }
   const id2Name = (id: number): string => Room.getName(roomState, id)
-  const directionSvgs = [
-    mdiArrowRight,
-    mdiArrowTopRight,
-    mdiArrowTopLeft,
-    mdiArrowLeft,
-    mdiArrowBottomLeft,
-    mdiArrowBottomRight
-  ]
   return (
     <CollapsibleWell
       header={gameState !== undefined ? `Current turn: ${id2Name(gameState.turn)}` : 'Board'}
@@ -82,19 +56,6 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, purchase, plant
       defaultOpen={true}>
       {gameState !== undefined && <Flex sx={{ flexWrap: 'wrap', justifyContent: 'space-around' }}>
         <Box>
-          <Grid columns={2}>
-            <Box>Rounds Left</Box>
-            <Box>
-              {
-                gameState.preparingRound > 0
-                  ? `${gameState.preparingRound} Preparations`
-                  : `${gameState.revolutionLeft} Revolutions`}
-            </Box>
-            <Box>Ray Direction</Box>
-            <Box><Icon path={directionSvgs[gameState.rayDirection]}/></Box>
-            <Box>Next Ray Direction</Box>
-            <Box><Icon path={directionSvgs[(gameState.rayDirection + 5) % 6]}/></Box>
-          </Grid>
           <Box>Score Tokens</Box>
           <Flex>
             {
