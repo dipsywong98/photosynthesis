@@ -63,16 +63,18 @@ const propTypes = {
   canBuy: PropTypes.arrayOf(PropTypes.bool.isRequired).isRequired,
   growthStage: PropTypes.number.isRequired,
   color: PropTypes.number.isRequired,
-  onClick: PropTypes.func
+  onClick: PropTypes.func,
+  myPoints: PropTypes.number.isRequired
 }
 
 export const getTreeImageByColorGrowthStage = (color: Color, growthStage: GrowthStage): string => TREE_TOKENS[color][growthStage]
 
-export const TreeTokenStack: FunctionComponent<InferProps<typeof propTypes>> = ({ canBuy, growthStage, color, onClick }) => {
-  const [stack, shouldMute] = useMemo(() => {
+export const TreeTokenStack: FunctionComponent<InferProps<typeof propTypes>> = ({ canBuy, growthStage, color, onClick, myPoints }) => {
+  const [stack, enabled] = useMemo(() => {
     const stack = canBuy.map((_, k) => (
       <SunlightBadge
         key={k}
+        myPoints={myPoints}
         sx={{
           top: 0,
           right: '-4px',
@@ -81,22 +83,22 @@ export const TreeTokenStack: FunctionComponent<InferProps<typeof propTypes>> = (
         {ACTION_COST_PURCHASE[growthStage as GrowthStage][k]}
       </SunlightBadge>
     ))
+    const enabled = [...canBuy]
     if (!canBuy[0]) {
       const k = canBuy.indexOf(true)
       if (k !== -1) {
         const tag = stack.splice(k, 1)
-        const shouldMute = [...canBuy]
-        shouldMute[0] = true
-        shouldMute[k] = false
-        return [[tag, ...stack], shouldMute]
+        enabled[0] = true
+        enabled[k] = false
+        return [[tag, ...stack], enabled]
       }
     }
-    return [stack, canBuy]
-  }, [canBuy, growthStage])
+    return [stack, enabled]
+  }, [canBuy, growthStage, myPoints])
   return (
     <ImageStack
       stack={stack}
-      enabled={shouldMute}
+      enabled={enabled}
       imgPath={getTreeImageByColorGrowthStage(color, growthStage)}
       onClick={onClick}
       badge={canBuy.filter(s => s).length}

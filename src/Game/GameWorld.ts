@@ -421,6 +421,13 @@ export default class GameWorld {
     return this.getActiveEntity()?.getComponent(AxialCoordsComponent)?.axial
   }
 
+  public resetBoard (): void {
+    Axial.origin.range(3).forEach(axial => {
+      this.removeTree(axial)
+    })
+    this.setRayDirection(0)
+  }
+
   private removeTree (axial: Axial): void {
     // animate tree removal
     const linkedTileComponent = this.tileEntities.get(axial.toString())?.getMutableComponent(TileComponent)

@@ -10,6 +10,7 @@ import { withAlertQueue } from './common/AlertContext'
 import GameRenderer from './GameRenderer'
 import { Box } from '@theme-ui/components'
 import RevolutionCounter from './RevolutionCounter'
+import { withConfirmQueue } from './common/ConfirmContext'
 
 export enum AppState {
   HOME,
@@ -71,4 +72,4 @@ const App: FunctionComponent = () => {
   )
 }
 
-export default withAlertQueue(App)
+export default withConfirmQueue(withAlertQueue(App))
