@@ -8,8 +8,6 @@ import PropTypes, { InferProps } from 'prop-types'
 import { AppState } from './App'
 import { ConnEvent } from '../lib/ConnectionTypes'
 import Axial from '../3d/Coordinates/Axial'
-import { RoomActionTypes } from '../lib/Room'
-import { GameActions } from '../Game/Game'
 
 const roomState = {
   maxPlayers: 4,
@@ -40,10 +38,14 @@ const roomState = {
 }
 roomState.game.scoreTokens[4] = []
 roomState.game.playerInfo[0].playerBoard[GrowthStage.SEED][1] = false
+// roomState.game.playerInfo[0].availableArea[GrowthStage.SEED] = 0
+// roomState.game.playerInfo[0].availableArea[GrowthStage.SHORT] = 0
+// roomState.game.playerInfo[0].availableArea[GrowthStage.MID] = 0
 roomState.game.playerInfo[0].playerBoard[GrowthStage.SHORT][0] = false
 roomState.game.playerInfo[0].playerBoard[GrowthStage.SHORT][1] = false
 roomState.game.playerInfo[0].playerBoard[GrowthStage.TALL][0] = false
 roomState.game.playerInfo[0].playerBoard[GrowthStage.TALL][1] = false
+// roomState.game.playerInfo[0].lightPoint = 100
 roomState.game.preparingRound = 0
 globalRoom.network.state = roomState
 globalRoom.network.myConnectionManager.id = 'id1'
@@ -52,7 +54,9 @@ const axial1 = new Axial(-1, 1)
 const axial2 = new Axial(-2, 2)
 const axial3 = new Axial(-3, 3)
 globalRoom.network.myConnectionManager.on(ConnEvent.PEER_OPEN, () => {
-  globalRoom.network.myConnectionManager.id = 'id4'
+  globalRoom.network.myConnectionManager.id = 'id1'
+})
+window.addEventListener('load', () => {
   globalRoom.game.setTile(roomState.game, axial3, {
     color: Color.BLUE,
     growthStage: GrowthStage.TALL
@@ -82,15 +86,15 @@ globalRoom.network.myConnectionManager.on(ConnEvent.PEER_OPEN, () => {
     growthStage: GrowthStage.SEED
   })
   // globalRoom.game.endGameCalculation(roomState.game)
-  roomState.game.revolutionLeft = 0
-  roomState.game.turn = 3
-  globalRoom.network.dispatchLocal({
-    action: RoomActionTypes.GAME_EVENT,
-    payload: {
-      action: GameActions.END_TURN,
-      payload: []
-    }
-  }).catch(console.log)
+  // roomState.game.revolutionLeft = 0
+  // roomState.game.turn = 3
+  // globalRoom.network.dispatchLocal({
+  //   action: RoomActionTypes.GAME_EVENT,
+  //   payload: {
+  //     action: GameActions.END_TURN,
+  //     payload: []
+  //   }
+  // }).catch(console.log)
 })
 
 const propTypes = {

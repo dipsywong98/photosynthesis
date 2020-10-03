@@ -264,20 +264,28 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     })
   }
 
-  public purchaseHandler (gameState: GameState, playerId: number, stage: GrowthStage): GameState {
-    if (gameState.preparingRound > 0) {
-      throw new Error('Cannot purchase at preparing round')
-    }
+  public static nextPurchase (gameState: GameState, playerId: number, stage: GrowthStage): { cost: number, purchaseIndex: number } {
     let purchaseIndex: number
     for (purchaseIndex = 0; purchaseIndex < gameState.playerInfo[playerId].playerBoard[stage].length; purchaseIndex++) {
       if (gameState.playerInfo[playerId].playerBoard[stage][purchaseIndex]) {
         break
       }
     }
-    if (gameState.playerInfo[playerId].lightPoint < ACTION_COST_PURCHASE[stage][purchaseIndex]) {
-      throw new Error(`Not enough light point to purchase ${GrowthStage[stage]}, ${ACTION_COST_PURCHASE[stage][purchaseIndex].toString()} needed but only have ${gameState.playerInfo[playerId].lightPoint}`)
+    return {
+      purchaseIndex,
+      cost: ACTION_COST_PURCHASE[stage][purchaseIndex]
     }
-    gameState.playerInfo[playerId].lightPoint -= ACTION_COST_PURCHASE[stage][purchaseIndex]
+  }
+
+  public purchaseHandler (gameState: GameState, playerId: number, stage: GrowthStage): GameState {
+    if (gameState.preparingRound > 0) {
+      throw new Error('Cannot purchase at preparing round')
+    }
+    const { purchaseIndex, cost } = Game.nextPurchase(gameState, playerId, stage)
+    if (gameState.playerInfo[playerId].lightPoint < cost) {
+      throw new Error(`Not enough light point to purchase ${GrowthStage[stage]}, ${cost.toString()} needed but only have ${gameState.playerInfo[playerId].lightPoint}`)
+    }
+    gameState.playerInfo[playerId].lightPoint -= cost
     gameState.playerInfo[playerId].playerBoard[stage][purchaseIndex] = false
     gameState.playerInfo[playerId].availableArea[stage]++
     return gameState

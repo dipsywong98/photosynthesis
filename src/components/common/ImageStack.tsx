@@ -1,17 +1,18 @@
 import React, { FunctionComponent, useEffect, useState } from 'react'
 import PropTypes, { InferProps } from 'prop-types'
-import { Badge, Box } from '@theme-ui/components'
+import { Box } from '@theme-ui/components'
 import { Image } from './Image'
 import { IMAGE_SIZE, IMAGE_SIZE_CSS } from '../../3d/constants'
 import { SLOW, transition } from '../../theme/transitions'
 import Hammer from 'react-hammerjs'
+import { CountBadge } from './CountBadge'
 
 const propTypes = {
   stack: PropTypes.arrayOf(PropTypes.node).isRequired,
   enabled: PropTypes.arrayOf(PropTypes.bool.isRequired),
   imgPath: PropTypes.string.isRequired,
   onClick: PropTypes.func,
-  badge: PropTypes.node
+  badge: PropTypes.number
 }
 
 export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ stack, imgPath, badge, enabled, onClick }) => {
@@ -62,21 +63,24 @@ export const ImageStack: FunctionComponent<InferProps<typeof propTypes>> = ({ st
             <Image
               path={imgPath}
               disabled={content === '-' || enabled?.[k] === false}
-              onClick={k === 0 ? onClick : undefined}>
-              {enabled?.[k] === false ? '-' : content}
+              onClick={k === 0 && enabled?.[k] !== false ? onClick : undefined}>
+              {
+                // enabled?.[k] === false ? '-' : ''
+              }
+              {content}
             </Image>
           </Box>
         ))}
-        {badge !== undefined && <Badge
-          variant='circle'
-          sx={{
-            position: 'absolute',
-            right: 0,
-            bottom: 0,
-            zIndex: stack.length + 1
-          }}>
-          {badge}
-        </Badge>}
+        {badge !== undefined && badge !== null && (
+          <CountBadge
+            count={badge}
+            sx={{
+              position: 'absolute',
+              right: 0,
+              bottom: 0,
+              zIndex: stack.length + 1
+            }}
+          />)}
       </Box>
     </Hammer>
   )

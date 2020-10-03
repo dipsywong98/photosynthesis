@@ -10,6 +10,9 @@ import { Card } from './common/Card'
 import { InteractionState } from './GamePlayer'
 import { Axial } from '../3d/Coordinates/Axial'
 import { SunlightBadge } from './SunlightBadge'
+import Button from './common/Button'
+import { ImageStack } from './common/ImageStack'
+import { useAlert } from './common/AlertContext'
 
 const propTypes = {
   game: PropTypes.any.isRequired,
@@ -25,8 +28,9 @@ interface Props {
 
 export const Popper: FunctionComponent<Props> = ({ interactionState, game, interactionStateReducer }) => {
   const isMyTile = (axial: Axial): boolean => game.started && game.state?.board[axial.toString()].color === game.mi
-  const growthStateOfTile: GrowthStage | undefined = game.started ? game.state?.board[interactionState?.axial?.toString() ?? '']?.growthStage : undefined
+  const growthStageOfTile: GrowthStage | undefined = game.started ? game.state?.board[interactionState?.axial?.toString() ?? '']?.growthStage : undefined
   const domElement = game.gameWorld.renderer.domElement.parentElement
+  const alert = useAlert()
   useEffect(() => {
     const listener = (event: TouchEvent | MouseEvent): void => {
       const popperCoord: [number, number] = [0, 0]
@@ -52,6 +56,16 @@ export const Popper: FunctionComponent<Props> = ({ interactionState, game, inter
   if (interactionState.axial === undefined || game.state === undefined || interactionState.popperCoord === undefined) {
     return null
   }
+  if (!game.started) {
+    return null
+  }
+  const playerInfo = game.state.playerInfo[game.mi]
+  const errorHandler = (e: Error): void => {
+    alert(e.message)
+  }
+  const purchase = (growthStage: GrowthStage): void => {
+    game.purchase(growthStage).catch(errorHandler)
+  }
   const plantInitialTreeButton = (
     <Box>
       <Box>Plant initial tree</Box>
@@ -61,40 +75,86 @@ export const Popper: FunctionComponent<Props> = ({ interactionState, game, inter
       />
     </Box>
   )
+  const iHaveSeed = playerInfo.availableArea[GrowthStage.SEED] >= 1
+  const purchaseSeedCost = Game.nextPurchase(game.state, game.mi, GrowthStage.SEED).cost
   const plantSeedButton = (
     <Box m={1}>
       <Box>Seed</Box>
-      <Image
-        path={getTreeImageByColorGrowthStage(game.mi, GrowthStage.SEED)}
-        onClick={() => interactionStateReducer({ action: GameActions.PLANT_SEED })}>
-        <SunlightBadge sx={{ float: 'right' }}>{ACTION_COST_SEED}</SunlightBadge>
-      </Image>
+      <ImageStack
+        imgPath={getTreeImageByColorGrowthStage(game.mi, GrowthStage.SEED)}
+        stack={[<SunlightBadge
+          key={1}
+          myPoints={playerInfo.lightPoint}
+          sx={{ position: 'absolute', top: 0, right: '-4px' }}>{ACTION_COST_SEED}</SunlightBadge>]}
+        badge={playerInfo.availableArea[GrowthStage.SEED]}
+        onClick={() => interactionStateReducer({ action: GameActions.PLANT_SEED })}
+        enabled={[iHaveSeed && playerInfo.lightPoint >= ACTION_COST_SEED]}
+      />
+      {!iHaveSeed && (<Box sx={{ position: 'relative' }}>
+        <Button
+          variant='normal-pill-sm'
+          mt={2}
+          onClick={() => purchase(GrowthStage.SEED)}
+          disabled={purchaseSeedCost === undefined || playerInfo.lightPoint < purchaseSeedCost}>
+          {purchaseSeedCost === undefined ? 'N/A' : 'Buy'}
+        </Button>
+        <SunlightBadge
+          myPoints={playerInfo.lightPoint}
+          sx={{ position: 'absolute', right: 0, top: 0 }}>
+          {purchaseSeedCost}
+        </SunlightBadge>
+      </Box>)}
     </Box>
   )
-  const growTreeButton = growthStateOfTile !== undefined && growthStateOfTile !== GrowthStage.TALL && (
+  const iHaveNextTree = growthStageOfTile !== undefined && playerInfo.availableArea[growthStageOfTile + 1 as GrowthStage] > 0
+  const purchaseNextStageCost = growthStageOfTile !== undefined && growthStageOfTile !== GrowthStage.TALL ? Game.nextPurchase(game.state, game.mi, growthStageOfTile + 1).cost : Infinity
+  const growTreeButton = growthStageOfTile !== undefined && growthStageOfTile !== GrowthStage.TALL && (
     <Box m={1}>
       <Box>Grow</Box>
-      <Image
-        path={getTreeImageByColorGrowthStage(game.mi, growthStateOfTile + 1)}
-        onClick={() => interactionStateReducer({ action: GameActions.GROW_TREE })}>
-        <SunlightBadge sx={{ float: 'right' }}>{ACTION_COST_GROW[growthStateOfTile]}</SunlightBadge>
-      </Image>
+      <ImageStack
+        imgPath={getTreeImageByColorGrowthStage(game.mi, growthStageOfTile + 1)}
+        stack={[<SunlightBadge
+          key={1}
+          myPoints={playerInfo.lightPoint}
+          sx={{ position: 'absolute', top: 0, right: '-4px' }}>{ACTION_COST_GROW[growthStageOfTile]}</SunlightBadge>]}
+        badge={playerInfo.availableArea[growthStageOfTile + 1 as GrowthStage]}
+        onClick={() => interactionStateReducer({ action: GameActions.GROW_TREE })}
+        enabled={[iHaveNextTree && playerInfo.lightPoint >= ACTION_COST_GROW[growthStageOfTile]]}
+      />
+      {!iHaveNextTree &&
+      <Box sx={{ position: 'relative' }}>
+        <Button
+          variant='normal-pill-sm'
+          mt={2}
+          onClick={() => purchase(growthStageOfTile + 1)}
+          disabled={purchaseNextStageCost === undefined || playerInfo.lightPoint < purchaseNextStageCost}>
+          {purchaseNextStageCost === undefined ? 'N/A' : 'Buy'}
+        </Button>
+        <SunlightBadge
+          myPoints={playerInfo.lightPoint}
+          sx={{ position: 'absolute', right: 0, top: 0 }}>
+          {purchaseNextStageCost}
+        </SunlightBadge>
+      </Box>}
     </Box>
   )
   const nextToken = game.nextToken(game.state, interactionState.axial)
-  const harvestButton = growthStateOfTile !== undefined && growthStateOfTile === GrowthStage.TALL && (
+  const harvestButton = growthStageOfTile !== undefined && growthStageOfTile === GrowthStage.TALL && (
     <Box m={1}>
       <Box>Harvest</Box>
-      <Image
-        path={getScoreTokenImageByLeaves(nextToken.leaves)}
-        onClick={() => interactionStateReducer({ action: GameActions.GROW_TREE })}>
-        <Box sx={{ position: 'relative' }}>
-          <SunlightBadge sx={{ position: 'absolute', right: '-4px' }}>{ACTION_COST_GROW[growthStateOfTile]}</SunlightBadge>
+      <ImageStack
+        stack={[<Box key={1} sx={{ position: 'relative' }}>
+          <SunlightBadge
+            myPoints={playerInfo.lightPoint}
+            sx={{ position: 'absolute', right: '-4px' }}>{ACTION_COST_GROW[growthStageOfTile]}</SunlightBadge>
           <Box>
             {nextToken.score}
           </Box>
-        </Box>
-      </Image>
+        </Box>]}
+        imgPath={getScoreTokenImageByLeaves(nextToken.leaves)}
+        onClick={() => interactionStateReducer({ action: GameActions.GROW_TREE })}
+        enabled={[playerInfo.lightPoint >= ACTION_COST_GROW[GrowthStage.TALL]]}
+      />
     </Box>
   )
   return (
@@ -113,9 +173,9 @@ export const Popper: FunctionComponent<Props> = ({ interactionState, game, inter
           ? (plantInitialTreeButton)
           : (
             <Flex sx={{ justifyItems: 'space-around' }}>
-              {(isMyTile(interactionState.axial) || growthStateOfTile === undefined) && plantSeedButton}
-              {growthStateOfTile !== undefined && isMyTile(interactionState.axial) && (
-                growthStateOfTile === GrowthStage.TALL ? harvestButton : growTreeButton
+              {(isMyTile(interactionState.axial) || growthStageOfTile === undefined) && plantSeedButton}
+              {growthStageOfTile !== undefined && isMyTile(interactionState.axial) && (
+                growthStageOfTile === GrowthStage.TALL ? harvestButton : growTreeButton
               )}
             </Flex>))
       }

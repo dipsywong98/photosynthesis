@@ -13,7 +13,7 @@ import { SunlightTag } from './SunlightTag'
 import { getTreeImageByColorGrowthStage, TreeTokenStack } from './TreeTokenStack'
 import { ImageStack } from './common/ImageStack'
 import { InteractionState } from './GamePlayer'
-import { GameActions } from '../Game/Game'
+import { Game, GameActions } from '../Game/Game'
 import { SunlightBadge } from './SunlightBadge'
 
 interface props {
@@ -90,24 +90,29 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, interactionStat
             <Grid columns={[1, null, 2]}>
               <Box>
                 <Box>Available:</Box>
-                <Flex>{Object.entries(playerInfo.availableArea).map(([growthStage, amount]) => (
-                  <Box key={growthStage} sx={{ position: 'relative' }}>
-                    <ImageStack
-                      key={growthStage}
-                      onClick={(activePlayerId === mi && (gameState.preparingRound <= 0 || growthStage === GrowthStage.SHORT.toString())) ? () => handlerAvailableTokenClick(Number.parseInt(growthStage)) : undefined}
-                      imgPath={getTreeImageByColorGrowthStage(playerInfo.color, Number.parseInt(growthStage))}
-                      stack={new Array(amount).fill(<SunlightBadge
-                        sx={{
-                          top: 0,
-                          right: '-4px',
-                          position: 'absolute'
-                        }}>
-                        {Number.parseInt(growthStage) === GrowthStage.SEED ? ACTION_COST_SEED : ACTION_COST_GROW[Number.parseInt(growthStage) - 1 as GrowthStage]}
-                      </SunlightBadge>)}
-                      badge={amount}
-                    />
-                  </Box>
-                ))}
+                <Flex>{Object.entries(playerInfo.availableArea).map(([growthStage, amount]) => {
+                  const cost = Number.parseInt(growthStage) === GrowthStage.SEED ? ACTION_COST_SEED : ACTION_COST_GROW[Number.parseInt(growthStage) - 1 as GrowthStage]
+                  return (
+                    <Box key={growthStage} sx={{ position: 'relative' }}>
+                      <ImageStack
+                        key={growthStage}
+                        onClick={(activePlayerId === mi && playerInfo.lightPoint >= cost && (gameState.preparingRound <= 0 || growthStage === GrowthStage.SHORT.toString())) ? () => handlerAvailableTokenClick(Number.parseInt(growthStage)) : undefined}
+                        imgPath={getTreeImageByColorGrowthStage(playerInfo.color, Number.parseInt(growthStage))}
+                        enabled={amount === 0 ? [false] : undefined}
+                        stack={new Array(Math.max(1, amount)).fill(<SunlightBadge
+                          myPoints={playerInfo.lightPoint}
+                          sx={{
+                            top: 0,
+                            right: '-4px',
+                            position: 'absolute'
+                          }}>
+                          {cost}
+                        </SunlightBadge>)}
+                        badge={amount}
+                      />
+                    </Box>
+                  )
+                })}
                 </Flex>
               </Box>
               <Box>
@@ -117,10 +122,11 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, interactionStat
                     Object.entries(playerInfo.playerBoard).map(([growStage, canBuy]) => (
                       <TreeTokenStack
                         key={growStage}
-                        onClick={activePlayerId === mi ? () => clickToPurchase(Number.parseInt(growStage)) : undefined}
+                        onClick={activePlayerId === mi && activePlayerId !== undefined && playerInfo.lightPoint >= Game.nextPurchase(gameState, activePlayerId, Number.parseInt(growStage)).cost ? () => clickToPurchase(Number.parseInt(growStage)) : undefined}
                         growthStage={Number.parseInt(growStage)}
                         color={playerInfo.color}
                         canBuy={canBuy}
+                        myPoints={playerInfo.lightPoint}
                       />
                     ))
                   }
