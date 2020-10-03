@@ -80,7 +80,7 @@ export const Panel: FunctionComponent<props> = ({ mi, roomState, interactionStat
               ))}
               <Button onClick={() => console.log(roomState)}>O</Button>
             </ButtonGroup>
-            {gameState.turn === mi && <Button onClick={clickToEndTurn}>End Turn</Button>}
+            {gameState.turn === mi && <Button onClick={clickToEndTurn} disabled={gameState.preparingRound > 0}>End Turn</Button>}
           </Flex>
           {playerInfo !== undefined && <Box>
             <Grid columns={2}>
