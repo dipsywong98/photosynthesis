@@ -26,7 +26,7 @@ import {
   MODELS,
   SKY_COLOR,
   SUN_ANGLE,
-  SUN_COLOR,
+  SUN_COLOR, SUN_ROTATION_DURATION,
   SUN_SEGMENT_POSITION_Y,
   SUN_SEGMENT_POSITION_Z,
   TAU,
@@ -403,7 +403,7 @@ export default class GameWorld {
     this.sunManagerEntity
       .getComponent<TweenComponent<TweenObjectProperties<GameWorld, 'sunOrientationRad'>>>(TweenComponent)?.tweens
       .push({
-        duration: 2,
+        duration: SUN_ROTATION_DURATION,
         from,
         func: applyNumber(easeInOut),
         loop: 1,

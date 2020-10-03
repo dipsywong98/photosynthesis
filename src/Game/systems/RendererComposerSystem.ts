@@ -14,6 +14,7 @@ export class RendererComposerSystem extends GameWorldSystem {
 
   onResize (): void {
     this.needsResize = true
+    this.gameWorld.sceneHasUpdated = true
   }
 
   init (): void {
