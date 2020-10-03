@@ -19,7 +19,7 @@ const ConfirmDialog = props => {
       isStatic
       {...{
         isOpen: props.isOpen,
-        onClose: props.onClose,
+        onClose: run(false),
         contentLabel: props.contentLabel,
         setIsOpen: props.setIsOpen,
         size: props.size
@@ -35,7 +35,7 @@ const ConfirmDialog = props => {
           justifyContent: 'flex-end'
         }}>
         {!props.hideNoChoice && <Button onClick={run(false)}>{props.noText}</Button>}
-        <Button ml={2} onClick={run(true)}>{props.yesText}</Button>
+        <Button variant='primary' ml={2} onClick={run(true)}>{props.yesText}</Button>
       </Flex>
     </Dialog>
   )
