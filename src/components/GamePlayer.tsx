@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback, useEffect, useMemo, useReducer } from 'react'
+import React, { FunctionComponent, useCallback, useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
 import { useGame } from '../Game/GameContext'
 import { Box, Flex, Heading, Text } from '@theme-ui/components'
@@ -13,6 +13,7 @@ import { Popper } from './Popper'
 import { Card } from './common/Card'
 import { SLOW, transition } from '../theme/transitions'
 import Button from './common/Button'
+import { useConfirm } from './common/ConfirmContext'
 
 const propTypes = {
   setState: PropTypes.func.isRequired
@@ -27,54 +28,59 @@ export interface InteractionState {
   action?: GameActions
 }
 
-type InteractionStateReducer = (prevState: InteractionState, patch: Partial<InteractionState> | undefined) => InteractionState
-
 export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({ setState }) => {
   const [game] = useGame()
   const room = useRoom()
-  const [interactionState, interactionStateReducer] = useReducer<InteractionStateReducer>((prevState, patch) => {
-    if (patch === undefined) {
-      return {}
-    } else {
-      return { ...prevState, ...patch }
+  const confirm = useConfirm()
+  const [interactionState, setInteractionState] = useState<InteractionState>({})
+  const interactionStateReducer = (patch: Partial<InteractionState> | undefined): void => {
+    let newState = patch === undefined ? {} : { ...interactionState, ...patch }
+    if (newState.action === GameActions.PLANT_SEED && newState.popperCoord !== undefined) {
+      if (game.state?.board[newState.axial?.toString() ?? '']?.growthStage === undefined) {
+        newState = { ...newState, target: newState.axial, popperCoord: undefined }
+      } else {
+        newState = { ...newState, source: newState.axial, popperCoord: undefined }
+      }
     }
-  }, {})
-  if (interactionState.action === GameActions.PLANT_SEED && interactionState.popperCoord !== undefined) {
-    if (game.state?.board[interactionState.axial?.toString() ?? '']?.growthStage === undefined) {
-      interactionStateReducer({ target: interactionState.axial, popperCoord: undefined })
-    } else {
-      console.log(interactionState.axial, game.state?.board[interactionState.axial?.toString() ?? '']?.growthStage)
-      interactionStateReducer({ source: interactionState.axial, popperCoord: undefined })
+    if (newState.action === GameActions.PURCHASE && newState.growthStage !== undefined) {
+      console.log('purchase')
+      game.purchase(newState.growthStage).catch(errorHandler)
+      newState = {}
     }
+    if (newState.action === GameActions.END_TURN) {
+      console.log('end turn')
+      game.endTurn().catch(errorHandler)
+      newState = {}
+    }
+    if (newState.action === GameActions.PLANT_SEED && newState.source !== undefined && newState.target !== undefined) {
+      console.log('plant seed')
+      game.plantSeed(newState.source, newState.target).catch(errorHandler)
+      newState = {}
+    }
+    if (newState.action === GameActions.GROW_TREE && newState.axial !== undefined) {
+      console.log('grow tree')
+      const growthStageOfTile: GrowthStage | undefined = game.state?.board[newState.axial.toString()]?.growthStage
+      console.log('have slot', growthStageOfTile !== undefined, game.state !== undefined, growthStageOfTile !== undefined && game.state !== undefined && !game.haveSlot(game.state, game.mi, growthStageOfTile))
+      if (growthStageOfTile !== undefined && game.state !== undefined && !game.haveSlot(game.state, game.mi, growthStageOfTile)) {
+        confirm(`Not enough slot in your purchase board, proceed will lose your ${GROWTH_STAGE_NAME[growthStageOfTile]}`)
+          .then((yes) => {
+            if (yes && newState.axial !== undefined) {
+              game.growTree(newState.axial).catch(errorHandler)
+            }
+            setInteractionState({})
+          }).catch(errorHandler)
+      } else {
+        game.growTree(newState.axial).catch(errorHandler)
+        newState = {}
+      }
+    }
+    setInteractionState(newState)
   }
   const alert = useAlert()
   const errorHandler = useCallback((e: Error) => {
     console.log(e)
     alert(e.message)
   }, [alert])
-  useEffect(() => {
-    console.log(interactionState)
-    if (interactionState.action === GameActions.PURCHASE && interactionState.growthStage !== undefined) {
-      console.log('purchase')
-      interactionStateReducer(undefined)
-      game.purchase(interactionState.growthStage).catch(errorHandler)
-    }
-    if (interactionState.action === GameActions.END_TURN) {
-      console.log('end turn')
-      interactionStateReducer(undefined)
-      game.endTurn().catch(errorHandler)
-    }
-    if (interactionState.action === GameActions.PLANT_SEED && interactionState.source !== undefined && interactionState.target !== undefined) {
-      console.log('plant seed')
-      interactionStateReducer(undefined)
-      game.plantSeed(interactionState.source, interactionState.target).catch(errorHandler)
-    }
-    if (interactionState.action === GameActions.GROW_TREE && interactionState.axial !== undefined) {
-      console.log('grow tree')
-      interactionStateReducer(undefined)
-      game.growTree(interactionState.axial).catch(errorHandler)
-    }
-  }, [game, interactionState, interactionStateReducer, errorHandler])
   const isPreparationRound = (game.state?.preparingRound ?? 1) > 0
   const hintText: string = useMemo(() => {
     if (interactionState.action !== undefined) {

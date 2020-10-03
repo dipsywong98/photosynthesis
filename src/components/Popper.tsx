@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Box, Flex } from '@theme-ui/components'
 import { Image } from './common/Image'
 import { getTreeImageByColorGrowthStage } from './TreeTokenStack'
-import { ACTION_COST_GROW, ACTION_COST_SEED, GrowthStage } from '../3d/constants'
+import { ACTION_COST_GROW, ACTION_COST_SEED, GROWTH_STAGE_NAME, GrowthStage } from '../3d/constants'
 import { Game, GameActions } from '../Game/Game'
 import { getScoreTokenImageByLeaves } from './ScoreTokenStack'
 import { Card } from './common/Card'
@@ -13,6 +13,8 @@ import { SunlightBadge } from './SunlightBadge'
 import Button from './common/Button'
 import { ImageStack } from './common/ImageStack'
 import { useAlert } from './common/AlertContext'
+import { mdiAlert } from '@mdi/js'
+import IconText from './common/IconText'
 
 const propTypes = {
   game: PropTypes.any.isRequired,
@@ -110,7 +112,11 @@ export const Popper: FunctionComponent<Props> = ({ interactionState, game, inter
   const purchaseNextStageCost = growthStageOfTile !== undefined && growthStageOfTile !== GrowthStage.TALL ? Game.nextPurchase(game.state, game.mi, growthStageOfTile + 1).cost : Infinity
   const growTreeButton = growthStageOfTile !== undefined && growthStageOfTile !== GrowthStage.TALL && (
     <Box m={1}>
-      <Box>Grow</Box>
+      {game.haveSlot(game.state, game.mi, growthStageOfTile)
+        ? <Box>Grow</Box>
+        : <Box title={`Not enough slot in your purchase board, proceed will lose your ${GROWTH_STAGE_NAME[growthStageOfTile]}`}>
+          <IconText color='yellow.0' path={mdiAlert}>Grow</IconText>
+        </Box>}
       <ImageStack
         imgPath={getTreeImageByColorGrowthStage(game.mi, growthStageOfTile + 1)}
         stack={[<SunlightBadge

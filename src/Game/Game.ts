@@ -264,6 +264,10 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     })
   }
 
+  public haveSlot (gameState: GameState, playerId: number, stage: GrowthStage): boolean {
+    return gameState.playerInfo[playerId].playerBoard[stage].reduce((flag, current) => flag || !current, false)
+  }
+
   public static nextPurchase (gameState: GameState, playerId: number, stage: GrowthStage): { cost: number, purchaseIndex: number } {
     let purchaseIndex: number
     for (purchaseIndex = 0; purchaseIndex < gameState.playerInfo[playerId].playerBoard[stage].length; purchaseIndex++) {

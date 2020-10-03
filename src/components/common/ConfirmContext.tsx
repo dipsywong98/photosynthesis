@@ -1,4 +1,4 @@
-import React, { Context, createContext, FunctionComponent, useContext, useState } from 'react'
+import React, { Context, createContext, FunctionComponent, useCallback, useContext, useState } from 'react'
 import ConfirmDialog from './ConfirmDialog'
 
 export interface ConfirmMessage {
@@ -21,12 +21,12 @@ export const withConfirmQueue = (WrappedComponent: FunctionComponent): FunctionC
       setQueue(queue.slice(1))
     }
 
-    const queueConfirm: ConfirmFunction = async (s: string | ConfirmMessage): Promise<boolean> => {
+    const queueConfirm: ConfirmFunction = useCallback(async (s: string | ConfirmMessage): Promise<boolean> => {
       const message: ConfirmMessage = typeof s === 'string' ? { title: 'Alert', message: s } : s
       return await new Promise((resolve) => {
         setQueue(queue.concat([{ message, resolve }]))
       })
-    }
+    }, [queue])
 
     const confirmNodes = queue.map(({ message, resolve }, i) => (
       <ConfirmDialog
