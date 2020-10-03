@@ -12,6 +12,10 @@ export const baseButton = {
   outline: 'none',
   '::-moz-focus-inner': {
     border: 'none'
+  },
+  cursor: 'pointer',
+  ':disabled': {
+    cursor: 'default'
   }
 }
 

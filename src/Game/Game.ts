@@ -5,7 +5,7 @@ import { StarMeshAction, StarMeshNetworkEvents, StarMeshReducer } from '../lib/S
 import { GameState } from './types/GameState'
 import { getInitialState } from './getInitialState'
 import { Axial } from '../3d/Coordinates/Axial'
-import { ACTION_COST_GROW, ACTION_COST_PURCHASE, GrowthStage } from '../3d/constants'
+import { ACTION_COST_GROW, ACTION_COST_PURCHASE, ACTION_COST_SEED, GrowthStage } from '../3d/constants'
 import { TileInfo } from './types/TileInfo'
 import { clone } from 'ramda'
 import { isTreeGrowthStage } from './isTreeGrowthStage'
@@ -65,8 +65,8 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     })
   }
 
-  public start (gameState: GameState): void {
-    //
+  public start (_gameState: GameState): void {
+    this.gameWorld.resetBoard()
   }
 
   public rejoin (gameState: GameState): void {
@@ -97,6 +97,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         gameState.preparingRound--
         if (gameState.preparingRound === 0) {
           gameState.rayDirection = 1
+          gameState.revolutionLeft++
         }
       }
       if (gameState.preparingRound === 0) {
@@ -108,7 +109,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         gameState = this.setRayDirection(gameState, gameState.rayDirection)
       }
       gameState.turn = 0
-      if (gameState.revolutionLeft <= -1) {
+      if (gameState.revolutionLeft <= 0) {
         return this.endGameCalculation(gameState)
       }
       if (gameState.preparingRound === 0) {
@@ -154,7 +155,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         winningsPlayerIds.push(id.toString())
       }
     })
-    gameState.gameOver = `Player '${winningsPlayerIds.map(i => this.room.whoami(i)).join(', ')}' win`
+    gameState.gameOver = `Player ${winningsPlayerIds.map(i => `'${this.room.whoami(i)}'`).join(', ')} win`
     return { ...gameState }
   }
 
@@ -246,7 +247,11 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     if (source.tileDistance(target) > tileInfo.growthStage) {
       throw new Error('Seed is too far from tree')
     }
+    if (gameState.playerInfo[playerId].lightPoint < ACTION_COST_SEED) {
+      throw new Error(`Need ${ACTION_COST_SEED} light points, but only got ${gameState.playerInfo[playerId].lightPoint}`)
+    }
     gameState.dirtyTiles.push(source.toString(), target.toString())
+    gameState.playerInfo[playerId].lightPoint -= ACTION_COST_SEED
     gameState.playerInfo[playerId].availableArea[GrowthStage.SEED]--
     gameState = this.setTile(gameState, target, { color: playerId, growthStage: GrowthStage.SEED })
     return gameState
@@ -259,20 +264,32 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     })
   }
 
-  public purchaseHandler (gameState: GameState, playerId: number, stage: GrowthStage): GameState {
-    if (gameState.preparingRound > 0) {
-      throw new Error('Cannot purchase at preparing round')
-    }
+  public haveSlot (gameState: GameState, playerId: number, stage: GrowthStage): boolean {
+    return gameState.playerInfo[playerId].playerBoard[stage].reduce((flag, current) => flag || !current, false)
+  }
+
+  public static nextPurchase (gameState: GameState, playerId: number, stage: GrowthStage): { cost: number, purchaseIndex: number } {
     let purchaseIndex: number
     for (purchaseIndex = 0; purchaseIndex < gameState.playerInfo[playerId].playerBoard[stage].length; purchaseIndex++) {
       if (gameState.playerInfo[playerId].playerBoard[stage][purchaseIndex]) {
         break
       }
     }
-    if (gameState.playerInfo[playerId].lightPoint < ACTION_COST_PURCHASE[stage][purchaseIndex]) {
-      throw new Error(`Not enough light point to purchase ${GrowthStage[stage]}, ${ACTION_COST_PURCHASE[stage][purchaseIndex].toString()} needed but only have ${gameState.playerInfo[playerId].lightPoint}`)
+    return {
+      purchaseIndex,
+      cost: ACTION_COST_PURCHASE[stage][purchaseIndex]
     }
-    gameState.playerInfo[playerId].lightPoint -= ACTION_COST_PURCHASE[stage][purchaseIndex]
+  }
+
+  public purchaseHandler (gameState: GameState, playerId: number, stage: GrowthStage): GameState {
+    if (gameState.preparingRound > 0) {
+      throw new Error('Cannot purchase at preparing round')
+    }
+    const { purchaseIndex, cost } = Game.nextPurchase(gameState, playerId, stage)
+    if (gameState.playerInfo[playerId].lightPoint < cost) {
+      throw new Error(`Not enough light point to purchase ${GrowthStage[stage]}, ${cost.toString()} needed but only have ${gameState.playerInfo[playerId].lightPoint}`)
+    }
+    gameState.playerInfo[playerId].lightPoint -= cost
     gameState.playerInfo[playerId].playerBoard[stage][purchaseIndex] = false
     gameState.playerInfo[playerId].availableArea[stage]++
     return gameState
@@ -328,7 +345,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     return prevState
   }
 
-  private setTile (gameState: GameState, axial: Axial, tileInfo: Partial<TileInfo>): GameState {
+  public setTile (gameState: GameState, axial: Axial, tileInfo: Partial<TileInfo>): GameState {
     gameState.board[axial.toString()].growthStage = tileInfo.growthStage
     gameState.board[axial.toString()].color = tileInfo.color
     this.gameWorld.setTile(axial, tileInfo)
@@ -352,15 +369,26 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     return gameState
   }
 
-  private obtainToken (gameState: GameState, playerId: number, axial: Axial): GameState {
+  public nextToken (gameState: GameState, axial: Axial): { leaves: number, score: number } {
     for (let leaves = gameState.board[axial.toString()].leaves; leaves >= 1; leaves--) {
       const scoreToken = gameState.scoreTokens[leaves]
-      const amount = scoreToken.shift()
-      if (amount !== undefined) {
-        gameState.playerInfo[playerId].score += amount
-        break
+      const score = scoreToken[0]
+      if (score !== undefined) {
+        return {
+          leaves,
+          score
+        }
       }
     }
+    return {
+      leaves: 0, score: 0
+    }
+  }
+
+  private obtainToken (gameState: GameState, playerId: number, axial: Axial): GameState {
+    const { leaves } = this.nextToken(gameState, axial)
+    const amount = gameState.scoreTokens[leaves].shift()
+    gameState.playerInfo[playerId].score += amount ?? 0
     return gameState
   }
 
