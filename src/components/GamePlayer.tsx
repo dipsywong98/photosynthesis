@@ -131,7 +131,7 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
         }}>
         <Heading>Game Over</Heading>
         <Text>{gameOver}</Text>
-        <Button variant='primary' mt={3} onClick={nextRound}>Next Round</Button>
+        <Button variant='primary' mt={3} onClick={nextRound}>New Game</Button>
       </Card>
       <Flex
         sx={{
