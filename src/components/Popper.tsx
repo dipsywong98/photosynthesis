@@ -113,7 +113,7 @@ export const Popper: FunctionComponent<Props> = ({ interactionState, game, inter
       {game.haveSlot(game.state, game.mi, growthStageOfTile)
         ? <Box>Grow</Box>
         : <Box
-          title={`No empty slots on your purchase board, if proceed then you will need to say bye bye to your lovely ${GROWTH_STAGE_NAME[growthStageOfTile]} so please think carefully`}
+          title={`No empty slots on your purchase board. Proceed and you will say bye bye to your lovely ${GROWTH_STAGE_NAME[growthStageOfTile]}. So think carefully.`}
           sx={{ color: 'yellow.0' }}>
           Grow
         </Box>}
