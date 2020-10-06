@@ -155,7 +155,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
         winningsPlayerIds.push(id.toString())
       }
     })
-    gameState.gameOver = `Player ${winningsPlayerIds.map(i => `'${this.room.whoami(i)}'`).join(', ')} win`
+    gameState.gameOver = `${winningsPlayerIds.map(i => this.room.whoami(i)).join(', ')} ${winningsPlayerIds.length === 1 ? 'wins' : 'win'}`
     return { ...gameState }
   }
 
