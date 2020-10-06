@@ -62,7 +62,7 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
       const growthStageOfTile: GrowthStage | undefined = game.state?.board[newState.axial.toString()]?.growthStage
       console.log('have slot', growthStageOfTile !== undefined, game.state !== undefined, growthStageOfTile !== undefined && game.state !== undefined && !game.haveSlot(game.state, game.mi, growthStageOfTile))
       if (growthStageOfTile !== undefined && game.state !== undefined && !game.haveSlot(game.state, game.mi, growthStageOfTile)) {
-        confirm(`No empty slots on your purchase board, proceed and lose your ${GROWTH_STAGE_NAME[growthStageOfTile]}`)
+        confirm(`No empty slots on your purchase board. Proceed and lose your ${GROWTH_STAGE_NAME[growthStageOfTile]}`)
           .then((yes) => {
             if (yes && newState.axial !== undefined) {
               game.growTree(newState.axial).catch(errorHandler)
