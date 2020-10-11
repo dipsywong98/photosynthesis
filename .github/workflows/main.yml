@@ -20,7 +20,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: bahmutov/npm-install@v1
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
@@ -28,7 +27,7 @@ jobs:
     - run: yarn install --frozen-lockfile
     - run: yarn lint
     - run: yarn jest
-    - run: yarn build
+    - uses: bahmutov/npm-install@v1
       env:
         REACT_APP_PEER_HOST: hkustracing.com
         REACT_APP_PEER_PORT: 9000
