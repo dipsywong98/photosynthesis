@@ -28,13 +28,14 @@ jobs:
     - run: yarn lint
     - run: yarn jest
     - run: yarn build
+      env:
+        REACT_APP_PEER_HOST: photosynthesis-peer.herokuapp.com
+        REACT_APP_PEER_PORT: 443
+        REACT_APP_PEER_PATH: /
+        REACT_APP_PEER_SECURE: true
     - uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./build
       env:
         CI: true
-        REACT_APP_PEER_HOST: photosynthesis-peer.herokuapp.com
-        REACT_APP_PEER_PORT: 443
-        REACT_APP_PEER_PATH: /
-        REACT_APP_PEER_SECURE: true
