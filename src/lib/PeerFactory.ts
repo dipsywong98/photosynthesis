@@ -16,7 +16,7 @@ export const PeerFactory: { peers: Peer[], useFake: boolean, make: (id?: string)
           host: process.env.REACT_APP_PEER_HOST ?? 'localhost',
           port: Number.parseInt(process.env.REACT_APP_PEER_PORT ?? '9000'),
           path: process.env.REACT_APP_PEER_PATH ?? '/peer',
-          secure: Boolean(process.env.REACT_APP_PEER_SECURE)
+          secure: process.env.REACT_APP_PEER_SECURE === 'true'
         })
       }
     } else {
