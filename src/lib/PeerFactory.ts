@@ -12,7 +12,6 @@ export const PeerFactory: { peers: Peer[], useFake: boolean, make: (id?: string)
       if (process.env.REACT_APP_PEER_HOST === undefined) {
         return new Peer(id)
       } else {
-        console.log(process.env)
         return new Peer(id, {
           host: process.env.REACT_APP_PEER_HOST ?? 'localhost',
           port: Number.parseInt(process.env.REACT_APP_PEER_PORT ?? '9000'),
