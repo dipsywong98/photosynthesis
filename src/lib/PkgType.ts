@@ -13,4 +13,6 @@ export enum PkgType {
   UPDATE_GAME_STATE,
   DISPATCH,
   SET_STATE,
+  PROMOTE,
+  CANCEL,
 }

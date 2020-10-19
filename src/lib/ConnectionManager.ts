@@ -99,7 +99,7 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
     }))
   }
 
-  public conn (id: string): Connection {
+  private conn (id: string): Connection {
     const find = this.connections.find(c => c.id === id)
     if (find === undefined) {
       throw new Error(`connection lost with ${id}`)
