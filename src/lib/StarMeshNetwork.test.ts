@@ -2,7 +2,8 @@ import { StarMeshNetwork, StarMeshNetworkEvents, StarMeshReducer } from './StarM
 import { ConnectionManager } from './ConnectionManager'
 import { pause } from './pause'
 import { prepareFakePeerSystem } from './fake/prepareFakePeerSystem'
-import { NetworkStateBusyError } from './errors/NetworkStateBusyError'
+import { ConnEvent } from './ConnectionTypes'
+import { PkgType } from './PkgType'
 
 const SET_FOO = 'SET_FOO'
 const reducer: StarMeshReducer<Record<string, unknown>> = (prevState, { action, payload }) => {
@@ -65,7 +66,7 @@ describe('StarMeshNetwork', () => {
           foo: 123
         })
       })
-      await pause(1)
+      await pause(100)
       await net1.dispatch({
         action: SET_FOO,
         payload: 123
@@ -199,40 +200,20 @@ describe('StarMeshNetwork', () => {
       net2.setReducer(reducer)
       await net1.joinOrHost('my-net')
       await net2.joinOrHost('my-net')
-      await net1.dispatch({
-        action: SET_FOO,
-        payload: 123
-      })
-      expect(net2.activeAction).toEqual({
-        action: SET_FOO,
-        payload: 123
-      })
-      done()
-    })
-
-    it('can reject state change request if there is active request', async (done) => {
-      const manager1 = await ConnectionManager.startAs('1')
-      const manager2 = await ConnectionManager.startAs('2')
-      const net1 = new StarMeshNetwork<Record<string, unknown>>(manager1, { foo: 0 })
-      const net2 = new StarMeshNetwork(manager2, {})
-      net1.setReducer(reducer)
-      net2.setReducer(reducer)
-      await net1.joinOrHost('my-net')
-      await net2.joinOrHost('my-net')
-      net1.activeAction = {
-        action: SET_FOO,
-        payload: 123
-      }
       const promise = net1.dispatch({
         action: SET_FOO,
         payload: 123
       })
-      expect(net1.requestQueue).toHaveLength(1)
+      expect(net1.activeAction).toEqual({
+        action: SET_FOO,
+        payload: 123
+      })
       await promise
+      expect(net1.activeAction).toEqual(undefined)
       done()
     })
 
-    it('can queue state change request if rejected due to there is active request', async (done) => {
+    it('can queue state change request if previous action hasnt resolved', async (done) => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const net1 = new StarMeshNetwork<Record<string, unknown>>(manager1, { foo: 0 })
@@ -245,7 +226,10 @@ describe('StarMeshNetwork', () => {
         action: SET_FOO,
         payload: 123
       })
-      expect(net1.haveActiveRequest).toEqual(true)
+      expect(net1.activeAction).toEqual({
+        action: SET_FOO,
+        payload: 123
+      })
       const promise2 = net1.dispatch({
         action: SET_FOO,
         payload: 456
@@ -269,11 +253,94 @@ describe('StarMeshNetwork', () => {
       done()
     })
 
-    describe('can validate state change request and cache a staging state, then response a checksum', () => {})
+    it('can queue state change request if other has staging change', async (done) => {
+      const manager1 = await ConnectionManager.startAs('1')
+      const manager2 = await ConnectionManager.startAs('2')
+      const net1 = new StarMeshNetwork<Record<string, unknown>>(manager1, { foo: 0 })
+      const net2 = new StarMeshNetwork(manager2, {})
+      net1.setReducer(reducer)
+      net2.setReducer(reducer)
+      await net1.joinOrHost('my-net')
+      await net2.joinOrHost('my-net')
+      net2.stateStaging = {
+        foo: -1
+      }
+      const promise = net1.dispatch({
+        action: SET_FOO,
+        payload: 123
+      })
+      await pause(100)
+      expect(net1.state).toEqual({
+        foo: 0
+      })
+      expect(net2.state).toEqual({
+        foo: 0
+      })
+      net2.stateStaging = undefined
+      await promise
+      expect(net1.state).toEqual({
+        foo: 123
+      })
+      expect(net2.state).toEqual({
+        foo: 123
+      })
+      done()
+    })
 
-    describe('can collect checksum and notify all to promote the staging state', () => {})
+    it('can rollback if one if the network member reject the change', async (done) => {
+      const manager1 = await ConnectionManager.startAs('1')
+      const manager2 = await ConnectionManager.startAs('2')
+      const net1 = new StarMeshNetwork<Record<string, unknown>>(manager1, { foo: 0 })
+      const net2 = new StarMeshNetwork(manager2, {})
+      net1.setReducer(reducer)
+      net2.setReducer(reducer)
+      await net1.joinOrHost('my-net')
+      await net2.joinOrHost('my-net')
+      const promise1 = net1.dispatch({
+        action: SET_FOO,
+        payload: 123
+      })
+      expect(net1.activeAction).toEqual({
+        action: SET_FOO,
+        payload: 123
+      })
+      net2.setReducer(() => {
+        throw new Error('invalid action')
+      })
+      const promise2 = net1.dispatch({
+        action: SET_FOO,
+        payload: 456
+      })
+      await promise1.catch(() => console.log('fail promise 1'))
+      expect(net1.state).toEqual({
+        foo: 123
+      })
+      expect(net2.state).toEqual({
+        foo: 123
+      })
+      if (promise2 !== undefined) {
+        await expect(promise2).rejects.toEqual(new Error('invalid action'))
+      }
+      expect(net2.state).toEqual({
+        foo: 123
+      })
+      expect(net1.state).toEqual({
+        foo: 123
+      })
+      done()
+    })
 
-    describe('can pop queue when clear current active request', () => {})
+    // describe('can validate state change request and cache a staging state, then response a checksum', () => {
+    //   //
+    // })
+    //
+    // describe('can collect checksum and notify all to promote the staging state', () => {
+    //   //
+    // })
+    //
+    // describe('can pop queue when clear current active request', () => {
+    //   //
+    // })
   })
 
   describe('subscribable events', () => {

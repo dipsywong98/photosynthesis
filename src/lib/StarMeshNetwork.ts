@@ -55,10 +55,10 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
   hostId?: string
   initialState: T
 
-  haveActiveRequest = false
+  activeAction?: StarMeshAction
 
   requestQueue: Array<{ action: StarMeshAction, resolve: () => void, reject: (error: Error) => void }> = []
-  private stateStaging?: T
+  stateStaging?: T
 
   public get id (): string {
     return this.myConnectionManager.id
@@ -73,8 +73,14 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
     this.state = clone(initialState)
   }
 
+  logs: unknown[][] = []
+
+  private log (...params: unknown[]): void {
+    console.log(...params)
+    this.logs.push(params)
+  }
+
   private readonly networkErrorHandler = (error: Error): void => {
-    // console.log(this.id, error)
     this.emit(StarMeshNetworkEvents.NETWORK_ERROR, { error })
   }
 
@@ -124,25 +130,26 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
   public async joinOrHost (networkName: string): Promise<void> {
     this.networkName = networkName
     try {
-      console.log('[joinOrHost] to host')
+      this.log(`check if network ${networkName} exists, if not, create it`)
       await this.host(networkName)
-      console.log('[joinOrHost] to join')
+      this.log(`created network ${networkName}`)
       await this.join(networkName)
-      console.log('[joinOrHost] end join')
     } catch (e) {
-      console.log('[joinOrHost] fail host to join')
+      this.log(`network ${networkName} exists`)
       await this.join(networkName)
-      console.log('[joinOrHost] joined without host')
     }
   }
 
   private readonly host = async (networkName: string): Promise<void> => {
+    this.log(`hosting network ${networkName}`)
     const hostConnection = await ConnectionManager.startPrefix(networkName)
+    this.log('created hostConnection')
     const oldHost = this.hostId
     this.hostId = this.id
     this.hostConnectionManager = hostConnection
     this.hostConnectionManager.on(ConnEvent.CONN_OPEN, ({ conn }) => {
       if (conn !== undefined) {
+        this.log(`${conn.id ?? 'someone'} is joining the network, telling the rest about it and tell new joiner the member list`)
         this.hostConnectionManager?.broadcastPkg(PkgType.MEMBER_CHANGE, {
           host: this.hostId,
           members: [...this.members, conn.id]
@@ -152,6 +159,7 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
       }
     })
     this.hostConnectionManager.on(ConnEvent.CONN_CLOSE, ({ conn }) => {
+      this.log(`${conn?.id ?? 'someone'} is leaving the network, telling the rest about it`)
       this.hostConnectionManager?.broadcastPkg(PkgType.MEMBER_CHANGE, {
         host: this.id,
         members: this.members.filter(id => id !== conn?.id)
@@ -161,36 +169,39 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
     // if there are existing members, probably the members were connected to a disconnected host
     // so update them to use the new host
     if (this.members.length > 0) {
+      this.log('hostConnection trying to connect to all members and tell them to update member list')
       const members = this.members.filter(n => n !== oldHost)
       await Promise.all(members.map(async (id: string): Promise<Connection> => await hostConnection?.connect(id))).catch(console.log)
       await hostConnection.broadcastPkg(PkgType.MEMBER_CHANGE, {
         host: this.id,
         members
       })
+      this.log('hostConnection connected to all members')
     }
   }
 
   private readonly join = async (networkName: string): Promise<void> => {
-    console.log('[join] to connect', networkName)
+    this.log('joining network ', networkName)
     this.meToHostConnection = await this.myConnectionManager.connectPrefix(networkName)
-    console.log('[join] done connect')
-    this.meToHostConnection.on(ConnEvent.CONN_CLOSE, () => {
-      console.log('on conn close')
+    this.log('connected to network')
+    this.meToHostConnection.on(ConnEvent.CONN_CLOSE, ({ conn }) => {
+      this.log(`lost connection with ${conn?.id ?? 'some peer'}`)
       if (this.members.length > 1) {
         if (this.networkName !== undefined && !this.myConnectionManager.isClosed() && this.members.filter(n => n !== this.hostId)[0] === this.id) {
+          this.log('taking over the host role')
           this.host(this.networkName).catch(this.networkErrorHandler)
         }
       }
     })
-    console.log('wait members non empty')
+    this.log('waiting for member list')
     while (this.members.length === 0) {
       await pause(100)
     }
-    console.log('got members')
+    this.log('received member list, connecting to other members')
     while (!this.members.reduce((flag: boolean, member) => flag && undefined !== this.myConnectionManager.connections.find(({ id }) => id === member), true)) {
-      console.log('what is this')
       await pause(100)
     }
+    this.log('all members connected')
   }
 
   private readonly handleMemberChange = async (data: unknown): Promise<void> => {
@@ -237,13 +248,14 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
   }
 
   public dispatch = async (action: StarMeshAction): Promise<void> => {
+    this.log('dispatch', action)
     const queueThisAction = async (): Promise<void> => await new Promise((resolve, reject) => {
       this.requestQueue.push({ action, resolve, reject })
     })
-    if (this.haveActiveRequest) {
+    if (this.activeAction !== undefined) {
       return await queueThisAction()
     }
-    this.haveActiveRequest = true
+    this.activeAction = action
     const responses = await Promise.all(this.members.map(async (id) => await this.myConnectionManager.sendPkg(id, PkgType.DISPATCH, action)))
     let gotBusyError = false
     const gotValidationErrors: string[] = []
@@ -259,21 +271,23 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
       }
     })
     let error
+    let promise = Promise.resolve()
     if (gotValidationErrors.length > 0) {
-      this.haveActiveRequest = false
+      this.activeAction = undefined
       await Promise.all(this.members.map(async (id) => await this.myConnectionManager.sendPkg(id, PkgType.CANCEL, {})))
       const filtered = uniq(gotValidationErrors)
-      if (filtered.length === 0) {
+      if (filtered.length === 1) {
         error = new Error(filtered[0])
       } else {
         error = new Error(`Multiple Errors: ${filtered.join(',')}`)
       }
     } else if (gotBusyError) {
-      this.haveActiveRequest = false
+      this.activeAction = undefined
       await Promise.all(this.members.map(async (id) => await this.myConnectionManager.sendPkg(id, PkgType.CANCEL, {})))
-      await queueThisAction()
+      promise = queueThisAction()
     } else {
       await Promise.all(this.members.map(async (id) => await this.myConnectionManager.sendPkg(id, PkgType.PROMOTE, {})))
+      this.activeAction = undefined
     }
     {
       const { action, resolve, reject } = this.requestQueue.shift() ?? {}
@@ -282,8 +296,9 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
       }
     }
     if (error !== undefined) {
-      throw error
+      return await Promise.reject(error)
     }
+    return await promise
   }
 
   public dispatchLocal = async (action: StarMeshAction): Promise<void> => {
@@ -305,13 +320,14 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
       ack?.('no conn')
     } else {
       if (this.stateStaging !== undefined) {
-        throw new NetworkStateBusyError()
-      }
-      try {
-        this.stateStaging = this.reducer(this.state, data as StarMeshAction, conn.id)
-        ack?.(true)
-      } catch (e: unknown) {
-        ack?.((e as Error).message)
+        ack?.(NETWORK_STATE_BUSY_ERROR)
+      } else {
+        try {
+          this.stateStaging = this.reducer(this.state, data as StarMeshAction, conn.id)
+          ack?.(true)
+        } catch (e: unknown) {
+          ack?.((e as Error).message)
+        }
       }
     }
   }
