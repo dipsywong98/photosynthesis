@@ -3,12 +3,7 @@ import { equals } from 'ramda'
 
 const TIMEOUT_DURATION = 5000
 
-interface PayloadEssential {
-  toString: () => string
-}
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-type Payload = Exclude<PayloadEssential, Function>
+type Payload = unknown
 
 type Listener<P extends Payload> = (payload: P, preventClear?: () => void) => void
 type Matcher<P extends Payload> = (payload: P) => boolean
