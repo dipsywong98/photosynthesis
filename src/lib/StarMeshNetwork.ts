@@ -5,7 +5,8 @@ import { Connection } from './Connection'
 import { Observable } from './Observable'
 import { clone, uniq } from 'ramda'
 import { pause } from './pause'
-import { NETWORK_STATE_BUSY_ERROR, NetworkStateBusyError } from './errors/NetworkStateBusyError'
+import { NETWORK_STATE_BUSY_ERROR } from './errors/NetworkStateBusyError'
+import { v4 } from 'uuid'
 
 export enum StarMeshNetworkEvents {
   STATE_CHANGE,
@@ -59,6 +60,7 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
 
   requestQueue: Array<{ action: StarMeshAction, resolve: () => void, reject: (error: Error) => void }> = []
   stateStaging?: T
+  stagingActionId?: string
 
   public get id (): string {
     return this.myConnectionManager.id
@@ -114,8 +116,13 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
       this.state = data as T
     })
     this.myConnectionManager.onPkg(PkgType.DISPATCH, this.dispatchHandler)
-    this.myConnectionManager.onPkg(PkgType.CANCEL, () => {
-      this.stateStaging = undefined
+    this.myConnectionManager.onPkg(PkgType.CANCEL, ({ data }) => {
+      const id = (data as {id: string}).id
+      this.log('cancel staging', id, this.stagingActionId)
+      if (id === this.stagingActionId) {
+        this.stateStaging = undefined
+        this.stagingActionId = undefined
+      }
     })
     this.myConnectionManager.onPkg(PkgType.PROMOTE, () => {
       if (this.stateStaging !== undefined) {
@@ -255,13 +262,15 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
     if (this.activeAction !== undefined) {
       return await queueThisAction()
     }
+    const actionId = v4()
     this.activeAction = action
-    const responses = await Promise.all(this.members.map(async (id) => await this.myConnectionManager.sendPkg(id, PkgType.DISPATCH, action)))
+    const responses = await Promise.all(this.members.map(async (id) => await this.myConnectionManager.sendPkg(id, PkgType.DISPATCH, { ...action, actionId })))
     let gotBusyError = false
     const gotValidationErrors: string[] = []
-    responses.forEach(({ data }) => {
+    responses.forEach(({ data, conn }) => {
       if (data !== undefined && data !== true) {
         if (typeof data === 'string') {
+          this.log(`${conn?.id ?? 'someone'} response error ${data}`)
           if (data === NETWORK_STATE_BUSY_ERROR) {
             gotBusyError = true
           } else {
@@ -274,7 +283,7 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
     let promise = Promise.resolve()
     if (gotValidationErrors.length > 0) {
       this.activeAction = undefined
-      await Promise.all(this.members.map(async (id) => await this.myConnectionManager.sendPkg(id, PkgType.CANCEL, {})))
+      await Promise.all(this.members.map(async (id) => await this.myConnectionManager.sendPkg(id, PkgType.CANCEL, { id: actionId })))
       const filtered = uniq(gotValidationErrors)
       if (filtered.length === 1) {
         error = new Error(filtered[0])
@@ -283,8 +292,8 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
       }
     } else if (gotBusyError) {
       this.activeAction = undefined
-      await Promise.all(this.members.map(async (id) => await this.myConnectionManager.sendPkg(id, PkgType.CANCEL, {})))
-      promise = queueThisAction()
+      await Promise.all(this.members.map(async (id) => await this.myConnectionManager.sendPkg(id, PkgType.CANCEL, { id: actionId })))
+      promise = pause(500).then(async () => await this.dispatch(action))
     } else {
       await Promise.all(this.members.map(async (id) => await this.myConnectionManager.sendPkg(id, PkgType.PROMOTE, {})))
       this.activeAction = undefined
@@ -323,7 +332,9 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
         ack?.(NETWORK_STATE_BUSY_ERROR)
       } else {
         try {
-          this.stateStaging = this.reducer(this.state, data as StarMeshAction, conn.id)
+          const action = data as StarMeshAction
+          this.stateStaging = this.reducer(this.state, action, conn.id)
+          this.stagingActionId = action.actionId as string
           ack?.(true)
         } catch (e: unknown) {
           ack?.((e as Error).message)
