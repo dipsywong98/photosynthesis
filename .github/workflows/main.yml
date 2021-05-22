@@ -4,6 +4,7 @@
 name: main
 
 on:
+  workflow_dispatch: {}
   push:
     branches: [ master ]
   pull_request:
@@ -29,12 +30,12 @@ jobs:
     - run: yarn jest
     - run: yarn build
       env:
-        REACT_APP_PEER_HOST: peer.dipsy.me
+        REACT_APP_PEER_HOST: peer.hkustracing.com
         REACT_APP_PEER_PORT: 443
         REACT_APP_PEER_PATH: /
         REACT_APP_PEER_SECURE: true
         REACT_APP_PEER_CONFIG: >-
-          {"iceTransportPolicy":"all","iceServers":[{"urls":"stun:api.dipsy.me:3478"},{"urls":"turn:api.dipsy.me:3478","username":"hello","credential":"world"}]}
+          {"iceTransportPolicy":"all","iceServers":[{"urls":"stun:hkustracing.com:3478"},{"urls":"turn:hkustracing.com:3478","username":"player","credential":"player_password"}]}
     - uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
