@@ -48,6 +48,7 @@ export class Observable<E extends Record<string, string | number> = never, P ext
       } else if (
         typeof match === 'object' &&
         match !== null &&
+        // @ts-expect-error FIXME
         '_' in match &&
         Object.keys(match._)
           .reduce(
@@ -94,6 +95,7 @@ export class Observable<E extends Record<string, string | number> = never, P ext
       } else if (
         typeof match === 'object' &&
         match !== null &&
+        // @ts-expect-error FIXME
         '_' in match &&
         Object.keys(match._)
           .reduce(
