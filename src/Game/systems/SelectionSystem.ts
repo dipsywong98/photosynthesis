@@ -11,16 +11,18 @@ export default class SelectionSystem extends GameWorldSystem {
   private readonly raycaster = new Raycaster()
 
   execute (delta: number, time: number): void {
-    if (!this.gameWorld.hasMouseMoved) {
-      return
-    }
-    this.gameWorld.hasMouseMoved = false
+    if (!this.gameWorld.willSelectObject) {
+      if (!this.gameWorld.hasMouseMoved) {
+        return
+      }
+      this.gameWorld.hasMouseMoved = false
 
-    this.secondsElapsed += delta
-    if (this.secondsElapsed >= SelectionSystem.CHECK_PERIOD) {
-      this.secondsElapsed -= SelectionSystem.CHECK_PERIOD
-    } else {
-      return
+      this.secondsElapsed += delta
+      if (this.secondsElapsed >= SelectionSystem.CHECK_PERIOD) {
+        this.secondsElapsed -= SelectionSystem.CHECK_PERIOD
+      } else {
+        return
+      }
     }
 
     const selectableEntities = this.queries.selectables.results
@@ -58,8 +60,15 @@ export default class SelectionSystem extends GameWorldSystem {
       }
     } else if (this.gameWorld.hoverObject !== undefined) {
       this.gameWorld.hoverObject = undefined
-      this.gameWorld.sceneHasUpdated = true
     }
+
+    if (this.gameWorld.willSelectObject) {
+      this.gameWorld.activeObject = this.gameWorld.hoverObject
+      this.gameWorld.willSelectObject = false
+      this.gameWorld.activeObjectChangeHandlers.forEach(handler => handler())
+    }
+
+    this.gameWorld.sceneHasUpdated = true
   }
 }
 

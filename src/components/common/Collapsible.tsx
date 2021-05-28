@@ -69,8 +69,8 @@ const Collapsible: FunctionComponent<CollapsibleProps & BoxProps> = ({ isOpen, c
   const height = (transitionState === (DURING | OPEN)) || (transitionState === (BEFORE & ~OPEN))
     ? scrollHeight.toString() + 'px'
     : (transitionState === (BEFORE | OPEN)) || (transitionState === (DURING & ~OPEN))
-      ? '0px'
-      : undefined
+        ? '0px'
+        : undefined
 
   return (
     <Box
@@ -86,7 +86,7 @@ const Collapsible: FunctionComponent<CollapsibleProps & BoxProps> = ({ isOpen, c
           <Box sx={{ display: isVisible ? 'block' : 'none' }}>
             {children}
           </Box>
-        )
+          )
         : (isVisible ? children : null)}
     </Box>
   )

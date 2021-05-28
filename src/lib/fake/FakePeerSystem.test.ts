@@ -9,8 +9,10 @@ describe('Fake Peer System', () => {
     })
   })
   it('throws error when initializing as existing peer', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const _ = new FakePeer('1')
     expect(() => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _ = new FakePeer('1')
     }).toThrowError()
   })

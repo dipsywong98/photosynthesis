@@ -84,10 +84,13 @@ export default class GameWorld {
   // ray casting selections
   mouseScreenPosition = new Vector2()
   hasMouseMoved = false
+  willSelectObject = false
   activeObject?: Object3D & ECSYThreeObject3D
   hoverObject?: Object3D & ECSYThreeObject3D
 
   sceneHasUpdated = false
+
+  activeObjectChangeHandlers: Array<() => void> = []
 
   constructor () {
     this.stats = new Stats()
@@ -107,6 +110,7 @@ export default class GameWorld {
     disposeObj3D(this.sceneEntity?.getObject3D())
     this.sunOrientationRad = 0
     this.hasStarted = false
+    this.activeObjectChangeHandlers.splice(0)
     console.log('end')
   }
 
@@ -179,8 +183,8 @@ export default class GameWorld {
     this.world.registerSystem(TreeSystem, { gameWorld: this })
     this.world.registerSystem(TweenSystem, { gameWorld: this })
     this.world.registerSystem(SunOrientationSystem, { gameWorld: this })
-    this.world.registerSystem(SelectionSystem, { gameWorld: this })
     this.world.registerSystem(TouchSystem, { gameWorld: this })
+    this.world.registerSystem(SelectionSystem, { gameWorld: this })
   }
 
   private initRenderer (): void {
@@ -426,6 +430,10 @@ export default class GameWorld {
       this.removeTree(axial)
     })
     this.setRayDirection(0)
+  }
+
+  public onActiveObjectChange (handler: () => void): void {
+    this.activeObjectChangeHandlers.push(handler)
   }
 
   private removeTree (axial: Axial): void {

@@ -1,15 +1,16 @@
-/** @jsx jsx */
-import { jsx } from 'theme-ui'
 import Dialog from './Dialog'
 import { Box, Flex, Heading, Text } from '@theme-ui/components'
 import Button from './Button'
 import PropTypes from 'prop-types'
+import { always } from 'ramda'
 
 const ConfirmDialog = props => {
-  const close = typeof props.onClose === 'function' ? props.onClose : () => {
-  }
-  const action = typeof props.onAction === 'function' ? props.onAction : () => {
-  }
+  const close = typeof props.onClose === 'function'
+    ? props.onClose
+    : always(undefined)
+  const action = typeof props.onAction === 'function'
+    ? props.onAction
+    : always(undefined)
   const run = x => () => {
     close()
     action(x)

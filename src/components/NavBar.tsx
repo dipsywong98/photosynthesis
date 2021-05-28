@@ -1,11 +1,10 @@
-/** @jsx jsx */
 import { mdiCircleSlice4 } from '@mdi/js'
 import { Flex } from '@theme-ui/components'
-import { jsx, useColorMode } from 'theme-ui'
+import { useColorMode } from '@theme-ui/color-modes'
 import theme from '../theme'
 import Button from './common/Button'
 import Icon from './common/Icon'
-import { FunctionComponent } from 'react'
+import React, { FunctionComponent } from 'react'
 import PropTypes from 'prop-types'
 
 const propTypes = {

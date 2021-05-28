@@ -2,16 +2,16 @@
   "env": {
     "browser": true,
     "es6": true,
-    "node": true,
-    "jquery": true
+    "node": true
   },
+  "root": true,
   "extends": [
     "react-app",
     "standard-with-typescript",
-    "plugin:react/recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:@typescript-eslint/recommended-requiring-type-checking"
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:react-hooks/recommended"
   ],
   "globals": {
     "Atomics": "readonly",
@@ -19,23 +19,31 @@
   },
   "settings": {
     "react": {
-      "version": "16.12"
+      "version": "detect"
     }
   },
   "parserOptions": {
     "ecmaFeatures": {
       "jsx": true
     },
-    "ecmaVersion": 2018,
+    "ecmaVersion": 2020,
     "sourceType": "module",
     "project": "./tsconfig.json"
   },
   "parser": "@typescript-eslint/parser",
   "plugins": [
     "@typescript-eslint",
-    "react"
+    "react",
+    "react-hooks"
   ],
   "rules": {
+    "no-use-before-define": "off",
+    "@typescript-eslint/no-use-before-define": ["error"],
+    "import/no-anonymous-default-export": "off",
+    "react/prop-types": "off",
+    "react/jsx-uses-react": "off",
+    "react/react-in-jsx-scope": "off",
+    "@typescript-eslint/camelcase": "off",
     "react/jsx-max-props-per-line": [2, { "when": "multiline" }],
     "react/jsx-first-prop-new-line": [2, "multiline"],
     "react/jsx-closing-bracket-location": [2, {
@@ -51,25 +59,12 @@
     {
       "files": ["*.js", "*.jsx"],
       "rules": {
-        "@typescript-eslint/no-unused-vars": "off",
         "@typescript-eslint/explicit-function-return-type": "off",
-        "@typescript-eslint/no-empty-function": "off",
-        "@typescript-eslint/prefer-regexp-exec": "off",
-        "@typescript-eslint/no-var-requires": "off",
         "@typescript-eslint/no-unsafe-assignment": "off",
         "@typescript-eslint/no-unsafe-member-access": "off",
         "@typescript-eslint/restrict-template-expressions": "off",
         "@typescript-eslint/no-unsafe-call": "off",
-        "@typescript-eslint/no-unsafe-return": "off",
-        "@typescript-eslint/restrict-plus-operands": "off",
-        "@typescript-eslint/explicit-module-boundary-types": "off"
-
-      }
-    },
-    {
-      "files": ["*.js", "*.jsx", "*.ts", "*.tsx"],
-      "rules": {
-        "@typescript-eslint/camelcase": "off"
+        "@typescript-eslint/no-unsafe-return": "off"
       }
     }
   ]

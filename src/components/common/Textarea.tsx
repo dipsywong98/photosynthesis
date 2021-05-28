@@ -1,11 +1,17 @@
-/** @jsx jsx */
-import { jsx } from 'theme-ui'
 import { Box, Label, Text } from '@theme-ui/components'
-import PropTypes from 'prop-types'
-import { FunctionComponent } from 'react'
+import { FC } from 'react'
 import BasicTextarea from './BasicTextarea'
+import { SxProp } from '@theme-ui/core'
 
-const Textarea: FunctionComponent<{ fullwidth?: boolean, sx?: object, label: string, name?: string, value?: string, onChange?: Function, helperText?: string }> = props => (
+interface TextareaProps extends SxProp {
+  fullwidth?: boolean
+  label: string
+  name?: string
+  value?: string
+  helperText?: string
+}
+
+const Textarea: FC<TextareaProps> = props => (
   <Box mt={3} sx={{ width: props.fullwidth ?? false ? '100%' : undefined, ...props.sx }}>
     <Label
       sx={{
@@ -24,12 +30,5 @@ const Textarea: FunctionComponent<{ fullwidth?: boolean, sx?: object, label: str
     </Text>
   </Box>
 )
-
-Textarea.propTypes = {
-  fullwidth: PropTypes.bool,
-  label: PropTypes.string.isRequired,
-  sx: PropTypes.object,
-  helperText: PropTypes.string
-}
 
 export default Textarea

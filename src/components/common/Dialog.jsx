@@ -1,5 +1,4 @@
-/** @jsx jsx */
-import { jsx, useThemeUI } from 'theme-ui'
+import { useThemeUI } from '@theme-ui/core'
 import Modal from 'react-modal'
 import PropTypes from 'prop-types'
 import { Box } from '@theme-ui/components'

@@ -1,11 +1,10 @@
-/** @jsx jsx */
-import { jsx } from 'theme-ui'
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import { Box, Divider, Flex } from '@theme-ui/components'
 import PropTypes from 'prop-types'
 import { Children, useEffect, useRef, useState } from 'react'
 import Button from './Button'
 import Icon from './Icon'
+import { always } from 'ramda'
 
 const Dropdown = props => {
   const { children, title, onSelect, onToggle } = props
@@ -27,7 +26,7 @@ const Dropdown = props => {
       return () => window.removeEventListener('click', close)
     }
 
-    return () => {}
+    return always(undefined)
   }, [])
 
   useEffect(() => {

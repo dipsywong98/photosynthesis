@@ -14,6 +14,7 @@ import { Card } from './common/Card'
 import { SLOW, transition } from '../theme/transitions'
 import Button from './common/Button'
 import { useConfirm } from './common/ConfirmContext'
+import StationHUD from './playerStation/StationHUD'
 
 const propTypes = {
   setState: PropTypes.func.isRequired
@@ -104,52 +105,61 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
   const gameOver = game.state?.gameOver
   const flag = gameOver !== undefined
   return (
-    <Box>
-      {game.started && (
-        <Box
+    <>
+      <Box>
+        {game.started && (
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              left: 0,
+              bottom: 0,
+              pointerEvents: 'none',
+              boxShadow: (hintText !== '' ? `inset 0 0 100px #${COLOR_VALUES[game.mi].toString(16)}` : undefined),
+              ...transition(SLOW, ['box-shadow'])
+            }}
+          />)
+        }
+        <Heading sx={{ position: 'fixed', top: 0, width: '100%', textAlign: 'center' }}>{hintText}</Heading>
+        <Popper interactionState={interactionState} interactionStateReducer={interactionStateReducer} game={game}/>
+        <Card
           sx={{
             position: 'fixed',
-            top: 0,
-            right: 0,
+            top: (flag ? '50%' : '200%'),
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            ...transition(SLOW, ['top'])
+          }}>
+          <Heading>Game Over</Heading>
+          <Text>{gameOver}</Text>
+          <Button variant='primary' mt={3} onClick={nextRound}>Next Round</Button>
+        </Card>
+        <Flex
+          sx={{
+            width: '100vw',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            justifyItems: 'center',
+            position: 'absolute',
             left: 0,
-            bottom: 0,
-            pointerEvents: 'none',
-            boxShadow: (hintText !== '' ? `inset 0 0 100px #${COLOR_VALUES[game.mi as GrowthStage].toString(16)}` : undefined),
-            ...transition(SLOW, ['box-shadow'])
-          }}
-        />)
+            bottom: 0
+          }}>
+          <Panel
+            mi={game.started ? game.mi : undefined}
+            roomState={room.state}
+            interactionStateReducer={interactionStateReducer}
+          />
+        </Flex>
+      </Box>
+      {
+        process.env.NODE_ENV !== 'production'
+          ? (
+          <StationHUD interactionStateReducer={interactionStateReducer}/>
+            )
+          : null
       }
-      <Heading sx={{ position: 'fixed', top: 0, width: '100%', textAlign: 'center' }}>{hintText}</Heading>
-      <Popper interactionState={interactionState} interactionStateReducer={interactionStateReducer} game={game}/>
-      <Card
-        sx={{
-          position: 'fixed',
-          top: (flag ? '50%' : '200%'),
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          ...transition(SLOW, ['top'])
-        }}>
-        <Heading>Game Over</Heading>
-        <Text>{gameOver}</Text>
-        <Button variant='primary' mt={3} onClick={nextRound}>Next Round</Button>
-      </Card>
-      <Flex
-        sx={{
-          width: '100vw',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          justifyItems: 'center',
-          position: 'absolute',
-          left: 0,
-          bottom: 0
-        }}>
-        <Panel
-          mi={game.started ? game.mi : undefined}
-          roomState={room.state}
-          interactionStateReducer={interactionStateReducer}
-        />
-      </Flex>
-    </Box>
+    </>
   )
 }
 

@@ -1,9 +1,9 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent, useMemo } from 'react'
 import { Animate, HashMap, NodeGroup } from 'react-move'
 import { SUN_ROTATION_DURATION, TAU } from '../3d/constants'
 import { getColor } from '@theme-ui/color'
-import { BoxProps, useThemeUI } from 'theme-ui'
-import { Box } from '@theme-ui/components'
+import { useThemeUI } from '@theme-ui/core'
+import { Box, BoxProps } from '@theme-ui/components'
 import { darken, lighten } from 'polished'
 import { useGame } from '../Game/GameContext'
 import easeInOut from '../Game/easing/1d/easeInOut'
@@ -43,13 +43,12 @@ const RevolutionCounter: FunctionComponent<BoxProps> = ({
   const elapsedRounds = isPreparation ? 6 - preparingRounds : totalRounds - (state?.revolutionLeft ?? 0) * 6 + (6 - (state?.rayDirection ?? 0)) % 6
 
   // eslint-disable-next-line
-  const circleIndexes = React.useMemo(() => [...Array(Math.ceil(totalRounds / 6)).keys()], [elapsedRounds, totalRounds])
+  const circleIndexes = useMemo(() => [...Array(Math.ceil(totalRounds / 6)).keys()], [elapsedRounds, totalRounds])
   const { theme } = useThemeUI()
-  // eslint-disable-next-line
-  // @ts-ignore
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const bg = getColor(theme, 'bgs.2') as string
-  // eslint-disable-next-line
-  // @ts-ignore
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const accent = getColor(theme, isPreparation ? 'blue.0' : 'yellow.0') as string
   const shadow = darken(0.1, bg)
   const highlight = lighten(0.1, bg)
