@@ -6,7 +6,7 @@ import { AppState } from './App'
 import { useRoom } from '../lib/RoomContext'
 import { Panel } from './Panel'
 import { Axial } from '../3d/Coordinates/Axial'
-import { COLOR_VALUES, GROWTH_STAGE_NAME, GrowthStage } from '../3d/constants'
+import { Color, COLOR_VALUES, GROWTH_STAGE_NAME, GrowthStage } from '../3d/constants'
 import { GameActions } from '../Game/Game'
 import { useAlert } from './common/AlertContext'
 import { Popper } from './Popper'
@@ -63,7 +63,7 @@ export const GamePlayer: FunctionComponent<PropTypes.InferProps<typeof propTypes
       const growthStageOfTile: GrowthStage | undefined = game.state?.board[newState.axial.toString()]?.growthStage
       console.log('have slot', growthStageOfTile !== undefined, game.state !== undefined, growthStageOfTile !== undefined && game.state !== undefined && !game.haveSlot(game.state, game.mi, growthStageOfTile))
       if (growthStageOfTile !== undefined && game.state !== undefined && !game.haveSlot(game.state, game.mi, growthStageOfTile)) {
-        confirm(`Not enough slot in your purchase board, proceed will lose your ${GROWTH_STAGE_NAME[growthStageOfTile]}`)
+        confirm(`No empty slots on your purchase board. Proceed and lose your ${GROWTH_STAGE_NAME[growthStageOfTile]}`)
           .then((yes) => {
             if (yes && newState.axial !== undefined) {
               game.growTree(newState.axial).catch(errorHandler)

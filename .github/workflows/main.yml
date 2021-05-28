@@ -4,6 +4,7 @@
 name: main
 
 on:
+  workflow_dispatch: {}
   push:
     branches: [ master ]
   pull_request:
@@ -24,10 +25,17 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - run: yarn install --frozen-lockfile
+    - uses: bahmutov/npm-install@v1
     - run: yarn lint
     - run: yarn jest
     - run: yarn build
+      env:
+        REACT_APP_PEER_HOST: ${{secrets.REACT_APP_PEER_HOST}}
+        REACT_APP_PEER_PORT: 443
+        REACT_APP_PEER_PATH: /
+        REACT_APP_PEER_SECURE: true
+        REACT_APP_PEER_CONFIG: >-
+          ${{secrets.REACT_APP_PEER_CONFIG}}
     - uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}

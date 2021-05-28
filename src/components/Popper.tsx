@@ -126,7 +126,7 @@ export const Popper: FunctionComponent<Props> = ({ interactionState, game, inter
       {game.haveSlot(game.state, game.mi, growthStageOfTile)
         ? <Box>Grow</Box>
         : <Box
-          title={`Not enough slot in your purchase board, proceed will lose your ${GROWTH_STAGE_NAME[growthStageOfTile]}`}
+          title={`No empty slots on your purchase board. Proceed and you will say bye bye to your lovely ${GROWTH_STAGE_NAME[growthStageOfTile]}. So think carefully.`}
           sx={{ color: 'yellow.0' }}>
           Grow
         </Box>}
@@ -184,7 +184,7 @@ export const Popper: FunctionComponent<Props> = ({ interactionState, game, inter
         left: `${interactionState.popperCoord?.[0].toString() ?? '0'}px`,
         top: `${interactionState.popperCoord?.[1].toString() ?? '0'}px`,
         backgroundColor: 'bgPales.0',
-        zIndex: 1000
+        zIndex: 1
       }}>
       {interactionState.axial.toString()}
       {
