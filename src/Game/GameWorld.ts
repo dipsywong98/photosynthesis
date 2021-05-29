@@ -21,7 +21,7 @@ import TreeComponent from './components/TreeComponent'
 import TweenComponent from './components/TweenComponent'
 import AxialCoordsComponent from './components/AxialCoordsComponent'
 import {
-  AMBIENT_COLOR,
+  AMBIENT_COLOR, CAMERA_INITIAL_POSITION,
   INITIAL_SUN_ORIENTATION,
   MODELS,
   SKY_COLOR,
@@ -195,7 +195,7 @@ export default class GameWorld {
   }
 
   private initScene (): void {
-    this.camera.position.set(0, 0, 95)
+    this.camera.position.set(0, 0, CAMERA_INITIAL_POSITION)
     this.camera.fov = 40
 
     this.sceneEntity.getObject3D()?.remove(this.camera)
