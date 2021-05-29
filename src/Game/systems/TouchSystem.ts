@@ -1,9 +1,18 @@
 import GameWorldSystem from './GameWorldSystem'
 import Hammer from 'hammerjs'
+import { clamp } from 'ramda'
+import {
+  CAMERA_FURTHEST_DISTANCE,
+  CAMERA_INITIAL_POSITION,
+  CAMERA_MAX_ZOOM_DISTANCE,
+  CAMERA_MIN_ZOOM_DISTANCE
+} from '../../3d/constants'
 
 export default class TouchSystem extends GameWorldSystem {
   hm!: HammerManager
   panDistances: Array<[number, number]> = []
+  lastPinchDistance = CAMERA_INITIAL_POSITION
+  pinchDistance = CAMERA_INITIAL_POSITION
 
   private readonly setXY = ({ x, y }: { x: number, y: number }): void => {
     this.gameWorld.mouseScreenPosition.x = (x / window.innerWidth) * 2 - 1
@@ -30,6 +39,9 @@ export default class TouchSystem extends GameWorldSystem {
     const canvas = this.gameWorld.renderer.domElement
 
     this.hm = new Hammer(canvas)
+    this.hm.get('pinch').set({
+      enable: true
+    })
     this.hm.add(new Hammer.Pan({ direction: Hammer.DIRECTION_ALL }))
     this.hm.on('pan', ({ velocityX, velocityY }) => {
       this.panDistances.push([velocityX, velocityY])
@@ -39,7 +51,15 @@ export default class TouchSystem extends GameWorldSystem {
       this.gameWorld.willSelectObject = true
     })
     this.hm.on('pinch', ({ scale }) => {
-      this.gameWorld.camera.position.z = Math.max(0.999, Math.min(this.gameWorld.camera.position.z * (scale), 4))
+      this.pinchDistance = clamp(CAMERA_MIN_ZOOM_DISTANCE, CAMERA_MAX_ZOOM_DISTANCE, this.lastPinchDistance * scale)
+
+      console.log((1 - scale))
+      console.log(this.pinchDistance)
+      // scale means how much the fingers move from originally laying on the screen
+      this.gameWorld.camera.position.z = CAMERA_FURTHEST_DISTANCE - this.pinchDistance
+    })
+    this.hm.on('pinchend', () => {
+      this.lastPinchDistance = this.pinchDistance
     })
 
     canvas.addEventListener('touchmove', this.onMouseMove)
