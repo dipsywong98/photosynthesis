@@ -1,10 +1,10 @@
-import React, { FunctionComponent, useEffect } from 'react'
+import React, { FunctionComponent, useCallback, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Box, Flex } from '@theme-ui/components'
 import { Image } from './common/Image'
 import { getTreeImageByColorGrowthStage } from './TreeTokenStack'
 import { ACTION_COST_GROW, ACTION_COST_SEED, GROWTH_STAGE_NAME, GrowthStage } from '../3d/constants'
-import { Game, GameActions } from '../Game/Game'
+import { Game, GameActions, GameEvent } from '../Game/Game'
 import { getScoreTokenImageByLeaves } from './ScoreTokenStack'
 import { Card } from './common/Card'
 import { InteractionState } from './GamePlayer'
@@ -31,6 +31,23 @@ export const Popper: FunctionComponent<Props> = ({ interactionState, game, inter
   const growthStageOfTile: GrowthStage | undefined = game.started ? game.state?.board[interactionState?.axial?.toString() ?? '']?.growthStage : undefined
   const domElement = game.gameWorld.renderer.domElement.parentElement
   const alert = useAlert()
+  const axialUpdateHandler = useCallback(({ data }) => {
+    const axial = (data as { activeAxial?: Axial }).activeAxial
+    if (axial === undefined) {
+      interactionStateReducer(undefined)
+    } else {
+      interactionStateReducer({ axial })
+    }
+  }, [interactionStateReducer])
+
+  useEffect(() => {
+    const id = game.on(GameEvent.ACTIVE_OBJECT_CHANGED, axialUpdateHandler)
+
+    return () => {
+      game.off(GameEvent.ACTIVE_OBJECT_CHANGED, id)
+    }
+  }, [axialUpdateHandler, game])
+
   useEffect(() => {
     const listener = (event: TouchEvent | MouseEvent): void => {
       const popperCoord: [number, number] = [0, 0]
@@ -41,18 +58,14 @@ export const Popper: FunctionComponent<Props> = ({ interactionState, game, inter
         popperCoord[0] = event.changedTouches[0].pageX
         popperCoord[1] = event.changedTouches[0].pageY
       }
-      const axial = game.gameWorld.getActiveAxial()
-      if (axial === undefined) {
-        interactionStateReducer(undefined)
-      } else {
-        interactionStateReducer({ popperCoord: popperCoord, axial })
-      }
+      interactionStateReducer({ popperCoord: popperCoord })
     }
     domElement?.addEventListener('click', listener)
     return () => {
       domElement?.removeEventListener('click', listener)
     }
   }, [domElement, game.gameWorld, interactionStateReducer])
+
   if (interactionState.axial === undefined || game.state === undefined || interactionState.popperCoord === undefined) {
     return null
   }

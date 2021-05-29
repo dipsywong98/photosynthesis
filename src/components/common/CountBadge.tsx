@@ -1,17 +1,18 @@
-import React, { FunctionComponent } from 'react'
+import React, { VFC } from 'react'
 import PropTypes, { InferProps } from 'prop-types'
 import { Badge } from '@theme-ui/components'
+import { ThemeDerivedStyles, ThemeUICSSObject } from '@theme-ui/css'
 
 const propTypes = {
   count: PropTypes.number.isRequired,
-  sx: PropTypes.object
+  sx: PropTypes.object as PropTypes.Requireable<ThemeUICSSObject | ThemeDerivedStyles>
 }
 
-export const CountBadge: FunctionComponent<InferProps<typeof propTypes>> = ({ count, sx }) => {
+export const CountBadge: VFC<InferProps<typeof propTypes>> = ({ count, sx }) => {
   return (
     <Badge
       variant={count > 0 ? 'primary' : 'danger'}
-      sx={sx}>
+      sx={sx ?? undefined}>
       {count}
     </Badge>
   )

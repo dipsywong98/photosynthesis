@@ -1,22 +1,24 @@
-import React, { FunctionComponent } from 'react'
+import React, { VFC } from 'react'
 import ReactDOM from 'react-dom'
 import './index.css'
 import App from './components/App'
 import * as serviceWorker from './serviceWorker'
-import { Global } from '@emotion/core'
+import { Global } from '@emotion/react'
 import theme from './theme'
-import { ThemeProvider } from 'theme-ui'
+import { ThemeProvider } from '@theme-ui/core'
 import { startLoad } from './3d/assets'
+import { Theme } from '@theme-ui/css'
+import { omit } from 'ramda'
+import { ColorModeProvider } from '@theme-ui/color-modes'
 
-const MyGlobal: FunctionComponent = () => (
+const omitTheme = omit(['theme'])
+
+const MyGlobal: VFC = () => (
   <Global
-    styles={(theme) => ({
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
-      body: theme.styles.body,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
-      '*': theme.styles['*'],
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
-      a: theme.styles.a
+    styles={(theme: Theme) => ({
+      body: omitTheme(theme.styles?.body),
+      '*': omitTheme(theme.styles?.['*']),
+      a: omitTheme(theme.styles?.a)
     })}
   />
 )
@@ -25,7 +27,9 @@ ReactDOM.render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
       <MyGlobal/>
-      <App/>
+      <ColorModeProvider>
+        <App/>
+      </ColorModeProvider>
     </ThemeProvider>
   </React.StrictMode>,
   document.getElementById('root')

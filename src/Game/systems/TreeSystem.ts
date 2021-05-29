@@ -123,27 +123,12 @@ export default class TreeSystem extends GameWorldSystem {
           .addObject3DComponent(groundShadeObj, groundShadeContainerEntity)
           .addComponent(TweenComponent)
 
-        // Initialize scales and positions
-        groundShadeObj.rotation.x = treeComp.growthStage === GrowthStage.SEED ? GROUND_SHADE_HIDDEN_ROTATION : 0
-        shadeContainer.position.y = SHADE_Y[treeComp.growthStage]
-        treeComp.tree.getComponent<TweenComponent<TweenObjectProperties<Object3D, 'scale'>>>(TweenComponent)?.tweens?.push({
-          duration: TREE_GROWTH_DURATION,
-          loop: 1,
-          value: 0,
-          prop: 'scale',
-          from: new Vector3(0, 0, 0),
-          to: TREE_GROWTH_PROPS[treeComp.growthStage].tree.scale,
-          func: applyVector3(jelly)
-        })
-        treeComp.seed.getComponent<TweenComponent<TweenObjectProperties<Object3D, 'scale'>>>(TweenComponent)?.tweens?.push({
-          duration: TREE_GROWTH_DURATION,
-          loop: 1,
-          value: 0,
-          prop: 'scale',
-          from: new Vector3(0, 0, 0),
-          to: TREE_GROWTH_PROPS[treeComp.growthStage].seed.scale,
-          func: applyVector3(jelly)
-        })
+        // Initialize scales and positions to smallest size for animation
+        groundShadeObj.rotation.x = GROUND_SHADE_HIDDEN_ROTATION
+        shadeContainer.position.y = SHADE_Y[GrowthStage.SEED]
+        treeObj.scale.set(0, 0, 0)
+        seedObj.scale.set(0, 0, 0)
+        TreeSystem.updateGrowthStage(entity)
       }).catch(console.error)
     })
   }
@@ -167,7 +152,6 @@ export default class TreeSystem extends GameWorldSystem {
     const shadeObj = shade?.getObject3D()
     const groundShadeObj = groundShade?.getObject3D()
 
-    // Flexibility for animations
     if (shade !== undefined && shadeObj !== undefined) {
       TweenComponent.queueTween<TweenObjectProperties<Object3D, 'position'>>(shade, {
         duration: TREE_GROWTH_DURATION,

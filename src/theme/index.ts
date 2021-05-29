@@ -41,7 +41,7 @@ const theme: Theme = {
     512
   ],
   fonts: {
-    body: 'Arial',
+    body: 'Nunito',
     heading: 'inherit',
     monospace: 'Inconsolata, monospace'
   },

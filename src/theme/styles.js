@@ -8,7 +8,8 @@ export default {
     boxSizing: 'border-box'
   },
   body: {
-    margin: 0
+    margin: 0,
+    overscrollBehaviorY: 'contain'
   },
   h1: {
     color: 'text',

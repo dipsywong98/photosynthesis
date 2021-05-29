@@ -32,10 +32,12 @@ export const Image: FunctionComponent<InferProps<typeof propTypes & BoxOwnProps>
           width: '100%',
           height: '100%',
           borderRadius: '50%',
-          ':hover': disabled !== true ? {
-            backgroundColor: 'highlight',
-            cursor: (onClick !== undefined ? 'pointer' : undefined)
-          } : undefined,
+          ':hover': disabled !== true
+            ? {
+                backgroundColor: 'highlight',
+                cursor: (onClick !== undefined ? 'pointer' : undefined)
+              }
+            : undefined,
           backgroundColor: disabled === true ? 'muted' : undefined
         }}>
         {

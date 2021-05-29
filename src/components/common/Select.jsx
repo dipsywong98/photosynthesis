@@ -1,5 +1,3 @@
-/** @jsx jsx */
-import { jsx } from 'theme-ui'
 import { Box, Label, Text } from '@theme-ui/components'
 import PropTypes from 'prop-types'
 import { useState } from 'react'

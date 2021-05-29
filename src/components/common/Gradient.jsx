@@ -1,7 +1,6 @@
-/** @jsx jsx */
-import { css, jsx, keyframes } from '@emotion/core'
+import { css, keyframes } from '@emotion/core'
 import { Box } from '@theme-ui/components'
-import { useThemeUI } from 'theme-ui'
+import { useThemeUI } from '@theme-ui/core'
 
 const bounce = keyframes`
   0%{

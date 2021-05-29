@@ -5,6 +5,13 @@ export default class TouchSystem extends GameWorldSystem {
   hm!: HammerManager
   panDistances: Array<[number, number]> = []
 
+  private readonly setXY = ({ x, y }: { x: number, y: number }): void => {
+    this.gameWorld.mouseScreenPosition.x = (x / window.innerWidth) * 2 - 1
+    this.gameWorld.mouseScreenPosition.y = -(y / window.innerHeight) * 2 + 1
+
+    this.gameWorld.hasMouseMoved = true
+  }
+
   private readonly onMouseMove = (event: TouchEvent | MouseEvent): void => {
     let x, y
 
@@ -16,10 +23,7 @@ export default class TouchSystem extends GameWorldSystem {
       y = event.changedTouches[0].pageY
     }
 
-    this.gameWorld.mouseScreenPosition.x = (x / window.innerWidth) * 2 - 1
-    this.gameWorld.mouseScreenPosition.y = -(y / window.innerHeight) * 2 + 1
-
-    this.gameWorld.hasMouseMoved = true
+    this.setXY({ x, y })
   }
 
   init (): void {
@@ -30,8 +34,9 @@ export default class TouchSystem extends GameWorldSystem {
     this.hm.on('pan', ({ velocityX, velocityY }) => {
       this.panDistances.push([velocityX, velocityY])
     })
-    this.hm.on('tap', () => {
-      this.gameWorld.activeObject = this.gameWorld.hoverObject
+    this.hm.on('tap', ({ center }) => {
+      this.setXY(center)
+      this.gameWorld.willSelectObject = true
     })
     this.hm.on('pinch', ({ scale }) => {
       this.gameWorld.camera.position.z = Math.max(0.999, Math.min(this.gameWorld.camera.position.z * (scale), 4))
@@ -46,8 +51,9 @@ export default class TouchSystem extends GameWorldSystem {
   }
 
   execute (delta: number, time: number): void {
-    while (this.panDistances.length > 0) {
-      const [hDistance, vDistance] = this.panDistances.pop()
+    let panDistance
+    while ((panDistance = this.panDistances.pop()) !== undefined) {
+      const [hDistance, vDistance] = panDistance
       this.gameWorld.cameraRotationObj.rotation.y -= hDistance * 0.1
 
       const newTilt = this.gameWorld.cameraTiltObj.rotation.x - vDistance * 0.05

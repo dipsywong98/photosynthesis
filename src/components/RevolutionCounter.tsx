@@ -1,12 +1,13 @@
-import React, { FunctionComponent } from 'react'
-import { Animate, NodeGroup } from 'react-move'
-import { TAU } from '../3d/constants'
+import { FunctionComponent, useMemo } from 'react'
+import { Animate, HashMap, NodeGroup } from 'react-move'
+import { SUN_ROTATION_DURATION, TAU } from '../3d/constants'
 import { getColor } from '@theme-ui/color'
-import { BoxProps, useThemeUI } from 'theme-ui'
-import { Box } from '@theme-ui/components'
+import { useThemeUI } from '@theme-ui/core'
+import { Box, BoxProps } from '@theme-ui/components'
 import { darken, lighten } from 'polished'
-import easeOutQuart from '../Game/easing/1d/easeOutQuart'
 import { useGame } from '../Game/GameContext'
+import easeInOut from '../Game/easing/1d/easeInOut'
+import easeInOutQuart from '../Game/easing/1d/easeInOutQuart'
 
 const getRemainingSlices = (elapsedRounds: number, circleIndex: number): number => {
   if (elapsedRounds / 6 < circleIndex) {
@@ -42,17 +43,28 @@ const RevolutionCounter: FunctionComponent<BoxProps> = ({
   const elapsedRounds = isPreparation ? 6 - preparingRounds : totalRounds - (state?.revolutionLeft ?? 0) * 6 + (6 - (state?.rayDirection ?? 0)) % 6
 
   // eslint-disable-next-line
-  const circleIndexes = React.useMemo(() => [...Array(Math.ceil(totalRounds / 6)).keys()], [elapsedRounds, totalRounds])
+  const circleIndexes = useMemo(() => [...Array(Math.ceil(totalRounds / 6)).keys()], [elapsedRounds, totalRounds])
   const { theme } = useThemeUI()
-  // eslint-disable-next-line
-  // @ts-ignore
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const bg = getColor(theme, 'bgs.2') as string
-  // eslint-disable-next-line
-  // @ts-ignore
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const accent = getColor(theme, isPreparation ? 'blue.0' : 'yellow.0') as string
   const shadow = darken(0.1, bg)
   const highlight = lighten(0.1, bg)
   const { sx, ...otherBoxProps } = boxProps
+  // eslint-disable-next-line
+  const updateNodeGroup = (_: any, i: number): HashMap[] => [
+    {
+      remaining: [Math.min(0.9999, getRemainingSlices(elapsedRounds, i) / 6)],
+      timing: { duration: SUN_ROTATION_DURATION * 1000, ease: easeInOut }
+    },
+    {
+      scale: [isPieEnlarged(elapsedRounds, i) ? 1 : 0.3],
+      x: [isPieEnlarged(elapsedRounds, i) ? 0 : i - Math.floor((elapsedRounds) / 6) + 0.85],
+      timing: { duration: SUN_ROTATION_DURATION * 1000, ease: easeInOutQuart }
+    }
+  ]
   return (
     <Box
       sx={{
@@ -304,14 +316,14 @@ const RevolutionCounter: FunctionComponent<BoxProps> = ({
             keyAccessor={(x: number) => x.toString()}
             start={(_, i) => ({
               remaining: Math.min(0.9999, getRemainingSlices(elapsedRounds, i) / 6),
-              scale: isPieEnlarged(elapsedRounds, i) ? 1 : 0.3,
+              scale: 0,
               x: isPieEnlarged(elapsedRounds, i) ? 0 : i - Math.floor((elapsedRounds) / 6) + 0.85
             })}
-            update={(_, i) => ({
-              remaining: [Math.min(0.9999, getRemainingSlices(elapsedRounds, i) / 6)],
-              scale: [isPieEnlarged(elapsedRounds, i) ? 1 : 0.3],
-              x: [isPieEnlarged(elapsedRounds, i) ? 0 : i - Math.floor((elapsedRounds) / 6) + 0.85],
-              timing: { duration: 800, ease: easeOutQuart }
+            update={updateNodeGroup}
+            enter={updateNodeGroup}
+            leave={() => ({
+              scale: 0,
+              timing: { duration: SUN_ROTATION_DURATION * 1000, ease: easeInOutQuart }
             })}>
             {nodes => (
               <g>
@@ -343,7 +355,7 @@ const RevolutionCounter: FunctionComponent<BoxProps> = ({
             }}
             update={{
               rotation: [elapsedRounds * 60],
-              timing: { duration: 800, ease: easeOutQuart }
+              timing: { duration: 2000, ease: easeInOut }
             }}>
             {({ rotation }) => {
               return (

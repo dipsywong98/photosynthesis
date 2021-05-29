@@ -21,7 +21,7 @@ export default {
     letterSpacing: '2px',
     fontWeight: 'bold',
     fontSize: 2,
-    color: 'fgPales.0',
+    color: 'fgs.0',
     mb: 3
   },
   pageHeading: {

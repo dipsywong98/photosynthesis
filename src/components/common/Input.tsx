@@ -1,5 +1,3 @@
-/** @jsx jsx */
-import { jsx } from 'theme-ui'
 import { Box, Label, Text } from '@theme-ui/components'
 import PropTypes from 'prop-types'
 import BasicInput from './BasicInput'
@@ -34,7 +32,8 @@ const Input: FunctionComponent<PropTypes.InferProps<typeof propTypes>> = ({ onCl
       {!(props.disabled ?? false) && onClearClick !== undefined
         ? <Box sx={{ position: 'absolute', right: 1, top: '50%', transform: 'translateY(-50%)' }}>
           <IconButton variant='transparent-borderless-sm' path={mdiClose} onClick={onClearClick}/>
-        </Box> : null}
+        </Box>
+        : null}
     </Label>
     <Text variant='helperText'>
       {props.helperText}

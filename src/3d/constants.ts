@@ -116,6 +116,7 @@ export const TREE_GROWTH_PROPS: { [k in GrowthStage]: TreeGrowthProp } = {
 // Animations
 export const TREE_GROWTH_DURATION = 1.5
 export const GROUND_SHADE_DURATION = TREE_GROWTH_DURATION / 3 * 2
+export const SUN_ROTATION_DURATION = 2
 
 // Gameplay
 export const ACTION_COST_SEED = 1

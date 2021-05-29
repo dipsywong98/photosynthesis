@@ -2,15 +2,16 @@ import React, { FunctionComponent } from 'react'
 import PropTypes, { InferProps } from 'prop-types'
 import { Box, Flex } from '@theme-ui/components'
 import sun from '../assets/images/sun.svg'
+import { ThemeDerivedStyles, ThemeUICSSObject } from '@theme-ui/css'
 
 const propTypes = {
   children: PropTypes.node,
-  sx: PropTypes.object
+  sx: PropTypes.object as PropTypes.Requireable<ThemeUICSSObject | ThemeDerivedStyles>
 }
 
 export const SunlightTag: FunctionComponent<InferProps<typeof propTypes>> = ({ children, sx }) => {
   return (
-    <Flex sx={sx}>
+    <Flex sx={sx ?? undefined}>
       <Box>
         <img alt='sun icon' style={{ maxHeight: '24px' }} src={sun}/>
       </Box>

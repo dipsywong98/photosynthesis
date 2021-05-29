@@ -4,11 +4,13 @@ import { MODELS, MODELS_LOCATION } from './constants'
 
 export const objects: Record<string, Object3D | undefined> = {}
 
-const objectWaitOrders: Record<string, Array<{
-  resolve: (value?: Object3D | PromiseLike<Object3D>) => void
-  reject: (reason?: unknown) => void
+interface WaitOrder {
+  resolve: (value: Object3D | PromiseLike<Object3D>) => void
+  reject: (reason: unknown) => void
   modelName: string
-}> | undefined> = {}
+}
+
+const objectWaitOrders: Record<string, WaitOrder[] | undefined> = {}
 
 let loadedCount = 0
 let totalCount = 0
@@ -79,11 +81,11 @@ export const getObject = async (modelName: string): Promise<Object3D> => {
   if (obj3d === undefined) {
     if (loadedCount !== totalCount) {
       // Not all models are loaded, this model may be loading
-      const queue = objectWaitOrders[modelName] ?? []
+      const queue: WaitOrder[] = objectWaitOrders[modelName] ?? []
       if (objectWaitOrders[modelName] === undefined) {
         objectWaitOrders[modelName] = queue
       }
-      return await new Promise<Object3D>((resolve, reject) => {
+      return await new Promise((resolve, reject) => {
         queue.push({ resolve, reject, modelName })
       })
     } else {

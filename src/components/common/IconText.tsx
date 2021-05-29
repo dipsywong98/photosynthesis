@@ -1,22 +1,44 @@
 import React, { FunctionComponent } from 'react'
-import { FlexProps } from 'theme-ui'
-import { Flex, Text } from '@theme-ui/components'
+import { Flex, Text, FlexProps } from '@theme-ui/components'
 import PropTypes, { InferProps } from 'prop-types'
 import Icon from './Icon'
 
 const iconTextProps = {
   path: PropTypes.string.isRequired,
   children: PropTypes.node.isRequired,
-  size: PropTypes.number,
+  size: PropTypes.oneOfType([
+    PropTypes.arrayOf(PropTypes.oneOfType([
+      PropTypes.number,
+      PropTypes.string
+    ])),
+    PropTypes.number,
+    PropTypes.string
+  ]),
   color: PropTypes.any,
-  reverse: PropTypes.bool
+  reverse: PropTypes.bool,
+  iconMargin: PropTypes.oneOfType([
+    PropTypes.arrayOf(PropTypes.oneOfType([
+      PropTypes.number,
+      PropTypes.string
+    ])),
+    PropTypes.number,
+    PropTypes.string
+  ])
 }
 
 export interface IconTextProps extends InferProps<typeof iconTextProps> {
   color?: string | ((x: unknown) => string) | null
 }
 
-const IconText: FunctionComponent<IconTextProps & FlexProps> = ({ children, color, path, size, reverse = false, ...otherProps }) => {
+const IconText: FunctionComponent<IconTextProps & FlexProps> = ({
+  children,
+  color,
+  path,
+  size,
+  reverse = false,
+  iconMargin = 2,
+  ...otherProps
+}) => {
   const reverse_ = reverse ?? false
   return (
     <Flex sx={{ alignItems: 'center', flexDirection: reverse_ ? 'row-reverse' : 'row' }} {...otherProps}>
@@ -32,7 +54,15 @@ const IconText: FunctionComponent<IconTextProps & FlexProps> = ({ children, colo
         }}
       />
       {' '}
-      <Text ml={!reverse_ ? 2 : 0} mr={reverse_ ? 2 : 0} sx={{ flex: 1, color }}>{children}</Text>
+      <Text
+        sx={{
+          flex: 1,
+          color,
+          fontSize: size,
+          [reverse_ ? 'mr' : 'ml']: iconMargin
+        }}>
+        {children}
+      </Text>
     </Flex>
   )
 }

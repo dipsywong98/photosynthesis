@@ -5,7 +5,7 @@ import { StarMeshAction, StarMeshNetworkEvents, StarMeshReducer } from '../lib/S
 import { GameState } from './types/GameState'
 import { getInitialState } from './getInitialState'
 import { Axial } from '../3d/Coordinates/Axial'
-import { ACTION_COST_GROW, ACTION_COST_PURCHASE, ACTION_COST_SEED, GrowthStage } from '../3d/constants'
+import { ACTION_COST_GROW, ACTION_COST_PURCHASE, ACTION_COST_SEED, Color, GrowthStage } from '../3d/constants'
 import { TileInfo } from './types/TileInfo'
 import { clone } from 'ramda'
 import { isTreeGrowthStage } from './isTreeGrowthStage'
@@ -13,7 +13,7 @@ import { isTreeGrowthStage } from './isTreeGrowthStage'
 export enum GameEvent {
   UPDATE_GAME_STATE,
   GAME_OVER,
-  CLICK
+  ACTIVE_OBJECT_CHANGED
 }
 
 export enum GameActions {
@@ -49,7 +49,7 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     return this.room.p(this.room.myId)
   }
 
-  public get mi (): number {
+  public get mi (): Color {
     return Number.parseInt(this.me)
   }
 
@@ -62,6 +62,9 @@ export class Game extends Observable<typeof GameEvent, GameEventPayload> {
     this.room = room
     this.room.network.on(StarMeshNetworkEvents.STATE_CHANGE, ({ state }) => {
       this.emit(GameEvent.UPDATE_GAME_STATE, { data: state?.game })
+    })
+    this.gameWorld.onActiveObjectChange(() => {
+      this.emit(GameEvent.ACTIVE_OBJECT_CHANGED, { data: { activeAxial: this.gameWorld.getActiveAxial() } })
     })
   }
 
