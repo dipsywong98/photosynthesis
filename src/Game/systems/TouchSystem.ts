@@ -2,7 +2,6 @@ import GameWorldSystem from './GameWorldSystem'
 import Hammer from 'hammerjs'
 import { clamp } from 'ramda'
 import {
-  CAMERA_FURTHEST_DISTANCE,
   CAMERA_INITIAL_POSITION,
   CAMERA_MAX_ZOOM_DISTANCE,
   CAMERA_MIN_ZOOM_DISTANCE
@@ -51,12 +50,11 @@ export default class TouchSystem extends GameWorldSystem {
       this.gameWorld.willSelectObject = true
     })
     this.hm.on('pinch', ({ scale }) => {
-      this.pinchDistance = clamp(CAMERA_MIN_ZOOM_DISTANCE, CAMERA_MAX_ZOOM_DISTANCE, this.lastPinchDistance * scale)
+      this.pinchDistance = clamp(CAMERA_MIN_ZOOM_DISTANCE, CAMERA_MAX_ZOOM_DISTANCE, this.lastPinchDistance * (1 - Math.log(scale)))
 
-      console.log((1 - scale))
-      console.log(this.pinchDistance)
       // scale means how much the fingers move from originally laying on the screen
-      this.gameWorld.camera.position.z = CAMERA_FURTHEST_DISTANCE - this.pinchDistance
+      this.gameWorld.camera.position.z = this.pinchDistance
+      this.gameWorld.cameraZoomController.setValue(this.gameWorld.camera.position.z)
     })
     this.hm.on('pinchend', () => {
       this.lastPinchDistance = this.pinchDistance
