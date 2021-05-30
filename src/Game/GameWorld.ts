@@ -21,7 +21,7 @@ import TreeComponent from './components/TreeComponent'
 import TweenComponent from './components/TweenComponent'
 import AxialCoordsComponent from './components/AxialCoordsComponent'
 import {
-  AMBIENT_COLOR, CAMERA_INITIAL_POSITION,
+  AMBIENT_COLOR, CAMERA_INITIAL_POSITION, CAMERA_MAX_ZOOM_DISTANCE, CAMERA_MIN_ZOOM_DISTANCE,
   INITIAL_SUN_ORIENTATION,
   MODELS,
   SKY_COLOR,
@@ -62,6 +62,7 @@ import DelayedActionSystem from './systems/DelayedActionSystem'
 
 export default class GameWorld {
   gui: dat.GUI
+  cameraZoomController!: dat.GUIController
   stats: Stats
 
   hasStarted = false
@@ -213,7 +214,7 @@ export default class GameWorld {
 
     const cameraFolder = this.gui.addFolder('Camera')
 
-    cameraFolder.add(this.camera.position, 'z', 20, 300, 1).name('zoom')
+    this.cameraZoomController = cameraFolder.add(this.camera.position, 'z', CAMERA_MIN_ZOOM_DISTANCE, CAMERA_MAX_ZOOM_DISTANCE, 1).name('zoom')
     // cameraFolder.add(cameraTiltObj.rotation, 'x', -Math.PI / 2, 0, 0.01).name('tilt')
     // cameraFolder.add(cameraRotationObj.rotation, 'y', 0, TAU, 0.01).name('rotation')
     cameraFolder.open()

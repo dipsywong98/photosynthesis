@@ -122,7 +122,6 @@ export const SUN_ROTATION_DURATION = 2
 export const CAMERA_INITIAL_POSITION = 95
 export const CAMERA_MIN_ZOOM_DISTANCE = 20
 export const CAMERA_MAX_ZOOM_DISTANCE = 300
-export const CAMERA_FURTHEST_DISTANCE = 325
 
 // Gameplay
 export const ACTION_COST_SEED = 1
