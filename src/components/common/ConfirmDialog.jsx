@@ -1,5 +1,5 @@
 import Dialog from './Dialog'
-import { Box, Flex, Heading, Text } from '@theme-ui/components'
+import { Box, Flex, Heading, Text } from 'theme-ui'
 import Button from './Button'
 import PropTypes from 'prop-types'
 import { always } from 'ramda'

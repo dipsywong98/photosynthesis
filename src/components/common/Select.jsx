@@ -1,4 +1,4 @@
-import { Box, Label, Text } from '@theme-ui/components'
+import { Box, Label, Text } from 'theme-ui'
 import PropTypes from 'prop-types'
 import { useState } from 'react'
 import BasicSelect from './BasicSelect'

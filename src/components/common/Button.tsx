@@ -1,4 +1,4 @@
-import { Button as ThemeUIButton, ButtonProps } from '@theme-ui/components'
+import { Button as ThemeUIButton, ButtonProps } from 'theme-ui'
 import PropTypes from 'prop-types'
 import { forwardRef, FunctionComponent } from 'react'
 import { isDefined } from '../../utils/componentHelpers'

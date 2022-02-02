@@ -56,7 +56,7 @@ export class ConnectionManager extends Observable<typeof ConnEvent, ConnectionLi
 
   public async connect (id: string, timeout = 5000): Promise<Connection> {
     const existing = this.connections.find(({ id: _id }) => _id === id)
-    if (existing !== undefined) return Promise.resolve(existing)
+    if (existing !== undefined) return existing
     if (id === this.id) {
       return this.enrichConn(new Connection('self', this))
     }

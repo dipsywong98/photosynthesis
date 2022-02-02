@@ -50,7 +50,7 @@ describe('Observable', () => {
     observable.emit(TestEvent.SOME_EVENT, 'mnop')
     expect(cb).toBeCalledTimes(3)
   })
-  it('can subscribe until callback called', async (done) => {
+  it('can subscribe until callback called', async () => {
     const observable = new Observable<typeof TestEvent, string>()
     let calledTimes = 0
     observable.until(TestEvent.SOME_EVENT).then((value) => {
@@ -65,7 +65,6 @@ describe('Observable', () => {
     expect(result).toEqual('efgh')
     observable.emit(TestEvent.SOME_EVENT, 'ijkl')
     expect(calledTimes).toEqual(1)
-    done()
   })
   describe('can subscribe once match', () => {
     it('example: value', () => {
@@ -100,7 +99,7 @@ describe('Observable', () => {
       expect(cb).toBeCalledTimes(1)
     })
   })
-  it('can subscribe until match', async (done) => {
+  it('can subscribe until match', async () => {
     const observable = new Observable<typeof TestEvent, string>()
     let calledTimes = 0
     observable.untilMatch(TestEvent.SOME_EVENT, 'foo').then(value => {
@@ -118,9 +117,8 @@ describe('Observable', () => {
     expect(calledTimes).toEqual(1)
     observable.emit(TestEvent.SOME_EVENT, 'foo')
     expect(calledTimes).toEqual(1)
-    done()
   })
-  it('can subscribe until partial match', async (done) => {
+  it('can subscribe until partial match', async () => {
     const observable = new Observable<typeof TestEvent, { k?: string, extra?: string }>()
     let calledTimes = 0
     const p = observable.untilMatch(TestEvent.SOME_EVENT, {
@@ -137,7 +135,6 @@ describe('Observable', () => {
     observable.emit(TestEvent.SOME_EVENT, { k: 'foo', extra: 'bar' })
     await p
     expect(calledTimes).toEqual(1)
-    done()
   })
   // it('can subscribe * event', () => {
   //   const observable = new Observable<typeof TestEvent, string>()

@@ -5,11 +5,10 @@ import App from './components/App'
 import * as serviceWorker from './serviceWorker'
 import { Global } from '@emotion/react'
 import theme from './theme'
-import { ThemeProvider } from '@theme-ui/core'
+import { ThemeProvider } from 'theme-ui'
 import { startLoad } from './3d/assets'
 import { Theme } from '@theme-ui/css'
 import { omit } from 'ramda'
-import { ColorModeProvider } from '@theme-ui/color-modes'
 
 const omitTheme = omit(['theme'])
 
@@ -27,9 +26,7 @@ ReactDOM.render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
       <MyGlobal/>
-      <ColorModeProvider>
-        <App/>
-      </ColorModeProvider>
+      <App/>
     </ThemeProvider>
   </React.StrictMode>,
   document.getElementById('root')

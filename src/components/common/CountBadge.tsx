@@ -1,6 +1,6 @@
 import React, { VFC } from 'react'
 import PropTypes, { InferProps } from 'prop-types'
-import { Badge } from '@theme-ui/components'
+import { Badge } from 'theme-ui'
 import { ThemeDerivedStyles, ThemeUICSSObject } from '@theme-ui/css'
 
 const propTypes = {

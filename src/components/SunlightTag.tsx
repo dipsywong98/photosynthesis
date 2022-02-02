@@ -1,7 +1,7 @@
 import React, { FunctionComponent } from 'react'
 import PropTypes, { InferProps } from 'prop-types'
-import { Box, Flex } from '@theme-ui/components'
-import sun from '../assets/images/sun.svg'
+import { Box, Flex } from 'theme-ui'
+import sun from '!file-loader!../assets/images/sun.svg'
 import { ThemeDerivedStyles, ThemeUICSSObject } from '@theme-ui/css'
 
 const propTypes = {

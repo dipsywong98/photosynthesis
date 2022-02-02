@@ -1,7 +1,6 @@
-import { Box, Label, Text } from '@theme-ui/components'
+import { Box, Label, Text, SxProp } from 'theme-ui'
 import { FC } from 'react'
 import BasicTextarea from './BasicTextarea'
-import { SxProp } from '@theme-ui/core'
 
 interface TextareaProps extends SxProp {
   fullwidth?: boolean

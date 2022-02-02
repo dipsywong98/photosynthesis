@@ -1,5 +1,5 @@
 import React from 'react'
-import { Flex } from '@theme-ui/components'
+import { Flex } from 'theme-ui'
 import PropTypes from 'prop-types'
 
 const ButtonGroup = ({ children, ...props }) => {

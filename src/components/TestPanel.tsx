@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useEffect } from 'react'
 import { Panel } from './Panel'
 import { getInitialState } from '../Game/getInitialState'
-import { Box } from '@theme-ui/components'
+import { Box } from 'theme-ui'
 import { Color, GrowthStage } from '../3d/constants'
 import { globalRoom } from '../lib/RoomContext'
 import PropTypes, { InferProps } from 'prop-types'

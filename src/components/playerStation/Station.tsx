@@ -1,10 +1,10 @@
 import React, { FunctionComponent } from 'react'
 import PropTypes, { InferProps, Validator } from 'prop-types'
-import { Box, Flex, Heading } from '@theme-ui/components'
+import { Box, Flex, Heading, useColorMode } from 'theme-ui'
 import { ACTION_COST_GROW, ACTION_COST_PURCHASE, ACTION_COST_SEED, Color, GrowthStage } from '../../3d/constants'
 import { useGame } from '../../Game/GameContext'
 import { Room } from '../../lib/Room'
-import { useColorMode } from '@theme-ui/color-modes'
+
 import { colorsFromPlayerColor } from '../../utils/colors'
 import { ImageStack } from '../common/ImageStack'
 import { getTreeImageByColorGrowthStage } from '../TreeTokenStack'

@@ -2,7 +2,7 @@ import React, { VFC } from 'react'
 import { GameContext } from '../../Game/GameContext'
 import { Color } from '../../3d/constants'
 import StationIndicator from './StationIndicator'
-import { Flex } from '@theme-ui/components'
+import { Flex } from 'theme-ui'
 
 interface StationIndicatorsProps {
   onPlayerSelect: (color: Color) => void

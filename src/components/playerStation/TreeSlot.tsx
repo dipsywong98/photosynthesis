@@ -1,9 +1,9 @@
 import { Color, GrowthStage } from '../../3d/constants'
 import React, { VFC } from 'react'
-import { useColorMode } from '@theme-ui/color-modes'
+import { useColorMode, Box } from 'theme-ui'
 import { useBreakpointIndex } from '@theme-ui/match-media'
 import { colorsFromPlayerColor } from '../../utils/colors'
-import { Box } from '@theme-ui/components'
+
 import Token from './Token'
 import { getTreeImageByColorGrowthStage } from '../TreeTokenStack'
 import { SunlightBadge } from '../SunlightBadge'

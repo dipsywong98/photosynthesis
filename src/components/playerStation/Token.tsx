@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from 'react'
 import PropTypes, { InferProps } from 'prop-types'
-import { Box } from '@theme-ui/components'
+import { Box } from 'theme-ui'
 import { SLOW, transition } from '../../theme/transitions'
 
 const DEPTH = 6

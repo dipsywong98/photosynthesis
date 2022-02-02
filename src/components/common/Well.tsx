@@ -1,5 +1,5 @@
 import React, { forwardRef, FunctionComponent } from 'react'
-import { Box, BoxOwnProps } from '@theme-ui/components'
+import { Box, BoxOwnProps } from 'theme-ui'
 
 const Well: FunctionComponent<BoxOwnProps> = forwardRef<HTMLDivElement, BoxOwnProps>((props, ref) => (
   <Box

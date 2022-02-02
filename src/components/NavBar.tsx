@@ -1,6 +1,6 @@
 import { mdiCircleSlice4 } from '@mdi/js'
-import { Flex } from '@theme-ui/components'
-import { useColorMode } from '@theme-ui/color-modes'
+import { Flex, useColorMode } from 'theme-ui'
+
 import theme from '../theme'
 import Button from './common/Button'
 import Icon from './common/Icon'

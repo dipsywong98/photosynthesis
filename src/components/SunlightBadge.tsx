@@ -1,8 +1,7 @@
 import React, { FC } from 'react'
-import sun from '../assets/images/sun.svg'
-import { Box } from '@theme-ui/components'
+import sun from '!file-loader!../assets/images/sun.svg'
+import { Box, SxProp } from 'theme-ui'
 import { Theme } from '@theme-ui/css'
-import { SxProp } from '@theme-ui/core'
 
 interface SunlightBadgeProps extends SxProp {
   size?: number | string

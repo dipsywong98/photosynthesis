@@ -1,4 +1,4 @@
-import { Box, Flex, Grid } from '@theme-ui/components'
+import { Box, Flex, Grid } from 'theme-ui'
 import Button from './common/Button'
 import { ACTION_COST_GROW, ACTION_COST_SEED, GrowthStage } from '../3d/constants'
 import CollapsibleWell from './common/CollapsibleWell'

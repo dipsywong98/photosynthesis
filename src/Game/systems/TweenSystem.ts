@@ -10,7 +10,7 @@ export default class TweenSystem extends GameWorldSystem {
     this.queries.object3DTweens.results.forEach(entity => {
       const obj3d = entity?.getObject3D()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tweenComp = entity.getMutableComponent<TweenComponent<TweenObjectProperties<Object3D, any>>>(TweenComponent)
+      const tweenComp = entity.getMutableComponent<TweenComponent<TweenObjectProperties<Object3D, 'scale' | 'position' | 'rotation' | 'quaternion'>>>(TweenComponent)
 
       if (obj3d === undefined || tweenComp === undefined) {
         return

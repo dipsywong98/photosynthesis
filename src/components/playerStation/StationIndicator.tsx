@@ -1,10 +1,10 @@
 import React, { FunctionComponent } from 'react'
 import PropTypes, { InferProps } from 'prop-types'
-import { Box, BoxProps, Flex } from '@theme-ui/components'
+import { Box, BoxProps, Flex, useColorMode } from 'theme-ui'
 import { Color, COLOR_VALUES, GrowthStage } from '../../3d/constants'
 import { useGame } from '../../Game/GameContext'
 import { darken, lighten, transparentize } from 'polished'
-import { useColorMode } from '@theme-ui/color-modes'
+
 import { reverse } from 'ramda'
 import IconText from '../common/IconText'
 import { mdiLeaf, mdiWhiteBalanceSunny } from '@mdi/js'

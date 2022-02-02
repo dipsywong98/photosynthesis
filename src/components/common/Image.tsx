@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from 'react'
 import PropTypes, { InferProps } from 'prop-types'
-import { Box, BoxOwnProps } from '@theme-ui/components'
+import { Box, BoxOwnProps } from 'theme-ui'
 import { IMAGE_SIZE_CSS } from '../../3d/constants'
 
 const propTypes = {

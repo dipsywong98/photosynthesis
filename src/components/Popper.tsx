@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useCallback, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { Box, Flex } from '@theme-ui/components'
+import { Box, Flex } from 'theme-ui'
 import { Image } from './common/Image'
 import { getTreeImageByColorGrowthStage } from './TreeTokenStack'
 import { ACTION_COST_GROW, ACTION_COST_SEED, GROWTH_STAGE_NAME, GrowthStage } from '../3d/constants'

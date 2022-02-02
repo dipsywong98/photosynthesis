@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useEffect, useState } from 'react'
 import PropTypes, { InferProps } from 'prop-types'
-import { Box } from '@theme-ui/components'
+import { Box } from 'theme-ui'
 import { Image } from './Image'
 import { IMAGE_SIZE, IMAGE_SIZE_CSS } from '../../3d/constants'
 import { SLOW, transition } from '../../theme/transitions'

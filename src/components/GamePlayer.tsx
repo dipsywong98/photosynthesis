@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useCallback, useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
 import { useGame } from '../Game/GameContext'
-import { Box, Flex, Heading, Text } from '@theme-ui/components'
+import { Box, Flex, Heading, Text } from 'theme-ui'
 import { AppState } from './App'
 import { useRoom } from '../lib/RoomContext'
 import { Panel } from './Panel'

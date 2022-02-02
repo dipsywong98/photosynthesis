@@ -1,7 +1,7 @@
 import React, { forwardRef, FunctionComponent, useEffect, useState } from 'react'
 import PropTypes, { InferProps } from 'prop-types'
 import Well from './Well'
-import { Box, BoxOwnProps, BoxProps, Flex } from '@theme-ui/components'
+import { Box, BoxOwnProps, BoxProps, Flex } from 'theme-ui'
 import Icon from './Icon'
 import { mdiChevronDown } from '@mdi/js'
 import { transition } from '../../theme/transitions'

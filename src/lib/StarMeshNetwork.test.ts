@@ -2,8 +2,6 @@ import { StarMeshNetwork, StarMeshNetworkEvents, StarMeshReducer } from './StarM
 import { ConnectionManager } from './ConnectionManager'
 import { pause } from './pause'
 import { prepareFakePeerSystem } from './fake/prepareFakePeerSystem'
-import { ConnEvent } from './ConnectionTypes'
-import { PkgType } from './PkgType'
 
 const SET_FOO = 'SET_FOO'
 const reducer: StarMeshReducer<Record<string, unknown>> = (prevState, { action, payload }) => {
@@ -19,7 +17,7 @@ prepareFakePeerSystem()
 
 describe('StarMeshNetwork', () => {
   describe('can handle members change ', () => {
-    it('can host and join', async (done) => {
+    it('can host and join', async () => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const manager3 = await ConnectionManager.startAs('3')
@@ -49,10 +47,9 @@ describe('StarMeshNetwork', () => {
         net2.id
       ])
       expect(net3.members.length).toBe(0)
-      done()
     })
 
-    it('can set and validate state', async (done) => {
+    it('can set and validate state', async () => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const net1 = new StarMeshNetwork(manager1, {})
@@ -81,10 +78,9 @@ describe('StarMeshNetwork', () => {
         action: 'random',
         payload: 123
       })).rejects.toThrowError('invalid action')
-      done()
     })
 
-    it('can handle disconnect of member', async (done) => {
+    it('can handle disconnect of member', async () => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const net1 = new StarMeshNetwork(manager1, {})
@@ -99,10 +95,9 @@ describe('StarMeshNetwork', () => {
       expect(net1.members).not.toContain(net2.id)
       expect(net1.isHost()).toBeTruthy()
       await pause(1)
-      done()
     })
 
-    it('can handle disconnect of host', async (done) => {
+    it('can handle disconnect of host', async () => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const manager3 = await ConnectionManager.startAs('3')
@@ -153,12 +148,11 @@ describe('StarMeshNetwork', () => {
       expect(net3.state).toEqual({
         foo: 123
       })
-      done()
     })
   })
 
   describe('can do state management', () => {
-    it('can get existing state', async (done) => {
+    it('can get existing state', async () => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const manager3 = await ConnectionManager.startAs('3')
@@ -188,10 +182,9 @@ describe('StarMeshNetwork', () => {
       expect(net3.state).toEqual({
         foo: 0
       })
-      done()
     })
 
-    it('can dispatch state change request if no active request', async (done) => {
+    it('can dispatch state change request if no active request', async () => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const net1 = new StarMeshNetwork<Record<string, unknown>>(manager1, { foo: 0 })
@@ -210,10 +203,9 @@ describe('StarMeshNetwork', () => {
       })
       await promise
       expect(net1.activeAction).toEqual(undefined)
-      done()
     })
 
-    it('can queue state change request if previous action hasnt resolved', async (done) => {
+    it('can queue state change request if previous action hasnt resolved', async () => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const net1 = new StarMeshNetwork<Record<string, unknown>>(manager1, { foo: 0 })
@@ -250,10 +242,9 @@ describe('StarMeshNetwork', () => {
       expect(net2.state).toEqual({
         foo: 456
       })
-      done()
     })
 
-    it('can queue state change request if other has staging change', async (done) => {
+    it('can queue state change request if other has staging change', async () => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const net1 = new StarMeshNetwork<Record<string, unknown>>(manager1, { foo: 0 })
@@ -284,10 +275,9 @@ describe('StarMeshNetwork', () => {
       expect(net2.state).toEqual({
         foo: 123
       })
-      done()
     })
 
-    it('can rollback if one if the network member reject the change', async (done) => {
+    it('can rollback if one if the network member reject the change', async () => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const net1 = new StarMeshNetwork<Record<string, unknown>>(manager1, { foo: 0 })
@@ -327,7 +317,6 @@ describe('StarMeshNetwork', () => {
       expect(net1.state).toEqual({
         foo: 123
       })
-      done()
     })
 
     // describe('can validate state change request and cache a staging state, then response a checksum', () => {
@@ -344,7 +333,7 @@ describe('StarMeshNetwork', () => {
   })
 
   describe('subscribable events', () => {
-    it('triggers set state when connected', async (done) => {
+    it('triggers set state when connected', async () => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const net1 = new StarMeshNetwork(manager1, { foo: 0 })
@@ -358,10 +347,9 @@ describe('StarMeshNetwork', () => {
           foo: 0
         }
       })
-      done()
     })
 
-    it('triggers set state when dispatch', async (done) => {
+    it('triggers set state when dispatch', async () => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const net1 = new StarMeshNetwork(manager1, { foo: 0 }, reducer)
@@ -386,10 +374,9 @@ describe('StarMeshNetwork', () => {
           foo: 123
         }
       })
-      done()
     })
 
-    it('triggers member join, left, member change when someone join', async (done) => {
+    it('triggers member join, left, member change when someone join', async () => {
       const manager1 = await ConnectionManager.startAs('1')
       const manager2 = await ConnectionManager.startAs('2')
       const net1 = new StarMeshNetwork(manager1, { foo: 0 })
@@ -436,7 +423,6 @@ describe('StarMeshNetwork', () => {
       expect(fb1l).toHaveBeenCalledWith({
         members: ['2']
       })
-      done()
     })
   })
 })
