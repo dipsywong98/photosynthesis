@@ -12,16 +12,15 @@ describe('Connection Manager', () => {
     expect(manager).toBeTruthy()
   })
 
-  it('can connect to another manager', async (done) => {
+  it('can connect to another manager', async () => {
     const manager1 = await ConnectionManager.startPrefix('1')
     const manager2 = await ConnectionManager.startPrefix('2')
     const promise = manager2.until(ConnEvent.CONN_OPEN)
     await manager1.connectPrefix('2')
     await promise
-    done()
   })
 
-  it('can send to another manager', async (done) => {
+  it('can send to another manager', async () => {
     const manager1 = await ConnectionManager.startPrefix('1')
     const manager2 = await ConnectionManager.startPrefix('2')
     await manager1.connectPrefix('2')
@@ -32,10 +31,9 @@ describe('Connection Manager', () => {
     await pause(1)
     const { data: ret } = await manager1.sendPkg(manager2.id, PkgType.ALERT, '123')
     expect(ret).toEqual('456')
-    done()
   })
 
-  // it('can handle disconnection', async (done) => {
+  // it('can handle disconnection', async () => {
   //   const manager1 = await ConnectionManager.startPrefix('1')
   //   const manager2 = await ConnectionManager.startPrefix('2')
   //   await manager1.connectPrefix('2')
@@ -45,6 +43,5 @@ describe('Connection Manager', () => {
   //     await pause(10)
   //   }
   //   expect(manager1.connections.length).toEqual(0)
-  //   done()
   // })
 })

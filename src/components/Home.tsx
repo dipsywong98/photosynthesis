@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useEffect, useState } from 'react'
-import { Flex, Heading, Text } from '@theme-ui/components'
+import { Flex, Heading, Text } from 'theme-ui'
 import Input from './common/Input'
 import PropTypes from 'prop-types'
 import Button from './common/Button'

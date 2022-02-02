@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from 'react'
-import { Flex, Text, FlexProps } from '@theme-ui/components'
+import { Flex, Text, FlexProps } from 'theme-ui'
 import PropTypes, { InferProps } from 'prop-types'
 import Icon from './Icon'
 

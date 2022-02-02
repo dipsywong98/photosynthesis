@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useEffect, useRef, useState } from 'react'
 import PropTypes, { InferProps } from 'prop-types'
-import { Box, BoxProps } from '@theme-ui/components'
+import { Box, BoxProps } from 'theme-ui'
 import { SLOW, transition } from '../../theme/transitions'
 
 const OPEN = 0b001

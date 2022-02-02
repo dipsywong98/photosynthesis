@@ -90,9 +90,9 @@ export const getObject = async (modelName: string): Promise<Object3D> => {
       })
     } else {
       // Model name is definitely not loaded
-      return Promise.reject(new Error(modelNotFoundMessage + ': ' + modelName))
+      throw new Error(modelNotFoundMessage + ': ' + modelName)
     }
   } else {
-    return Promise.resolve(obj3d)
+    return obj3d
   }
 }

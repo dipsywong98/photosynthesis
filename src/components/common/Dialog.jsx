@@ -1,7 +1,9 @@
-import { useThemeUI } from '@theme-ui/core'
+/** @jsxImportSource theme-ui */
+
+import { useThemeUI, Box } from 'theme-ui'
 import Modal from 'react-modal'
 import PropTypes from 'prop-types'
-import { Box } from '@theme-ui/components'
+
 import { shortTransition } from '../../theme/transitions'
 
 const Dialog = props => {

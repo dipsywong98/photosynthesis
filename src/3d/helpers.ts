@@ -1,11 +1,11 @@
-import { Geometry, Material, Mesh, Object3D, Texture } from 'three'
+import { Material, Mesh, Object3D, Texture } from 'three'
 import { BufferGeometry } from 'three/src/core/BufferGeometry'
 import { basicGray } from './extraObjects'
 
 export const disposeObj3D = (obj3d?: Object3D | null): void => {
   obj3d?.traverse((obj) => {
     if (obj instanceof Mesh) {
-      const geometry = obj.geometry as Geometry | BufferGeometry | undefined
+      const geometry = obj.geometry as BufferGeometry | undefined
       const material = obj.material as Material | Material[] | undefined
 
       if (geometry !== undefined) {

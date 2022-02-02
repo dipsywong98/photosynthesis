@@ -233,7 +233,7 @@ export class StarMeshNetwork<T = Record<string, unknown>> extends Observable<typ
           this.myConnectionManager.disconnect(n)
         })
       } catch (e) {
-        this.emit(StarMeshNetworkEvents.NETWORK_ERROR, e)
+        this.emit(StarMeshNetworkEvents.NETWORK_ERROR, e as StarMeshEventPayload<never>)
         console.log(e)
       }
       if (memberJoining.length > 0 || memberLeaving.length > 0) {

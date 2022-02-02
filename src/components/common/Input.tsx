@@ -1,4 +1,4 @@
-import { Box, Label, Text } from '@theme-ui/components'
+import { Box, Label, Text } from 'theme-ui'
 import PropTypes from 'prop-types'
 import BasicInput from './BasicInput'
 import { FunctionComponent } from 'react'

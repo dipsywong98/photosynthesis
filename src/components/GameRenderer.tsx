@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useEffect, useRef } from 'react'
-import { Box } from '@theme-ui/components'
+import { Box } from 'theme-ui'
 import { WebGLRendererSystem } from 'ecsy-three'
 import { useGame } from '../Game/GameContext'
 

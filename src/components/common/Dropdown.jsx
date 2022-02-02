@@ -1,5 +1,5 @@
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
-import { Box, Divider, Flex } from '@theme-ui/components'
+import { Box, Divider, Flex } from 'theme-ui'
 import PropTypes from 'prop-types'
 import { Children, useEffect, useRef, useState } from 'react'
 import Button from './Button'

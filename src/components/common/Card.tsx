@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from 'react'
-import { Box } from '@theme-ui/components'
+import { Box } from 'theme-ui'
 import PropTypes, { InferProps } from 'prop-types'
 
 const propTypes = {

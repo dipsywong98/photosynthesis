@@ -1,5 +1,5 @@
-import { Group, LoadingManager, Material, Object3D, Texture } from 'three'
-import { GLTF, GLTFParser, GLTFReference } from 'three/examples/jsm/loaders/GLTFLoader'
+import { Group, LoadingManager, Object3D } from 'three'
+import { GLTF, GLTFParser } from 'three/examples/jsm/loaders/GLTFLoader'
 
 export const mockManager: jest.Mocked<LoadingManager> = {
   onError: jest.fn(),
@@ -15,13 +15,6 @@ export const mockManager: jest.Mocked<LoadingManager> = {
   setURLModifier: jest.fn()
 }
 
-export const gltfParser: GLTFParser = {
-  associations: new Map<Object3D | Material | Texture, GLTFReference>(),
-  getDependencies: jest.fn(),
-  getDependency: jest.fn(),
-  json: undefined
-}
-
 export const createMockGltf = (): GLTF => {
   const scene = new Group()
   scene.add(new Object3D())
@@ -30,7 +23,7 @@ export const createMockGltf = (): GLTF => {
     animations: [],
     asset: {},
     cameras: [],
-    parser: gltfParser,
+    parser: {} as unknown as GLTFParser,
     scene,
     scenes: [],
     userData: undefined

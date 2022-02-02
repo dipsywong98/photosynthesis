@@ -28,26 +28,30 @@ describe('Assets test', () => {
     setPath: jest.fn(),
     setRequestHeader: jest.fn(),
     setResourcePath: jest.fn(),
-    ddsLoader: null,
     dracoLoader: null,
     manager: mockManager,
     load: mockLoad,
     setDRACOLoader: jest.fn(),
-    setDDSLoader: jest.fn(),
-    parse: jest.fn()
+    parse: jest.fn(),
+    withCredentials: false,
+    setWithCredentials: jest.fn(),
+    register: jest.fn(),
+    unregister: jest.fn(),
+    setKTX2Loader: jest.fn(),
+    parseAsync: jest.fn(),
+    setMeshoptDecoder: jest.fn()
   }
 
   const mockGLTFLoaderUtils = GLTFLoaderUtils as jest.Mocked<typeof GLTFLoaderUtils>
 
   const errorSpy = jest.spyOn(console, 'error')
 
-  mockGLTFLoaderUtils.GLTFLoader.mockImplementation(() => mockGLTFLoader)
-
   beforeEach(() => {
     // Reset loading states
     errorSpy.mockReset()
     resetAssets()
     mockLoad.mockReset()
+    mockGLTFLoaderUtils.GLTFLoader.mockImplementation(() => mockGLTFLoader)
   })
 
   it('All described models are loaded properly', () => {
@@ -73,9 +77,8 @@ describe('Assets test', () => {
     expect(errorSpy).toHaveBeenCalledTimes(0)
   })
 
-  it('getObject if model not exists should reject Error', async (done) => {
+  it('getObject if model not exists should reject Error', async () => {
     await expect(getObject('x')).rejects.toEqual(new Error('Model not found: x')).catch(e => { throw e })
-    done()
   })
 
   it('getObject when model is still loading should wait to resolve object', () => {
@@ -97,7 +100,7 @@ describe('Assets test', () => {
     expect(errorSpy).toHaveBeenCalledTimes(0)
   })
 
-  it('getObject when model will not be loaded in loading process should wait to reject Error', async (done) => {
+  it('getObject when model will not be loaded in loading process should wait to reject Error', async () => {
     const callbacks: Array<(gltf: GLTF) => void> = []
 
     mockLoad.mockImplementation((_: string, cb: (gltf: GLTF) => void): void => {
@@ -112,6 +115,5 @@ describe('Assets test', () => {
 
     await expect(promise).rejects.toEqual(new Error('Model not found: z')).catch(e => { throw e })
     expect(errorSpy).toHaveBeenCalledTimes(0)
-    done()
   })
 })

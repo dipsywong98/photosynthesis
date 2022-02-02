@@ -1,3 +1,4 @@
+/* @jsxImportSource theme-ui */
 import MdiIcon from '@mdi/react'
 import PropTypes from 'prop-types'
 

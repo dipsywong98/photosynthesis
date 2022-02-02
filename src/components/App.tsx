@@ -7,7 +7,7 @@ import { GameContextProvider } from '../Game/GameContext'
 import { GamePlayer } from './GamePlayer'
 import { withAlertQueue } from './common/AlertContext'
 import GameRenderer from './GameRenderer'
-import { Box, Flex } from '@theme-ui/components'
+import { Box, Flex } from 'theme-ui'
 import RevolutionCounter from './RevolutionCounter'
 import { withConfirmQueue } from './common/ConfirmContext'
 
