@@ -240,9 +240,9 @@ export default class GameWorld {
     sunContainer.name = 'sun'
     sunContainer.add(sun)
 
-    const sky = new DirectionalLight(0xFFFFFF, 0.2)
+    const sky = new AmbientLight(0xFFFFFF, 0.2)
     sky.name = 'sky'
-    sky.position.y = 100
+    // sky.position.y = 100
     // sky.castShadow = true
     // sky.shadow.bias = -0.001
     // sky.shadow.radius = 128
